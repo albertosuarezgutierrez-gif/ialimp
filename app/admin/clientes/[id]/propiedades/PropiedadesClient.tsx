@@ -24,6 +24,12 @@ const EMPTY = {
   nombre: '', tipo: 'piso_turistico', direccion: '',
   m2: '', habitaciones: '', pms_propiedad_id: '',
   asignacion_fija: false,
+  codigo_postal: '',
+  duracion_estimada_min: '120',
+  flexibilidad_horaria: 'ventana',
+  hora_pactada: '',
+  hora_checkout_habitual: '11:00',
+  hora_checkin_habitual: '15:00',
   limpiadora_principal_id: '',
   limpiadora_suplente_id: '',
   modelo_precio: 'precio_fijo',
@@ -441,6 +447,103 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                   </div>
                 </div>
               )}
+
+              {/* ── ZONA Y TIEMPOS ── */}
+              <div className="bg-blue-50 rounded-2xl p-4 space-y-4">
+                <div className="text-sm font-semibold text-blue-700">📍 Zona y tiempos</div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Código postal</label>
+                    <input value={form.codigo_postal} onChange={e => f('codigo_postal', e.target.value)}
+                      placeholder="41003"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Duración estimada</label>
+                    <select value={form.duracion_estimada_min} onChange={e => f('duracion_estimada_min', e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="60">1h</option>
+                      <option value="90">1h 30min</option>
+                      <option value="120">2h</option>
+                      <option value="150">2h 30min</option>
+                      <option value="180">3h</option>
+                      <option value="240">4h</option>
+                      <option value="300">5h</option>
+                      <option value="360">6h+</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-2">Tipo de horario</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'ventana',  icon: '⏱️', label: 'Ventana',  desc: 'Entre checkout y checkin (turístico)' },
+                      { id: 'fija',     icon: '🕐', label: 'Fija',     desc: 'Hora exacta (casa particular)' },
+                      { id: 'flexible', icon: '🔓', label: 'Flexible', desc: 'Cualquier hora del día (comunidad)' },
+                    ].map(opt => (
+                      <button key={opt.id} type="button" onClick={() => f('flexibilidad_horaria', opt.id)}
+                        className="p-2.5 rounded-xl border-2 text-center transition"
+                        style={{
+                          borderColor: form.flexibilidad_horaria === opt.id ? '#3b82f6' : '#e5e7eb',
+                          background:  form.flexibilidad_horaria === opt.id ? '#eff6ff'  : 'white'
+                        }}>
+                        <div className="text-lg">{opt.icon}</div>
+                        <div className="text-xs font-semibold mt-0.5"
+                          style={{ color: form.flexibilidad_horaria === opt.id ? '#2563eb' : '#374151' }}>
+                          {opt.label}
+                        </div>
+                        <div className="text-xs text-gray-400 leading-tight">{opt.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {form.flexibilidad_horaria === 'ventana' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">Checkout habitual</label>
+                      <input type="time" value={form.hora_checkout_habitual}
+                        onChange={e => f('hora_checkout_habitual', e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">Checkin siguiente</label>
+                      <input type="time" value={form.hora_checkin_habitual}
+                        onChange={e => f('hora_checkin_habitual', e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    {form.hora_checkout_habitual && form.hora_checkin_habitual && (() => {
+                      const [hO, mO] = form.hora_checkout_habitual.split(':').map(Number)
+                      const [hI, mI] = form.hora_checkin_habitual.split(':').map(Number)
+                      const ventana  = (hI * 60 + mI) - (hO * 60 + mO)
+                      const duracion = Number(form.duracion_estimada_min)
+                      const ok       = ventana >= duracion + 15
+                      return (
+                        <div className="col-span-2 flex items-center gap-2 text-xs">
+                          <span className={ok ? 'text-green-600' : 'text-red-500'}>
+                            {ok ? '✅' : '⚠️'}
+                          </span>
+                          <span className={ok ? 'text-green-700' : 'text-red-600'}>
+                            Ventana: {ventana}min | Limpieza: {duracion}min
+                            {ok ? ' — OK' : ' — ¡VENTANA AJUSTADA!'}
+                          </span>
+                        </div>
+                      )
+                    })()}
+                  </div>
+                )}
+
+                {form.flexibilidad_horaria === 'fija' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Hora pactada con el cliente</label>
+                    <input type="time" value={form.hora_pactada}
+                      onChange={e => f('hora_pactada', e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                )}
+              </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Notas</label>
