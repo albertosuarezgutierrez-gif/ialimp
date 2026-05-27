@@ -10,29 +10,44 @@ export default async function DashboardPage() {
 
   const today = new Date().toISOString().split('T')[0]
 
-  const [empresa, sesiones, conexiones] = await Promise.all([
-    prisma.$queryRaw<any[]>(Prisma.sql`SELECT nombre, email, plan FROM empresas WHERE id = ${empresa_id}::uuid`),
+  const [empresa, sesiones, conexiones, clientes, limpiadoras] = await Promise.all([
     prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT cs.id, cs.session_date, cs.property_name, cs.property_id,
-             cs.started_at, cs.completed_at, cs.hora_llegada, cs.hora_salida,
-             l.nombre as limpiadora_nombre, l.id as limpiadora_id
+      SELECT nombre, email, plan FROM empresas WHERE id = ${empresa_id}::uuid
+    `),
+    prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT cs.*, l.nombre AS limpiadora_nombre, c.nombre AS cliente_nombre
       FROM cleaning_sessions cs
       LEFT JOIN limpiadoras l ON l.id = cs.limpiadora_id
-      WHERE cs.empresa_id = ${empresa_id}::uuid AND cs.session_date = ${today}::date
-      ORDER BY l.nombre
+      LEFT JOIN clientes    c ON c.id = cs.cliente_id
+      WHERE cs.empresa_id = ${empresa_id}::uuid
+        AND cs.session_date = ${today}::date
+      ORDER BY cs.hora_inicio ASC NULLS LAST, l.nombre ASC
     `),
     prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT id, cliente_nombre, pms_tipo, activa, ultimo_sync, sync_error
-      FROM pms_connections WHERE empresa_id = ${empresa_id}::uuid
+      FROM pms_connections
+      WHERE empresa_id = ${empresa_id}::uuid
       ORDER BY cliente_nombre
+    `),
+    prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT id, nombre, tipo FROM clientes
+      WHERE empresa_id = ${empresa_id}::uuid AND activo = true
+      ORDER BY nombre
+    `),
+    prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT id, nombre FROM limpiadoras
+      WHERE empresa_id = ${empresa_id}::uuid AND activa = true
+      ORDER BY nombre
     `)
   ])
 
   return (
     <DashboardClient
       empresa={empresa[0] || {}}
-      sesiones={sesiones}
+      sesionesIniciales={sesiones}
       conexiones={conexiones}
+      clientes={clientes}
+      limpiadoras={limpiadoras}
       today={today}
     />
   )
