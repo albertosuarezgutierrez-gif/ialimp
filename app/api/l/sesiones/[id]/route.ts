@@ -9,7 +9,7 @@ async function getLimpiadoraId(): Promise<string | null> {
   const token = jar.get('limpiadora_token')?.value
   if (!token) return null
   const rows = await prisma.$queryRaw<any[]>(Prisma.sql`
-    SELECT limpiadora_id::text FROM limpiadora_sessions WHERE token = ${token}::uuid LIMIT 1
+    SELECT limpiadora_id::text FROM limpiadora_sessions WHERE token::text = ${token} LIMIT 1
   `)
   return rows[0]?.limpiadora_id || null
 }
@@ -18,10 +18,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   try {
     const limpiadora_id = await getLimpiadoraId()
     if (!limpiadora_id) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
-
     const { id } = await params
-    const body = await req.json()
-    const { accion, checklist_data, incidencias } = body
+    const { accion, checklist_data, incidencias } = await req.json()
 
     if (accion === 'fichar_entrada') {
       await prisma.$executeRaw(Prisma.sql`
@@ -30,15 +28,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       `)
     } else if (accion === 'completar') {
       await prisma.$executeRaw(Prisma.sql`
-        UPDATE cleaning_sessions SET
-          completed_at  = NOW(),
+        UPDATE cleaning_sessions SET completed_at = NOW(),
           checklist_data = COALESCE(${checklist_data ? JSON.stringify(checklist_data) : null}::jsonb, checklist_data)
         WHERE id = ${id}::uuid AND limpiadora_id = ${limpiadora_id}::uuid
       `)
-      // Notificar al propietario (fire & forget)
-      fetch((process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app') + '/api/admin/sesiones/' + id + '/completar',
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }
-      ).catch(() => {})
     } else if (accion === 'checklist') {
       await prisma.$executeRaw(Prisma.sql`
         UPDATE cleaning_sessions SET checklist_data = ${JSON.stringify(checklist_data)}::jsonb
