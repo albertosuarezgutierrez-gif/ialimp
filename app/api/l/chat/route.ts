@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { serialize } from '@/lib/serialize'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
@@ -30,7 +31,7 @@ export async function GET(req: Request) {
         ${sesion_id ? Prisma.sql`AND sesion_id = ${sesion_id}::uuid` : Prisma.sql``}
     `)
 
-    return NextResponse.json({ mensajes, no_leidos: Number(noLeidos[0]?.n || 0) })
+    return NextResponse.json(serialize({ mensajes, no_leidos: Number(noLeidos[0]?.n || 0) }))
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
