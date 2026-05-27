@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { serialize } from '@/lib/serialize'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
