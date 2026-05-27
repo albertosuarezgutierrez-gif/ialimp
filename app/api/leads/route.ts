@@ -2,12 +2,10 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
-// GET para el admin (sin auth para el cotizador público)
 export async function GET() {
-  return NextResponse.json({ ok: true, message: 'Use POST para crear lead' })
+  return NextResponse.json({ ok: true, message: 'Endpoint público de leads' })
 }
 
-// POST público — desde cotizador de la web (sin autenticación)
 export async function POST(req: Request) {
   try {
     const body = await req.json()
@@ -17,20 +15,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Nombre obligatorio' }, { status: 400 })
     }
 
+    // empresa_id es UUID — usar cast solo si viene en el body
+    const emp_val = empresa_id ? Prisma.sql`${empresa_id}::uuid` : Prisma.sql`NULL`
+
     const result = await prisma.$queryRaw<any[]>(Prisma.sql`
       INSERT INTO leads (empresa_id, nombre, telefono, email, zona, tipo_servicio, m2, frecuencia, precio_estimado, origen)
-      VALUES (
-        ${empresa_id || null},
-        ${nombre.trim()},
-        ${telefono || null},
-        ${email    || null},
-        ${zona     || null},
-        ${tipo_servicio || null},
-        ${m2 ? Number(m2) : null},
-        ${frecuencia || null},
-        ${precio_estimado ? Number(precio_estimado) : null},
-        'cotizador'
-      )
+      SELECT
+        ${emp_val} AS empresa_id,
+        ${nombre.trim()} AS nombre,
+        ${telefono || null} AS telefono,
+        ${email    || null} AS email,
+        ${zona     || null} AS zona,
+        ${tipo_servicio || null} AS tipo_servicio,
+        ${m2  ? Number(m2)  : null} AS m2,
+        ${frecuencia || null} AS frecuencia,
+        ${precio_estimado ? Number(precio_estimado) : null} AS precio_estimado,
+        'cotizador' AS origen
       RETURNING id
     `)
 
