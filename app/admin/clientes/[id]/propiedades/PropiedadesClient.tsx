@@ -10,12 +10,25 @@ const TIPO_CONFIG: Record<string, { label: string; icon: string; color: string }
   otro:           { label: 'Otro',           icon: '📋', color: '#64748b' },
 }
 
+const MODELO_CONFIG: Record<string, { label: string; icon: string; desc: string }> = {
+  precio_fijo:   { label: 'Precio fijo',    icon: '💶', desc: 'Mismo precio cada limpieza' },
+  por_horas:     { label: 'Por horas',      icon: '⏱️', desc: 'Tarifa × horas trabajadas' },
+  por_m2:        { label: 'Por m²',         icon: '📐', desc: 'Precio por metro cuadrado' },
+  mensual_fijo:  { label: 'Cuota mensual',  icon: '📅', desc: 'Precio fijo al mes' },
+  mixto:         { label: 'Mixto',          icon: '🔀', desc: 'Base + extras variables' },
+}
+
 const ZONAS_COMUNIDAD = ['Portal','Escaleras','Garaje','Jardín','Piscina','Ascensor','Local social','Trasteros']
 
 const EMPTY = {
   nombre: '', tipo: 'piso_turistico', direccion: '',
   m2: '', habitaciones: '', pms_propiedad_id: '',
-  precio_limpieza: '', notas: '', zonas: [] as string[]
+  modelo_precio: 'precio_fijo',
+  precio_limpieza: '', precio_hora: '', horas_estimadas: '',
+  precio_m2: '', precio_mensual: '', limpiezas_mes: '',
+  materiales_incluidos: true, precio_materiales: '',
+  recargo_festivo: '', recargo_urgencia: '', recargo_nocturno: '',
+  notas: '', zonas: [] as string[]
 }
 
 interface Props {
@@ -25,35 +38,38 @@ interface Props {
 }
 
 export default function PropiedadesClient({ cliente, propiedadesIniciales, conexiones }: Props) {
-  const [props, setProps]       = useState<any[]>(propiedadesIniciales)
+  const [props, setProps]         = useState<any[]>(propiedadesIniciales)
   const [showModal, setShowModal] = useState(false)
   const [editando, setEditando]   = useState<any>(null)
   const [form, setForm]           = useState({ ...EMPTY })
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState('')
 
-  const t = (tipo: string) => TIPO_CONFIG[tipo] || TIPO_CONFIG.otro
-  const f = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }))
+  const t  = (tipo: string)   => TIPO_CONFIG[tipo]   || TIPO_CONFIG.otro
+  const mp = (modelo: string) => MODELO_CONFIG[modelo] || MODELO_CONFIG.precio_fijo
+  const f  = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }))
 
   function abrirNueva() {
-    setEditando(null)
-    setForm({ ...EMPTY })
-    setError('')
-    setShowModal(true)
+    setEditando(null); setForm({ ...EMPTY }); setError(''); setShowModal(true)
   }
 
   function abrirEditar(p: any) {
     setEditando(p)
     setForm({
       nombre: p.nombre || '', tipo: p.tipo || 'piso_turistico',
-      direccion: p.direccion || '', m2: p.m2 || '',
-      habitaciones: p.habitaciones || '',
+      direccion: p.direccion || '', m2: p.m2 || '', habitaciones: p.habitaciones || '',
       pms_propiedad_id: p.pms_propiedad_id || '',
-      precio_limpieza: p.precio_limpieza || '',
+      modelo_precio: p.modelo_precio || 'precio_fijo',
+      precio_limpieza: p.precio_limpieza || '', precio_hora: p.precio_hora || '',
+      horas_estimadas: p.horas_estimadas || '', precio_m2: p.precio_m2 || '',
+      precio_mensual: p.precio_mensual || '', limpiezas_mes: p.limpiezas_mes || '',
+      materiales_incluidos: p.materiales_incluidos !== false,
+      precio_materiales: p.precio_materiales || '',
+      recargo_festivo: p.recargo_festivo || '', recargo_urgencia: p.recargo_urgencia || '',
+      recargo_nocturno: p.recargo_nocturno || '',
       notas: p.notas || '', zonas: p.zonas || []
     })
-    setError('')
-    setShowModal(true)
+    setError(''); setShowModal(true)
   }
 
   function toggleZona(zona: string) {
@@ -65,27 +81,41 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
     }))
   }
 
+  // Precio de referencia visual
+  function precioLabel(p: any): string {
+    switch (p.modelo_precio) {
+      case 'precio_fijo':  return p.precio_limpieza   ? p.precio_limpieza + '€'    : '—'
+      case 'por_horas':    return p.precio_hora        ? p.precio_hora + '€/h'     : '—'
+      case 'por_m2':       return p.precio_m2          ? p.precio_m2 + '€/m²'      : '—'
+      case 'mensual_fijo': return p.precio_mensual     ? p.precio_mensual + '€/mes' : '—'
+      default:             return '—'
+    }
+  }
+
   async function guardar(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true); setError('')
     try {
       const body = {
-        cliente_id:       cliente.id,
-        nombre:           form.nombre,
-        tipo:             form.tipo,
-        direccion:        form.direccion     || null,
-        m2:               form.m2            ? Number(form.m2)          : null,
-        habitaciones:     form.habitaciones  ? Number(form.habitaciones) : null,
-        pms_propiedad_id: form.pms_propiedad_id || null,
-        precio_limpieza:  form.precio_limpieza ? Number(form.precio_limpieza) : null,
-        zonas:            form.zonas.length > 0 ? form.zonas : null,
-        notas:            form.notas || null,
+        cliente_id: cliente.id, ...form,
+        m2:               form.m2               ? Number(form.m2)               : null,
+        habitaciones:     form.habitaciones      ? Number(form.habitaciones)      : null,
+        precio_limpieza:  form.precio_limpieza   ? Number(form.precio_limpieza)   : null,
+        precio_hora:      form.precio_hora       ? Number(form.precio_hora)       : null,
+        horas_estimadas:  form.horas_estimadas   ? Number(form.horas_estimadas)   : null,
+        precio_m2:        form.precio_m2         ? Number(form.precio_m2)         : null,
+        precio_mensual:   form.precio_mensual    ? Number(form.precio_mensual)    : null,
+        limpiezas_mes:    form.limpiezas_mes      ? Number(form.limpiezas_mes)     : null,
+        precio_materiales:form.precio_materiales ? Number(form.precio_materiales) : null,
+        recargo_festivo:  Number(form.recargo_festivo  || 0),
+        recargo_urgencia: Number(form.recargo_urgencia || 0),
+        recargo_nocturno: Number(form.recargo_nocturno || 0),
+        zonas: form.zonas.length > 0 ? form.zonas : null,
       }
       const url    = editando ? '/api/admin/propiedades/' + editando.id : '/api/admin/propiedades'
       const method = editando ? 'PATCH' : 'POST'
       const res    = await fetch(url, {
-        method, headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Error'); return }
@@ -106,18 +136,15 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
     else { const d = await res.json(); alert(d.error) }
   }
 
-  const cfg = t(cliente.tipo)
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-indigo-600 text-white px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <a href="/admin/clientes" className="text-indigo-200 hover:text-white text-sm">← Clientes</a>
             <div>
               <div className="flex items-center gap-1.5">
-                <span>{cfg.icon}</span>
+                <span>{t(cliente.tipo).icon}</span>
                 <h1 className="font-bold">{cliente.nombre}</h1>
               </div>
               <p className="text-indigo-200 text-xs">{props.length} propiedades</p>
@@ -130,22 +157,6 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
         </div>
       </header>
 
-      {/* Resumen tarifas */}
-      {props.some((p: any) => p.precio_limpieza) && (
-        <div className="mx-4 mt-4 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Facturación mensual estimada</p>
-          <div className="space-y-1.5">
-            {props.filter((p: any) => p.precio_limpieza && p.activa).map((p: any) => (
-              <div key={p.id} className="flex justify-between text-sm">
-                <span className="text-gray-600">{t(p.tipo).icon} {p.nombre}</span>
-                <span className="font-medium text-gray-800">{Number(p.precio_limpieza).toFixed(2)} €/limpieza</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Lista propiedades */}
       <div className="p-4 space-y-3 pb-20">
         {props.length === 0 && (
           <div className="text-center py-16 text-gray-400">
@@ -159,9 +170,9 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
 
         {props.map((p: any) => {
           const cfg = t(p.tipo)
+          const mcfg = mp(p.modelo_precio)
           return (
-            <div key={p.id}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+            <div key={p.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
               style={{ borderLeft: '4px solid ' + (p.activa ? cfg.color : '#e5e7eb') }}>
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2">
@@ -173,6 +184,17 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                     </div>
                     <p className="text-xs mt-0.5 font-medium" style={{ color: cfg.color }}>{cfg.label}</p>
                     {p.direccion && <p className="text-xs text-gray-400 mt-0.5 truncate">📍 {p.direccion}</p>}
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                        {mcfg.icon} {mcfg.label}
+                      </span>
+                      {p.materiales_incluidos === false && (
+                        <span className="text-xs bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full">Mat. aparte</span>
+                      )}
+                      {Number(p.recargo_festivo) > 0 && (
+                        <span className="text-xs bg-red-50 text-red-500 px-2 py-0.5 rounded-full">+{p.recargo_festivo}% festivo</span>
+                      )}
+                    </div>
                     {p.zonas?.length > 0 && (
                       <div className="flex gap-1 flex-wrap mt-1.5">
                         {p.zonas.map((z: string) => (
@@ -180,21 +202,20 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                         ))}
                       </div>
                     )}
-                    <div className="flex gap-3 mt-1.5 text-xs text-gray-400">
-                      {p.m2 && <span>📐 {p.m2} m²</span>}
+                    <div className="flex gap-3 mt-1 text-xs text-gray-400">
+                      {p.m2 && <span>📐 {p.m2}m²</span>}
                       {p.habitaciones && <span>🛏 {p.habitaciones} hab</span>}
-                      {p.pms_propiedad_id && <span>🔌 ID: {p.pms_propiedad_id}</span>}
+                      {p.pms_propiedad_id && <span className="font-mono">🔌 {p.pms_propiedad_id}</span>}
+                      {p.limpiezas_mes && <span>📅 {p.limpiezas_mes} limpiezas/mes</span>}
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    {p.precio_limpieza && (
-                      <p className="font-bold text-indigo-600 text-lg">{Number(p.precio_limpieza).toFixed(0)}€</p>
-                    )}
+                    <p className="font-bold text-indigo-600 text-lg">{precioLabel(p)}</p>
                     {Number(p.sesiones_hoy) > 0 && (
-                      <span className="text-xs bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded-full">🧹 hoy</span>
+                      <span className="text-xs bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded-full block mt-1">🧹 hoy</span>
                     )}
                     {p.ultima_limpieza && (
-                      <p className="text-xs text-gray-400 mt-1">{p.ultima_limpieza}</p>
+                      <p className="text-xs text-gray-400 mt-1">{String(p.ultima_limpieza).split('T')[0]}</p>
                     )}
                   </div>
                 </div>
@@ -203,10 +224,6 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                     className="flex-1 text-xs border border-indigo-200 text-indigo-600 rounded-lg py-1.5 hover:bg-indigo-50">
                     Editar
                   </button>
-                  <a href={'/admin/sesiones?propiedad_id=' + p.id}
-                    className="flex-1 text-xs border border-gray-200 text-gray-600 rounded-lg py-1.5 text-center hover:bg-gray-50">
-                    Ver limpiezas
-                  </a>
                   {p.activa && (
                     <button onClick={() => desactivar(p)}
                       className="text-xs border border-gray-200 text-gray-400 rounded-lg px-3 py-1.5">⊘</button>
@@ -223,10 +240,10 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
         <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-bold text-gray-800">{editando ? 'Editar propiedad' : 'Nueva propiedad'}</h2>
+              <h2 className="font-bold text-gray-800">{editando ? 'Editar' : 'Nueva propiedad'}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 text-2xl">✕</button>
             </div>
-            <form onSubmit={guardar} className="p-5 space-y-4">
+            <form onSubmit={guardar} className="p-5 space-y-5">
 
               {/* Tipo */}
               <div>
@@ -235,15 +252,9 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                   {Object.entries(TIPO_CONFIG).map(([key, val]) => (
                     <button key={key} type="button" onClick={() => f('tipo', key)}
                       className="p-2.5 rounded-xl border-2 text-center transition"
-                      style={{
-                        borderColor: form.tipo === key ? val.color : '#e5e7eb',
-                        background:  form.tipo === key ? val.color + '15' : 'white'
-                      }}>
+                      style={{ borderColor: form.tipo === key ? val.color : '#e5e7eb', background: form.tipo === key ? val.color + '15' : 'white' }}>
                       <div className="text-xl">{val.icon}</div>
-                      <div className="text-xs font-medium mt-0.5"
-                        style={{ color: form.tipo === key ? val.color : '#374151' }}>
-                        {val.label}
-                      </div>
+                      <div className="text-xs font-medium mt-0.5" style={{ color: form.tipo === key ? val.color : '#374151' }}>{val.label}</div>
                     </button>
                   ))}
                 </div>
@@ -253,24 +264,128 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre *</label>
                 <input value={form.nombre} onChange={e => f('nombre', e.target.value)}
-                  placeholder="Ej: Casa Socorro, Portal C/ Betis 12, Oficina 3ºA…"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  required />
+                  placeholder="Ej: Casa Socorro, Portal C/ Betis 12…"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required />
               </div>
 
-              {/* Precio limpieza */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Precio por limpieza (€)
-                  <span className="font-normal text-gray-400 ml-1">— para factura cliente</span>
-                </label>
-                <input type="number" step="0.01" value={form.precio_limpieza}
-                  onChange={e => f('precio_limpieza', e.target.value)}
-                  placeholder="Ej: 28.00"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              {/* MODELO DE PRECIO */}
+              <div className="bg-gray-50 rounded-2xl p-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Modelo de facturación</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(MODELO_CONFIG).map(([key, val]) => (
+                      <button key={key} type="button" onClick={() => f('modelo_precio', key)}
+                        className="p-3 rounded-xl border-2 text-left transition"
+                        style={{ borderColor: form.modelo_precio === key ? '#6366f1' : '#e5e7eb', background: form.modelo_precio === key ? '#eef2ff' : 'white' }}>
+                        <span className="text-base">{val.icon}</span>
+                        <div className="text-xs font-semibold mt-1" style={{ color: form.modelo_precio === key ? '#6366f1' : '#374151' }}>{val.label}</div>
+                        <div className="text-xs text-gray-400 leading-tight">{val.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Campos según modelo */}
+                {form.modelo_precio === 'precio_fijo' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Precio por limpieza (€) *</label>
+                    <input type="number" step="0.01" value={form.precio_limpieza}
+                      onChange={e => f('precio_limpieza', e.target.value)}
+                      placeholder="Ej: 28.00"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                )}
+
+                {form.modelo_precio === 'por_horas' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">€/hora *</label>
+                      <input type="number" step="0.01" value={form.precio_hora}
+                        onChange={e => f('precio_hora', e.target.value)} placeholder="15.00"
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">Horas estimadas</label>
+                      <input type="number" step="0.5" value={form.horas_estimadas}
+                        onChange={e => f('horas_estimadas', e.target.value)} placeholder="3"
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    </div>
+                  </div>
+                )}
+
+                {form.modelo_precio === 'por_m2' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">€/m² *</label>
+                    <input type="number" step="0.01" value={form.precio_m2}
+                      onChange={e => f('precio_m2', e.target.value)} placeholder="1.80"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                )}
+
+                {form.modelo_precio === 'mensual_fijo' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">€/mes *</label>
+                      <input type="number" step="0.01" value={form.precio_mensual}
+                        onChange={e => f('precio_mensual', e.target.value)} placeholder="300.00"
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">Limpiezas/mes</label>
+                      <input type="number" value={form.limpiezas_mes}
+                        onChange={e => f('limpiezas_mes', e.target.value)} placeholder="4"
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Materiales */}
+                <div>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={form.materiales_incluidos}
+                      onChange={e => f('materiales_incluidos', e.target.checked)}
+                      className="w-4 h-4 text-indigo-600 rounded" />
+                    <div>
+                      <p className="text-sm font-semibold text-gray-700">Materiales incluidos</p>
+                      <p className="text-xs text-gray-400">Productos de limpieza en el precio</p>
+                    </div>
+                  </label>
+                  {!form.materiales_incluidos && (
+                    <div className="mt-2">
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">Coste materiales (€)</label>
+                      <input type="number" step="0.01" value={form.precio_materiales}
+                        onChange={e => f('precio_materiales', e.target.value)} placeholder="10.00"
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Recargos */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-2">Recargos (%)</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { key: 'recargo_festivo',  label: '📅 Festivo'  },
+                      { key: 'recargo_urgencia', label: '🔴 Urgencia' },
+                      { key: 'recargo_nocturno', label: '🌙 Nocturno' },
+                    ].map(r => (
+                      <div key={r.key}>
+                        <label className="block text-xs text-gray-500 mb-1">{r.label}</label>
+                        <div className="relative">
+                          <input type="number" step="5" min="0" max="100"
+                            value={(form as any)[r.key]}
+                            onChange={e => f(r.key, e.target.value)}
+                            placeholder="0"
+                            className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Dirección */}
+              {/* Dirección / m² / habitaciones */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Dirección</label>
                 <input value={form.direccion} onChange={e => f('direccion', e.target.value)}
@@ -278,7 +393,6 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                   className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
 
-              {/* M² y habitaciones */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">M²</label>
@@ -294,21 +408,17 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                 </div>
               </div>
 
-              {/* ID en PMS (solo pisos turísticos) */}
               {form.tipo === 'piso_turistico' && (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    ID en PMS
-                    <span className="font-normal text-gray-400 ml-1">— para sincronización automática</span>
+                    ID en PMS <span className="font-normal text-gray-400">— para sync automático</span>
                   </label>
-                  <input value={form.pms_propiedad_id}
-                    onChange={e => f('pms_propiedad_id', e.target.value)}
-                    placeholder="Ej: 352007 (Smoobu), apt-abc123 (Octorate)…"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono" />
+                  <input value={form.pms_propiedad_id} onChange={e => f('pms_propiedad_id', e.target.value)}
+                    placeholder="Ej: 352007 (Smoobu)"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
               )}
 
-              {/* Zonas (solo comunidades) */}
               {form.tipo === 'comunidad' && (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Zonas a limpiar</label>
@@ -328,12 +438,10 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                 </div>
               )}
 
-              {/* Notas */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Notas</label>
                 <textarea value={form.notas} onChange={e => f('notas', e.target.value)}
-                  placeholder="Acceso, instrucciones especiales…"
-                  rows={2}
+                  placeholder="Acceso, instrucciones…" rows={2}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
               </div>
 
@@ -345,8 +453,8 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                   Cancelar
                 </button>
                 <button type="submit" disabled={loading}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl text-sm font-bold transition disabled:opacity-50">
-                  {loading ? 'Guardando…' : editando ? 'Guardar' : '+ Añadir propiedad'}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl text-sm font-bold disabled:opacity-50">
+                  {loading ? 'Guardando…' : editando ? 'Guardar' : '+ Añadir'}
                 </button>
               </div>
             </form>
