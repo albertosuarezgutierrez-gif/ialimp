@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import PropietarioClient from './PropietarioClient'
+import { serialize } from '@/lib/serialize'
 
 export default async function PropietarioPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
@@ -55,5 +56,5 @@ export default async function PropietarioPage({ params }: { params: Promise<{ to
     ORDER BY cs.session_date DESC, cs.completed_at DESC LIMIT 20
   `)
 
-  return <PropietarioClient cliente={cliente} propiedades={propiedades} historial={historial} token={token} />
+  return <PropietarioClient cliente={cliente} propiedades={safeProps} historial={safeHist} token={token} />
 }
