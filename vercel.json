@@ -6,6 +6,10 @@
     {
       "path": "/api/pms/sync",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/admin/programaciones/generar",
+      "schedule": "0 5 * * *"
     }
   ]
 }
