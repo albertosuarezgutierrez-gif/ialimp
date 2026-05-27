@@ -2,12 +2,21 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { serialize } from '@/lib/serialize'
 
-// PATCH — actualizar checklist, incidencias, fichar entrada/salida, completar
+async function getLimpiadoraId(): Promise<string | null> {
+  const jar = await cookies()
+  const token = jar.get('limpiadora_token')?.value
+  if (!token) return null
+  const rows = await prisma.$queryRaw<any[]>(Prisma.sql`
+    SELECT limpiadora_id::text FROM limpiadora_sessions WHERE token = ${token}::uuid LIMIT 1
+  `)
+  return rows[0]?.limpiadora_id || null
+}
+
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const jar = await cookies()
-    const limpiadora_id = jar.get('limpiadora_id')?.value
+    const limpiadora_id = await getLimpiadoraId()
     if (!limpiadora_id) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
     const { id } = await params
@@ -26,11 +35,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           checklist_data = COALESCE(${checklist_data ? JSON.stringify(checklist_data) : null}::jsonb, checklist_data)
         WHERE id = ${id}::uuid AND limpiadora_id = ${limpiadora_id}::uuid
       `)
-      // Disparar notificación al propietario (fire and forget)
-      fetch(new URL('/api/admin/sesiones/' + id + '/completar',
-        process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app').toString(),
-        { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({}) }
+      // Notificar al propietario (fire & forget)
+      fetch((process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app') + '/api/admin/sesiones/' + id + '/completar',
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }
       ).catch(() => {})
     } else if (accion === 'checklist') {
       await prisma.$executeRaw(Prisma.sql`
@@ -47,7 +54,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const result = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT * FROM sesiones_limpiadora WHERE id = ${id}::uuid
     `)
-    return NextResponse.json({ ok: true, sesion: result[0] })
+    return NextResponse.json(serialize({ ok: true, sesion: result[0] }))
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
