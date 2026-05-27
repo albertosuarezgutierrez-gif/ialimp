@@ -336,6 +336,29 @@ function SesionDetalle({ s, onBack, onUpdate }: { s: any; onBack: () => void; on
           </div>
         )}
       </div>
+
+      {/* Chat grupal del equipo */}
+      {showChatGlobal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', flexDirection: 'column', fontFamily: "'DM Sans',sans-serif" }}>
+          <div style={{ background: '#4f46e5', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button onClick={() => setShowChatGlobal(false)}
+              style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', width: 34, height: 34, borderRadius: 9, fontSize: 16, cursor: 'pointer' }}>←</button>
+            <div style={{ color: 'white', fontWeight: 800, fontSize: 16 }}>💬 Chat del equipo</div>
+          </div>
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            <ChatSesion sesionId={null} apiBase="/api/l/chat" miNombre={limpiadora?.nombre || 'Yo'} miTipo="limpiadora" />
+          </div>
+        </div>
+      )}
+
+      {/* Modal foto referencia */}
+      {fotoRef && (
+        <div onClick={() => setFotoRef(null)} style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginBottom: 12 }}>Toca para cerrar</div>
+          <img src={fotoRef} alt="Referencia" style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: 12 }} />
+        </div>
+      )}
+
     </div>
   )
 }
