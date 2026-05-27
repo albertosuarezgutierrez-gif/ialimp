@@ -36,8 +36,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const { id } = await params
     const {
       nombre, tipo, direccion, m2, habitaciones,
-      pms_connection_id, pms_propiedad_id,
-      zonas, precio_limpieza, notas, activa
+      pms_propiedad_id, zonas, precio_limpieza, notas, activa,
+      codigo_postal, duracion_estimada_min, flexibilidad_horaria,
+      hora_pactada, hora_checkout_habitual, hora_checkin_habitual,
+      num_camas_dobles, num_camas_individuales, num_camas_sofas, num_camas_literas,
+      num_huespedes_max, num_banos, num_aseos,
+      tiene_piscina, tiene_terraza, tiene_barbacoa, tiene_jacuzzi,
+      tiene_lavadora, tiene_secadora, tiene_cocina_completa, tiene_lavavajillas,
+      tiene_parking, kit_bienvenida, gestion_lenceria, notas_material,
+      limpiadora_principal_id, limpiadora_suplente_id, asignacion_fija
     } = await req.json()
 
     const result = await prisma.$queryRaw<any[]>(Prisma.sql`
