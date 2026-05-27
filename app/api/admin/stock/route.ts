@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { serialize } from '@/lib/serialize'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
@@ -12,7 +13,7 @@ export async function GET(req: Request) {
       WHERE empresa_id = ${empresa_id}::uuid AND activo = true
       ORDER BY categoria, nombre
     `)
-    return NextResponse.json({ productos })
+    return NextResponse.json(serialize({ productos }))
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
