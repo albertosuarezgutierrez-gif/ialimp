@@ -27,6 +27,7 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
     tipo_servicio: 'rotacion',
     hora_checkout: '',
     hora_checkin_siguiente: '',
+    num_huespedes: '',
     notas: '',
   })
   const [loading, setLoading] = useState(false)
@@ -156,6 +157,19 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
                 <option key={l.id} value={l.id}>{l.nombre}</option>
               ))}
             </select>
+          </div>
+
+          {/* Nº huéspedes */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Nº huéspedes
+              <span className="font-normal text-gray-400 ml-1">— para calcular toallas</span>
+            </label>
+            <input type="number" min="1" max="20"
+              value={form.num_huespedes}
+              onChange={e => setForm(p => ({ ...p, num_huespedes: e.target.value }))}
+              placeholder="2"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
 
           {/* Ventana horaria para pisos turísticos */}
