@@ -1,5 +1,7 @@
 'use client'
 import { useState } from 'react'
+import FirmaPad from '@/components/FirmaPad'
+import ChatSesion from '@/components/ChatSesion'
 
 const C = {
   primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff',
@@ -118,9 +120,10 @@ function QuejaModal({ sesion, token, onClose, onSent }: QuejaModalProps) {
 }
 
 export default function PropietarioClient({ cliente, propiedades, historial, token }: any) {
-  const [tab, setTab]           = useState<'hoy'|'historial'>('hoy')
+  const [tab, setTab]           = useState<'hoy'|'historial'|'chat'>('hoy')
   const [fotoModal, setFoto]    = useState<string|null>(null)
   const [quejaModal, setQueja]  = useState<any>(null)
+  const [firmaModal, setFirma]  = useState<any>(null)
   const [quejaEnviada, setQuejaEnviada] = useState<Set<string>>(new Set())
 
   const completadas = propiedades.filter((p: any) => p.estado_hoy === 'completada').length
@@ -150,7 +153,7 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
         </div>
 
         <div style={{ display: 'flex', marginTop: 16 }}>
-          {[['hoy','Hoy'],['historial','Historial']].map(([id, label]) => (
+          {[['hoy','Hoy'],['historial','Historial'],['chat','💬 Chat']].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id as any)}
               style={{ flex: 1, padding: '11px', border: 'none', cursor: 'pointer', background: 'transparent', color: tab === id ? 'white' : 'rgba(255,255,255,0.5)', fontWeight: tab === id ? 700 : 500, fontSize: 14, borderBottom: `2.5px solid ${tab === id ? 'white' : 'transparent'}`, fontFamily: 'inherit' }}>
               {label}
@@ -194,6 +197,17 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
                     {p.foto_url && (
                       <button onClick={() => setFoto(p.foto_url)}
                         style={{ width: '100%', height: 160, borderRadius: 10, backgroundImage: `url(${p.foto_url})`, backgroundSize: 'cover', backgroundPosition: 'center', border: `1px solid ${C.border}`, cursor: 'pointer', display: 'block', marginBottom: 10 }} />
+                    )}
+
+                    {/* Botón firma — para comunidades/particulares sin firma */}
+                    {p.estado_hoy === 'completada' && !p.firma_at && (p.tipo === 'comunidad' || p.tipo === 'particular') && (
+                      <button onClick={() => setFirma(p)}
+                        style={{ width: '100%', padding: '9px', borderRadius: 10, border: `1px solid ${C.brand}`, background: C.light, color: C.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer', marginBottom: 6 }}>
+                        ✍️ Firmar conformidad
+                      </button>
+                    )}
+                    {p.firma_at && (
+                      <div style={{ fontSize: 11, color: C.ok, fontWeight: 600, textAlign: 'center', padding: '5px 0' }}>✅ Firmado por {p.firma_nombre || 'cliente'}</div>
                     )}
 
                     {/* Botón queja — solo si está completada */}
@@ -248,6 +262,31 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
       {fotoModal && (
         <div onClick={() => setFoto(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 20 }}>
           <img src={fotoModal} style={{ maxWidth: '100%', maxHeight: '88vh', borderRadius: 14 }} />
+        </div>
+      )}
+
+      {/* Tab chat */}
+      {tab === 'chat' && (
+        <div style={{ height: 'calc(100vh - 200px)' }}>
+          <ChatSesion sesionId={null} apiBase={'/api/propietario/' + token + '/chat'} miNombre={cliente.nombre} miTipo="propietario" />
+        </div>
+      )}
+
+      {/* Modal firma */}
+      {firmaModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100, padding: 16 }}>
+          <div style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 480 }}>
+            <FirmaPad
+              onFirmar={async (svg, nombre) => {
+                await fetch('/api/propietario/' + token + '/firmar', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ sesion_id: firmaModal.sesion_id, firma_svg: svg, firmante_nombre: nombre })
+                })
+                setFirma(null)
+              }}
+              onCancelar={() => setFirma(null)}
+            />
+          </div>
         </div>
       )}
 
