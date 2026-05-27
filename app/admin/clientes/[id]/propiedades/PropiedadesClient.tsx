@@ -1,4 +1,5 @@
 'use client'
+import CaracteristicasApartamento from '@/components/CaracteristicasApartamento'
 import { useState } from 'react'
 
 const TIPO_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
@@ -37,7 +38,15 @@ const EMPTY = {
   precio_m2: '', precio_mensual: '', limpiezas_mes: '',
   materiales_incluidos: true, precio_materiales: '',
   recargo_festivo: '', recargo_urgencia: '', recargo_nocturno: '',
-  notas: '', zonas: [] as string[]
+  notas: '', zonas: [] as string[],
+  num_camas_dobles: 0, num_camas_individuales: 0,
+  num_camas_sofas: 0, num_camas_literas: 0,
+  num_huespedes_max: 2, num_banos: 1, num_aseos: 0,
+  tiene_piscina: false, tiene_terraza: false, tiene_barbacoa: false,
+  tiene_jacuzzi: false, tiene_lavadora: false, tiene_secadora: false,
+  tiene_cocina_completa: true, tiene_lavavajillas: false,
+  tiene_parking: false, kit_bienvenida: false,
+  gestion_lenceria: 'propietario', notas_material: ''
 }
 
 interface Props {
@@ -544,6 +553,11 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                   </div>
                 )}
               </div>
+
+              {/* Características del apartamento — solo para pisos turísticos y particulares */}
+              {(form.tipo === 'piso_turistico' || form.tipo === 'particular') && (
+                <CaracteristicasApartamento form={form} onChange={f} />
+              )}
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Notas</label>
