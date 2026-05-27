@@ -2,39 +2,34 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
+import { serialize } from '@/lib/serialize'
 
 export async function GET(req: Request) {
   try {
     const empresa_id = await requireEmpresaId()
     const { searchParams } = new URL(req.url)
     const cliente_id = searchParams.get('cliente_id')
-    const tipo       = searchParams.get('tipo')
 
     const propiedades = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT
         p.*,
-        c.nombre AS cliente_nombre,
-        c.tipo   AS cliente_tipo,
-        COUNT(DISTINCT cs.id)::int FILTER (
-          WHERE cs.session_date = CURRENT_DATE
-        ) AS sesiones_hoy,
-        COUNT(DISTINCT cs.id)::int FILTER (
-          WHERE cs.completed_at IS NOT NULL
-        ) AS total_completadas,
-        MAX(cs.session_date) FILTER (
-          WHERE cs.completed_at IS NOT NULL
-        ) AS ultima_limpieza
+        c.nombre  AS cliente_nombre,
+        c.tipo    AS cliente_tipo,
+        l.nombre  AS limpiadora_nombre,
+        COUNT(DISTINCT cs.id) FILTER (WHERE cs.session_date = CURRENT_DATE) AS sesiones_hoy,
+        COUNT(DISTINCT cs.id) FILTER (WHERE cs.completed_at IS NOT NULL) AS total_completadas,
+        MAX(cs.session_date) FILTER (WHERE cs.completed_at IS NOT NULL) AS ultima_limpieza
       FROM propiedades p
-      JOIN clientes c ON c.id = p.cliente_id
+      LEFT JOIN clientes    c  ON c.id  = p.cliente_id
+      LEFT JOIN limpiadoras l  ON l.id  = p.limpiadora_principal_id
       LEFT JOIN cleaning_sessions cs ON cs.propiedad_id = p.id
       WHERE p.empresa_id = ${empresa_id}::uuid
         ${cliente_id ? Prisma.sql`AND p.cliente_id = ${cliente_id}::uuid` : Prisma.sql``}
-        ${tipo       ? Prisma.sql`AND p.tipo = ${tipo}`                   : Prisma.sql``}
-      GROUP BY p.id, c.nombre, c.tipo
-      ORDER BY c.nombre ASC, p.nombre ASC
+      GROUP BY p.id, c.nombre, c.tipo, l.nombre
+      ORDER BY c.nombre NULLS LAST, p.nombre
     `)
 
-    return NextResponse.json({ propiedades })
+    return NextResponse.json(serialize({ propiedades }))
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
@@ -43,65 +38,45 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const empresa_id = await requireEmpresaId()
+    const body = await req.json()
     const {
-      cliente_id, nombre, tipo = 'piso_turistico',
-      direccion, m2, habitaciones,
-      pms_connection_id, pms_propiedad_id, zonas,
-      // Precio
-      modelo_precio = 'precio_fijo',
-      precio_limpieza, precio_hora, horas_estimadas,
-      precio_m2, precio_mensual, limpiezas_mes,
-      materiales_incluidos = true, precio_materiales,
-      recargo_festivo = 0, recargo_urgencia = 0, recargo_nocturno = 0,
-      notas
-    } = await req.json()
+      cliente_id, nombre, tipo = 'piso_turistico', direccion,
+      codigo_postal, modelo_precio = 'precio_fijo',
+      precio_limpieza, duracion_estimada_min = 120,
+      hora_checkout_habitual = '11:00', hora_checkin_habitual = '16:00',
+      num_camas_dobles = 0, num_camas_individuales = 0,
+      num_banos = 1, num_huespedes_max = 2,
+      tiene_piscina = false, tiene_terraza = false,
+      notas_material, limpiadora_principal_id
+    } = body
 
-    if (!cliente_id || !nombre?.trim()) {
-      return NextResponse.json({ error: 'Cliente y nombre son obligatorios' }, { status: 400 })
-    }
-
-    const check = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT id FROM clientes
-      WHERE id = ${cliente_id}::uuid AND empresa_id = ${empresa_id}::uuid
-    `)
-    if (!check.length) return NextResponse.json({ error: 'Cliente no válido' }, { status: 403 })
+    if (!nombre?.trim()) return NextResponse.json({ error: 'Nombre obligatorio' }, { status: 400 })
 
     const result = await prisma.$queryRaw<any[]>(Prisma.sql`
       INSERT INTO propiedades (
-        empresa_id, cliente_id, nombre, tipo,
-        direccion, m2, habitaciones,
-        pms_propiedad_id, zonas,
-        modelo_precio,
-        precio_limpieza, precio_hora, horas_estimadas,
-        precio_m2, precio_mensual, limpiezas_mes,
-        materiales_incluidos, precio_materiales,
-        recargo_festivo, recargo_urgencia, recargo_nocturno,
-        notas
+        empresa_id, cliente_id, nombre, tipo, direccion, codigo_postal,
+        modelo_precio, precio_limpieza, duracion_estimada_min,
+        hora_checkout_habitual, hora_checkin_habitual,
+        num_camas_dobles, num_camas_individuales, num_banos, num_huespedes_max,
+        tiene_piscina, tiene_terraza, notas_material, limpiadora_principal_id, activa
       ) VALUES (
-        ${empresa_id}::uuid, ${cliente_id}::uuid, ${nombre.trim()}, ${tipo},
-        ${direccion        || null},
-        ${m2               ? Number(m2)            : null},
-        ${habitaciones     ? Number(habitaciones)   : null},
-        ${pms_propiedad_id || null},
-        ${zonas?.length    ? zonas                 : null},
-        ${modelo_precio},
-        ${precio_limpieza  ? Number(precio_limpieza)  : null},
-        ${precio_hora      ? Number(precio_hora)      : null},
-        ${horas_estimadas  ? Number(horas_estimadas)  : null},
-        ${precio_m2        ? Number(precio_m2)        : null},
-        ${precio_mensual   ? Number(precio_mensual)   : null},
-        ${limpiezas_mes    ? Number(limpiezas_mes)    : null},
-        ${Boolean(materiales_incluidos)},
-        ${precio_materiales ? Number(precio_materiales) : null},
-        ${Number(recargo_festivo)},
-        ${Number(recargo_urgencia)},
-        ${Number(recargo_nocturno)},
-        ${notas || null}
+        ${empresa_id}::uuid,
+        ${cliente_id ? cliente_id + '::uuid' : null},
+        ${nombre.trim()}, ${tipo}, ${direccion || null}, ${codigo_postal || null},
+        ${modelo_precio}, ${precio_limpieza ? Number(precio_limpieza) : null},
+        ${Number(duracion_estimada_min)},
+        ${hora_checkout_habitual}, ${hora_checkin_habitual},
+        ${Number(num_camas_dobles)}, ${Number(num_camas_individuales)},
+        ${Number(num_banos)}, ${Number(num_huespedes_max)},
+        ${Boolean(tiene_piscina)}, ${Boolean(tiene_terraza)},
+        ${notas_material || null},
+        ${limpiadora_principal_id ? limpiadora_principal_id + '::uuid' : null},
+        true
       )
       RETURNING *
     `)
 
-    return NextResponse.json({ ok: true, propiedad: result[0] }, { status: 201 })
+    return NextResponse.json(serialize({ ok: true, propiedad: result[0] }), { status: 201 })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
