@@ -74,5 +74,18 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, total: unassigned.length, assigned, log })
+  
+    // Enviar push notification a la limpiadora asignada
+    if (d.limpiadora_id && d.empresa_id) {
+      await fetch(process.env.NEXTAUTH_URL + '/api/admin/push-notify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          limpiadora_id: d.limpiadora_id,
+          empresa_id:    d.empresa_id,
+          titulo: '🧹 Nueva limpieza asignada',
+          cuerpo: `${d.property_name} — ${d.session_date}`
+        })
+      }).catch(() => {})
+    }
+    return NextResponse.json({ ok: true, total: unassigned.length, assigned, log })
 }
