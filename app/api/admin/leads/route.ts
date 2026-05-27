@@ -11,7 +11,7 @@ export async function GET(req: Request) {
       ORDER BY creado_at DESC LIMIT 100
     `)
     const stats = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT estado, COUNT(*) as n FROM leads
+      SELECT estado, COUNT(*)::int as n FROM leads
       WHERE empresa_id = ${empresa_id}::uuid GROUP BY estado
     `)
     return NextResponse.json({ leads, stats })
