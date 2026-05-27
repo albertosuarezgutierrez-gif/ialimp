@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     `)
 
     const count = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT COUNT(*) as total FROM alertas
+      SELECT COUNT(*)::int as total FROM alertas
       WHERE empresa_id = ${empresa_id}::uuid AND leida = false
     `)
 
