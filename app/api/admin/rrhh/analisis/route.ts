@@ -9,7 +9,6 @@ export async function POST(req: Request) {
     const empresa_id = await requireEmpresaId()
     const { limpiadora_id } = await req.json()
 
-    // Recoger datos de la limpiadora
     const [rendimiento, quejas, sesiones, expedientes] = await Promise.all([
       prisma.$queryRaw<any[]>(Prisma.sql`
         SELECT * FROM rendimiento_limpiadoras
@@ -18,65 +17,51 @@ export async function POST(req: Request) {
       prisma.$queryRaw<any[]>(Prisma.sql`
         SELECT q.descripcion, q.categoria, q.estado, q.creada_at, p.nombre AS propiedad
         FROM quejas q LEFT JOIN propiedades p ON p.id = q.propiedad_id
-        WHERE q.limpiadora_id = ${limpiadora_id}::uuid
-          AND q.empresa_id = ${empresa_id}::uuid
+        WHERE q.limpiadora_id = ${limpiadora_id}::uuid AND q.empresa_id = ${empresa_id}::uuid
         ORDER BY q.creada_at DESC LIMIT 20
       `),
       prisma.$queryRaw<any[]>(Prisma.sql`
         SELECT session_date, property_name, tipo_servicio,
           CASE WHEN completed_at IS NOT NULL THEN 'completada' ELSE 'pendiente' END AS estado
         FROM cleaning_sessions
-        WHERE limpiadora_id = ${limpiadora_id}::uuid
-          AND session_date >= CURRENT_DATE - 60
+        WHERE limpiadora_id = ${limpiadora_id}::uuid AND session_date >= CURRENT_DATE - 60
         ORDER BY session_date DESC LIMIT 30
       `),
       prisma.$queryRaw<any[]>(Prisma.sql`
         SELECT tipo, titulo, descripcion, creada_at FROM expedientes_rrhh
-        WHERE limpiadora_id = ${limpiadora_id}::uuid
-          AND empresa_id = ${empresa_id}::uuid
+        WHERE limpiadora_id = ${limpiadora_id}::uuid AND empresa_id = ${empresa_id}::uuid
         ORDER BY creada_at DESC LIMIT 10
       `)
     ])
 
-    if (!rendimiento.length) {
-      return NextResponse.json({ error: 'Limpiadora no encontrada' }, { status: 404 })
-    }
-
+    if (!rendimiento.length) return NextResponse.json({ error: 'No encontrada' }, { status: 404 })
     const r = rendimiento[0]
-    const prompt = `Eres el sistema de RRHH de una empresa de limpieza profesional española llamada Sique Brilla.
-Analiza el rendimiento de esta limpiadora y proporciona un informe profesional en español.
 
-DATOS DE LA LIMPIADORA:
-- Nombre: ${r.limpiadora_nombre}
-- Total sesiones: ${r.total_sesiones} (${r.sesiones_mes} último mes)
-- Sesiones completadas: ${r.sesiones_completadas}
-- Rating medio: ${r.rating_medio || 'Sin rating'} ⭐ (${r.rating_mes || 'Sin datos'} este mes)
-- Quejas totales: ${r.total_quejas} (${r.quejas_mes} este mes, ${r.quejas_pendientes} pendientes)
-- Última limpieza: ${r.ultima_limpieza || 'Sin datos'}
+    // Construir listas de texto ANTES del template literal para evitar anidamiento
+    const listaQuejas = quejas.length > 0
+      ? quejas.map((q: any) => '- [' + q.categoria + '] ' + q.descripcion + ' → ' + q.estado + ' (' + (q.propiedad || 'prop. desconocida') + ')').join('\n')
+      : 'Sin quejas'
 
-QUEJAS RECIENTES (últimas 20):
-${quejas.map((q: any) => `- [${q.categoria}] ${q.descripcion} → ${q.estado} (${q.propiedad || 'prop. desconocida'})`).join('
-') || 'Sin quejas'}
+    const listaSesiones = sesiones.length > 0
+      ? sesiones.map((s: any) => '- ' + s.session_date + ': ' + s.property_name + ' [' + s.tipo_servicio + '] → ' + s.estado).join('\n')
+      : 'Sin sesiones'
 
-ÚLTIMAS SESIONES (60 días):
-${sesiones.map((s: any) => `- ${s.session_date}: ${s.property_name} [${s.tipo_servicio}] → ${s.estado}`).join('
-') || 'Sin sesiones'}
+    const listaExpedientes = expedientes.length > 0
+      ? expedientes.map((e: any) => '- [' + e.tipo + '] ' + e.titulo).join('\n')
+      : 'Sin expediente previo'
 
-EXPEDIENTE PREVIO:
-${expedientes.map((e: any) => `- [${e.tipo}] ${e.titulo}`).join('
-') || 'Sin expediente previo'}
-
-Responde SOLO con un objeto JSON con esta estructura exacta (sin markdown, sin explicaciones):
-{
-  "resumen": "2-3 frases de evaluación general",
-  "puntos_fuertes": ["punto1", "punto2"],
-  "areas_mejora": ["area1", "area2"],
-  "alertas": ["alerta urgente si existe", ...],
-  "recomendacion": "accion_recomendada",
-  "recomendacion_tipo": "positiva|neutral|atencion|urgente",
-  "sugerencia_accion": "texto de acción concreta a tomar",
-  "documento_sugerido": "aviso|amonestacion|felicitacion|formacion|ninguno"
-}`
+    const prompt = 'Eres el sistema de RRHH de una empresa de limpieza profesional española llamada Sique Brilla. ' +
+      'Analiza el rendimiento de esta limpiadora y proporciona un informe profesional en español.\n\n' +
+      'DATOS:\n' +
+      '- Nombre: ' + r.limpiadora_nombre + '\n' +
+      '- Total sesiones: ' + r.total_sesiones + ' (' + r.sesiones_mes + ' último mes)\n' +
+      '- Rating medio: ' + (r.rating_medio || 'Sin rating') + ' este mes: ' + (r.rating_mes || 'Sin datos') + '\n' +
+      '- Quejas totales: ' + r.total_quejas + ' (' + r.quejas_mes + ' este mes, ' + r.quejas_pendientes + ' pendientes)\n\n' +
+      'QUEJAS RECIENTES:\n' + listaQuejas + '\n\n' +
+      'ÚLTIMAS SESIONES (60 días):\n' + listaSesiones + '\n\n' +
+      'EXPEDIENTE PREVIO:\n' + listaExpedientes + '\n\n' +
+      'Responde SOLO con un objeto JSON (sin markdown):\n' +
+      '{"resumen":"...","puntos_fuertes":["..."],"areas_mejora":["..."],"alertas":["..."],"recomendacion_tipo":"positiva|neutral|atencion|urgente","sugerencia_accion":"...","documento_sugerido":"aviso|amonestacion|felicitacion|formacion|ninguno"}'
 
     const respuesta = await aiComplete(prompt)
     let analisis: any = {}
@@ -84,19 +69,20 @@ Responde SOLO con un objeto JSON con esta estructura exacta (sin markdown, sin e
       const clean = respuesta.replace(/```json|```/g, '').trim()
       analisis = JSON.parse(clean)
     } catch {
-      analisis = { resumen: respuesta, puntos_fuertes: [], areas_mejora: [], alertas: [], recomendacion_tipo: 'neutral' }
+      analisis = {
+        resumen: respuesta.slice(0, 300),
+        puntos_fuertes: [], areas_mejora: [], alertas: [],
+        recomendacion_tipo: 'neutral', sugerencia_accion: '', documento_sugerido: 'ninguno'
+      }
     }
 
-    // Guardar análisis como expediente
+    // Guardar como expediente
     await prisma.$executeRaw(Prisma.sql`
       INSERT INTO expedientes_rrhh (empresa_id, limpiadora_id, tipo, titulo, descripcion, generado_por_ia, periodo)
       VALUES (
-        ${empresa_id}::uuid,
-        ${limpiadora_id}::uuid,
-        'nota',
+        ${empresa_id}::uuid, ${limpiadora_id}::uuid, 'nota',
         ${'Análisis IA — ' + new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })},
-        ${analisis.resumen || ''},
-        true,
+        ${analisis.resumen || ''}, true,
         ${new Date().toISOString().slice(0, 7)}
       )
     `)
