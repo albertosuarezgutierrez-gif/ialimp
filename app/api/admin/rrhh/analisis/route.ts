@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
 import { aiComplete } from '@/lib/ai-client'
+import { serialize } from '@/lib/serialize'
 
 export async function POST(req: Request) {
   try {
@@ -87,7 +88,7 @@ export async function POST(req: Request) {
       )
     `)
 
-    return NextResponse.json({ ok: true, analisis, rendimiento: r })
+    return NextResponse.json(serialize({ ok: true, analisis, rendimiento: r }))
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
