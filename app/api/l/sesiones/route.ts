@@ -1,17 +1,30 @@
 import { NextResponse } from 'next/server'
-import { serialize } from '@/lib/serialize'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { serialize } from '@/lib/serialize'
+
+async function getLimpiadoraFromCookie(): Promise<{ limpiadora_id: string; empresa_id: string } | null> {
+  const jar = await cookies()
+  const token = jar.get('limpiadora_token')?.value
+  if (!token) return null
+
+  const rows = await prisma.$queryRaw<any[]>(Prisma.sql`
+    SELECT s.limpiadora_id::text, l.empresa_id::text
+    FROM limpiadora_sessions s
+    JOIN limpiadoras l ON l.id = s.limpiadora_id
+    WHERE s.token = ${token}::uuid
+    LIMIT 1
+  `)
+  if (!rows.length) return null
+  return { limpiadora_id: rows[0].limpiadora_id, empresa_id: rows[0].empresa_id }
+}
 
 export async function GET(req: Request) {
   try {
-    const jar = await cookies()
-    const limpiadora_id = jar.get('limpiadora_id')?.value
-    const empresa_id    = jar.get('empresa_id')?.value
-    if (!limpiadora_id || !empresa_id) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
-    }
+    const auth = await getLimpiadoraFromCookie()
+    if (!auth) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    const { limpiadora_id, empresa_id } = auth
 
     const { searchParams } = new URL(req.url)
     const date = searchParams.get('date') || new Date().toISOString().split('T')[0]
@@ -22,7 +35,7 @@ export async function GET(req: Request) {
         AND empresa_id    = ${empresa_id}::uuid
         AND session_date  = ${date}::date
       ORDER BY
-        COALESCE(hora_checkout, hora_inicio, hora_pactada) NULLS LAST
+        COALESCE(hora_checkout::text, hora_inicio::text, hora_pactada::text) NULLS LAST
     `)
 
     return NextResponse.json(serialize({ sesiones, date }))
