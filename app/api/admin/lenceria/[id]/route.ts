@@ -8,8 +8,25 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const empresa_id = await requireEmpresaId()
     const { id } = await params
     const { estado } = await req.json()
-    const extra = estado === 'en_lavanderia' ? Prisma.sql`, lavanderia_envio_at = NOW()` : estado === 'limpio' ? Prisma.sql`, lavanderia_vuelta_at = NOW()` : Prisma.sql``
-    await prisma.$executeRaw(Prisma.sql`UPDATE lenceria_items SET estado = ${estado}${extra} WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid`)
+
+    if (estado === 'en_lavanderia') {
+      await prisma.$executeRaw(Prisma.sql`
+        UPDATE lenceria SET estado = 'en_lavanderia', lavanderia_envio_at = NOW()
+        WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
+      `)
+    } else if (estado === 'limpio') {
+      await prisma.$executeRaw(Prisma.sql`
+        UPDATE lenceria SET estado = 'limpio', lavanderia_vuelta_at = CASE WHEN estado = 'en_lavanderia' THEN NOW() ELSE lavanderia_vuelta_at END
+        WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
+      `)
+    } else {
+      await prisma.$executeRaw(Prisma.sql`
+        UPDATE lenceria SET estado = ${estado}
+        WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
+      `)
+    }
     return NextResponse.json({ ok: true })
-  } catch (e: any) { return NextResponse.json({ error: e.message }, { status: 500 }) }
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 })
+  }
 }
