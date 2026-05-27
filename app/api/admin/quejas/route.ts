@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { serialize } from '@/lib/serialize'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
@@ -31,7 +32,7 @@ export async function GET(req: Request) {
 
     const pendientes = quejas.filter((q: any) => q.estado === 'pendiente').length
 
-    return NextResponse.json({ quejas, pendientes })
+    return NextResponse.json(serialize({ quejas, pendientes }))
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
