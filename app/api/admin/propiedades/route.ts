@@ -15,10 +15,10 @@ export async function GET(req: Request) {
         p.*,
         c.nombre AS cliente_nombre,
         c.tipo   AS cliente_tipo,
-        COUNT(DISTINCT cs.id) FILTER (
+        COUNT(DISTINCT cs.id)::int FILTER (
           WHERE cs.session_date = CURRENT_DATE
         ) AS sesiones_hoy,
-        COUNT(DISTINCT cs.id) FILTER (
+        COUNT(DISTINCT cs.id)::int FILTER (
           WHERE cs.completed_at IS NOT NULL
         ) AS total_completadas,
         MAX(cs.session_date) FILTER (
