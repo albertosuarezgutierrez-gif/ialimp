@@ -1,0 +1,11 @@
+{
+  "buildCommand": "prisma generate && next build",
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/pms/sync",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}
