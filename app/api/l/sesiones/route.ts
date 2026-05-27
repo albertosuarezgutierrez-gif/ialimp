@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { serialize } from '@/lib/serialize'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
@@ -24,7 +25,7 @@ export async function GET(req: Request) {
         COALESCE(hora_checkout, hora_inicio, hora_pactada) NULLS LAST
     `)
 
-    return NextResponse.json({ sesiones, date })
+    return NextResponse.json(serialize({ sesiones, date }))
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
