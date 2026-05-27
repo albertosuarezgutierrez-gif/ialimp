@@ -23,6 +23,9 @@ const ZONAS_COMUNIDAD = ['Portal','Escaleras','Garaje','Jardín','Piscina','Asce
 const EMPTY = {
   nombre: '', tipo: 'piso_turistico', direccion: '',
   m2: '', habitaciones: '', pms_propiedad_id: '',
+  asignacion_fija: false,
+  limpiadora_principal_id: '',
+  limpiadora_suplente_id: '',
   modelo_precio: 'precio_fijo',
   precio_limpieza: '', precio_hora: '', horas_estimadas: '',
   precio_m2: '', precio_mensual: '', limpiezas_mes: '',
@@ -35,9 +38,10 @@ interface Props {
   cliente: any
   propiedadesIniciales: any[]
   conexiones: any[]
+  limpiadoras?: any[]
 }
 
-export default function PropiedadesClient({ cliente, propiedadesIniciales, conexiones }: Props) {
+export default function PropiedadesClient({ cliente, propiedadesIniciales, conexiones, limpiadoras = [] }: Props) {
   const [props, setProps]         = useState<any[]>(propiedadesIniciales)
   const [showModal, setShowModal] = useState(false)
   const [editando, setEditando]   = useState<any>(null)
