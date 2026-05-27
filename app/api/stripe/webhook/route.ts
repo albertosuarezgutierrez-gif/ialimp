@@ -25,17 +25,15 @@ export async function POST(req: Request) {
     if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated') {
       const sub        = event.data.object
       const empresa_id = sub.metadata?.empresa_id
-      const plan       = sub.items?.data?.[0]?.price?.nickname?.toLowerCase().includes('agency') ? 'agency' : 'pro'
+      const isAgency   = sub.items?.data?.[0]?.price?.nickname?.toLowerCase().includes('agency')
+      const plan       = isAgency ? 'agency' : 'pro'
       const activo     = sub.status === 'active'
-
       if (empresa_id) {
-        await prisma.$executeRaw(Prisma.sql\`
-          UPDATE empresas SET
-            plan = \${activo ? plan : 'starter'},
-            stripe_subscription_id = \${sub.id},
-            plan_activo_desde = NOW()
-          WHERE id = \${empresa_id}::uuid
-        \`)
+        await prisma.$executeRaw(Prisma.sql`
+          UPDATE empresas SET plan = ${activo ? plan : 'starter'},
+            stripe_subscription_id = ${sub.id}
+          WHERE id = ${empresa_id}::uuid
+        `)
       }
     }
 
@@ -43,7 +41,7 @@ export async function POST(req: Request) {
       const sub        = event.data.object
       const empresa_id = sub.metadata?.empresa_id
       if (empresa_id) {
-        await prisma.$executeRaw(Prisma.sql\`UPDATE empresas SET plan = 'starter' WHERE id = \${empresa_id}::uuid\`)
+        await prisma.$executeRaw(Prisma.sql`UPDATE empresas SET plan = 'starter' WHERE id = ${empresa_id}::uuid`)
       }
     }
 
