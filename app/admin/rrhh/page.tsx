@@ -1,3 +1,4 @@
+import { serialize } from '@/lib/serialize'
 import { redirect } from 'next/navigation'
 import { getEmpresaId } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
@@ -25,5 +26,5 @@ export default async function RRHHPage() {
     `)
   ])
 
-  return <RRHHClient limpiadoras={limpiadoras} quejas={quejas_pendientes} />
+  return <RRHHClient limpiadoras={serialize(limpiadoras)} quejas={serialize(quejas_pendientes)} />
 }
