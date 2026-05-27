@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import ChatSesion from '@/components/ChatSesion'
 
 // ── Colores corporativos ialimp ───────────────────────────────────────────────
 const C = {
@@ -89,6 +90,7 @@ function SesionDetalle({ s, onBack, onUpdate }: { s: any; onBack: () => void; on
   const [checklist, setChecklist] = useState<any[]>(() => getChecklist(s.tipo_servicio, s.checklist_data))
   const [incidencias, setIncidencias] = useState<any[]>(s.incidencias || [])
   const [showIncid, setShowIncid]     = useState(false)
+  const [showChat, setShowChat]       = useState(false)
   const [incDesc, setIncDesc]         = useState('')
   const [saving, setSaving]           = useState(false)
   const [sesion, setSesion]           = useState(s)
