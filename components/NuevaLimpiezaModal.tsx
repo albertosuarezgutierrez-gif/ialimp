@@ -25,6 +25,8 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
     hora_inicio: '',
     limpiadora_id: '',
     tipo_servicio: 'rotacion',
+    hora_checkout: '',
+    hora_checkin_siguiente: '',
     notas: '',
   })
   const [loading, setLoading] = useState(false)
@@ -154,6 +156,34 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
                 <option key={l.id} value={l.id}>{l.nombre}</option>
               ))}
             </select>
+          </div>
+
+          {/* Ventana horaria para pisos turísticos */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Checkout</label>
+              <input type="time" value={form.hora_checkout}
+                onChange={e => setForm(p => ({ ...p, hora_checkout: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Próximo checkin</label>
+              <input type="time" value={form.hora_checkin_siguiente}
+                onChange={e => setForm(p => ({ ...p, hora_checkin_siguiente: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            {form.hora_checkout && form.hora_checkin_siguiente && (() => {
+              const [hO,mO] = form.hora_checkout.split(':').map(Number)
+              const [hI,mI] = form.hora_checkin_siguiente.split(':').map(Number)
+              const v = (hI*60+mI)-(hO*60+mO)
+              return (
+                <div className="col-span-2 text-xs">
+                  <span className={v >= 120 ? 'text-green-600' : 'text-red-500'}>
+                    {v >= 120 ? '✅' : '⚠️'} Ventana disponible: {v} min ({(v/60).toFixed(1)}h)
+                  </span>
+                </div>
+              )
+            })()}
           </div>
 
           {/* Notas */}
