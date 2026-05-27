@@ -28,7 +28,11 @@ export default function DashboardClient({ empresa, sesiones, conexiones, today }
           <h1 className="font-bold text-lg">ialimp</h1>
           <p className="text-indigo-200 text-xs">{empresa.nombre}</p>
         </div>
-        <button onClick={logout} className="text-indigo-200 hover:text-white text-sm">Salir</button>
+        <div className="flex items-center gap-3">
+          <a href="/admin/clientes" className="text-indigo-200 hover:text-white text-sm">👥 Clientes</a>
+          <a href="/admin" className="text-indigo-200 hover:text-white text-sm">⚙️ Admin</a>
+          <button onClick={logout} className="text-indigo-200 hover:text-white text-sm">Salir</button>
+        </div>
       </header>
 
       {/* Stats */}
