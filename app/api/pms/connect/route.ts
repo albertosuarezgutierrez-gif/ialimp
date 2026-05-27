@@ -18,14 +18,16 @@ export async function POST(req: Request) {
       RETURNING id, cliente_nombre, pms_tipo
     `)
 
-    // Lanzar sync inmediato si hay URL iCal
+    const connection = result[0]
+
+    // Sync inmediato en background si hay URL iCal
     if (ical_url) {
-      fetch(\`\${process.env.NEXT_PUBLIC_APP_URL || ''}/api/pms/sync?connection_id=\${result[0].id}\`, {
-        method: 'GET'
-      }).catch(() => {})
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+      const syncUrl = appUrl + '/api/pms/sync?connection_id=' + connection.id
+      fetch(syncUrl, { method: 'GET' }).catch(() => {})
     }
 
-    return NextResponse.json({ ok: true, connection: result[0] }, { status: 201 })
+    return NextResponse.json({ ok: true, connection }, { status: 201 })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
