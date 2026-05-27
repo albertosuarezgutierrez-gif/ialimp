@@ -71,6 +71,7 @@ export default function DashboardClient({
           </div>
           <div className="flex items-center gap-3">
             <a href="/admin/clientes" className="text-indigo-200 hover:text-white text-sm">👥</a>
+            <a href="/admin/facturas" className="text-indigo-200 hover:text-white text-sm">🧾</a>
             <a href="/admin" className="text-indigo-200 hover:text-white text-sm">⚙️</a>
             <button onClick={logout} className="text-indigo-200 hover:text-white text-sm">Salir</button>
           </div>
