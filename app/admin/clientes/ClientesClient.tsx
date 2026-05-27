@@ -207,9 +207,9 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
                     Editar
                   </button>
                   {c.tipo === 'apartamentos_turisticos' && (
-                    <a href={'/pms/nuevo?cliente_id=' + c.id}
+                    <a href={'/admin/clientes/' + c.id + '/propiedades'}
                       className="flex-1 text-xs bg-indigo-600 text-white rounded-lg py-1.5 text-center hover:bg-indigo-700 transition">
-                      + PMS
+                      🏠 Propiedades
                     </a>
                   )}
                   <button onClick={() => toggleActivo(c)}
