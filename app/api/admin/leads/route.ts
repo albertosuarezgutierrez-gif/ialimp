@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { serialize } from '@/lib/serialize'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
@@ -14,7 +15,7 @@ export async function GET(req: Request) {
       SELECT estado, COUNT(*)::int as n FROM leads
       WHERE empresa_id = ${empresa_id}::uuid GROUP BY estado
     `)
-    return NextResponse.json({ leads, stats })
+    return NextResponse.json(serialize({ leads, stats }))
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
