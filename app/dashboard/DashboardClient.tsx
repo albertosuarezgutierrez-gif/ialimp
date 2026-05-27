@@ -72,6 +72,10 @@ export default function DashboardClient({
           </div>
           <div className="flex items-center gap-3">
             <a href="/admin/clientes" className="text-indigo-200 hover:text-white text-sm">👥</a>
+            <a href="/admin/crm" className="text-indigo-200 hover:text-white text-sm">📋</a>
+            <a href="/admin/stock" className="text-indigo-200 hover:text-white text-sm">📦</a>
+            <a href="/admin/ia" className="text-indigo-200 hover:text-white text-sm">🤖</a>
+            <a href="/admin/rrhh" className="text-indigo-200 hover:text-white text-sm">👤</a>
             <AlertasBadge />
             <a href="/admin/facturas" className="text-indigo-200 hover:text-white text-sm">🧾</a>
             <a href="/admin" className="text-indigo-200 hover:text-white text-sm">⚙️</a>
