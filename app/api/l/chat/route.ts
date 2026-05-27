@@ -10,7 +10,9 @@ async function getLimpiadora() {
   const rows = await prisma.$queryRaw<any[]>(Prisma.sql`
     SELECT s.limpiadora_id::text, l.empresa_id::text, l.nombre
     FROM limpiadora_sessions s JOIN limpiadoras l ON l.id = s.limpiadora_id
-    WHERE s.token::text = ${token} LIMIT 1
+    WHERE s.token::text = ${token}
+      AND l.empresa_id IS NOT NULL
+    LIMIT 1
   `)
   return rows[0] || null
 }
@@ -19,10 +21,8 @@ export async function GET(req: Request) {
   try {
     const l = await getLimpiadora()
     if (!l) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
-
     const { searchParams } = new URL(req.url)
     const sesion_id = searchParams.get('sesion_id')
-
     const mensajes = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT * FROM chat_mensajes WHERE empresa_id = ${l.empresa_id}::uuid
         ${sesion_id ? Prisma.sql`AND sesion_id = ${sesion_id}::uuid` : Prisma.sql`AND sesion_id IS NULL`}
@@ -47,7 +47,6 @@ export async function POST(req: Request) {
     if (!l) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     const { sesion_id, texto } = await req.json()
     if (!texto?.trim()) return NextResponse.json({ error: 'Texto vacío' }, { status: 400 })
-
     await prisma.$executeRaw(Prisma.sql`
       INSERT INTO chat_mensajes
         (empresa_id, sesion_id, remitente_tipo, remitente_id, remitente_nombre, texto)
