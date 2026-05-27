@@ -10,6 +10,10 @@
     {
       "path": "/api/admin/programaciones/generar",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/admin/informes/cron",
+      "schedule": "0 7 1 * *"
     }
   ]
 }
