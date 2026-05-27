@@ -53,8 +53,8 @@ export async function POST(req: Request) {
   try {
     const pinHash = await hashPin(pin)
     const limpiadora = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT id, nombre, propiedades, color FROM limpiadoras
-      WHERE pin_hash = ${pinHash} AND activa = true LIMIT 1
+      SELECT id, nombre, empresa_id, propiedades, color FROM limpiadoras
+      WHERE pin_hash = ${pinHash} AND activa = true AND empresa_id IS NOT NULL LIMIT 1
     `)
     if (!limpiadora.length) {
       return NextResponse.json({ error: 'PIN incorrecto' }, { status: 401 })
