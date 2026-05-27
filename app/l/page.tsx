@@ -91,6 +91,8 @@ function SesionDetalle({ s, onBack, onUpdate }: { s: any; onBack: () => void; on
   const [incidencias, setIncidencias] = useState<any[]>(s.incidencias || [])
   const [showIncid, setShowIncid]     = useState(false)
   const [showChat, setShowChat]       = useState(false)
+  const [showChatGlobal, setShowChatGlobal] = useState(false)
+  const [fotoRef, setFotoRef]            = useState<string|null>(null)
   const [incDesc, setIncDesc]         = useState('')
   const [saving, setSaving]           = useState(false)
   const [sesion, setSesion]           = useState(s)
@@ -98,7 +100,7 @@ function SesionDetalle({ s, onBack, onUpdate }: { s: any; onBack: () => void; on
   const hecho    = !!sesion.completed_at
   const enCurso  = !hecho && !!sesion.started_at
   const criticos = checklist.filter(i => i.critico)
-  const todosCriticos = criticos.every(i => i.hecho)
+  const todosCriticos = criticos.every(i => i.hecho && (!i.foto || i.foto_url))
   const pct = checklist.length > 0 ? Math.round((checklist.filter(i => i.hecho).length / checklist.length) * 100) : 0
 
   async function ficharEntrada() {
@@ -172,6 +174,22 @@ function SesionDetalle({ s, onBack, onUpdate }: { s: any; onBack: () => void; on
         )}
       </div>
 
+        {/* Cómo llegar + Chat grupal */}
+        <div style={{ display: 'flex', gap: 8, padding: '0 16px 12px' }}>
+          {sesion.direccion && (
+            <a
+              href={`https://maps.google.com/maps?q=${encodeURIComponent(sesion.direccion + ', Sevilla')}`}
+              target="_blank" rel="noreferrer"
+              style={{ flex: 1, background: 'rgba(255,255,255,0.15)', color: 'white', padding: '9px 12px', borderRadius: 10, textDecoration: 'none', fontSize: 12, fontWeight: 700, textAlign: 'center' as const, display: 'block' }}>
+              📍 Cómo llegar
+            </a>
+          )}
+          <button onClick={() => setShowChatGlobal(v => !v)}
+            style={{ flex: 1, background: 'rgba(255,255,255,0.15)', color: 'white', border: 'none', padding: '9px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            💬 Chat equipo
+          </button>
+        </div>
+
       <div style={{ padding: '16px' }}>
 
         {/* Fichar entrada */}
@@ -203,31 +221,56 @@ function SesionDetalle({ s, onBack, onUpdate }: { s: any; onBack: () => void; on
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {checklist.map((item, idx) => (
-                <button key={item.id} onClick={() => !hecho && toggleItem(idx)}
-                  style={{
-                    width: '100%', textAlign: 'left', border: 'none', cursor: hecho ? 'default' : 'pointer',
-                    background: 'white', borderRadius: 12, padding: '12px 14px',
-                    display: 'flex', gap: 12, alignItems: 'center',
-                    borderLeft: `3px solid ${item.critico ? C.brand : C.border}`,
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)', fontFamily: 'inherit'
-                  }}>
-                  <div style={{
-                    width: 26, height: 26, borderRadius: 8, flexShrink: 0, border: '2px solid',
-                    borderColor: item.hecho ? C.ok : item.critico ? C.brand : C.border,
-                    background: item.hecho ? C.okBg : 'white',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14
-                  }}>
-                    {item.hecho ? '✓' : ''}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: 14, fontWeight: item.critico ? 600 : 400, color: item.hecho ? C.muted : C.text, textDecoration: item.hecho ? 'line-through' : 'none' }}>
-                      {item.foto && '📷 '}{item.label}
-                    </span>
-                    {item.critico && !item.hecho && (
-                      <span style={{ fontSize: 10, color: C.brand, marginLeft: 6, fontWeight: 700 }}>CRÍTICO</span>
+                <div key={item.id} style={{ background: 'white', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', borderLeft: `3px solid ${item.hecho && (!item.foto || item.foto_url) ? C.ok : item.critico ? C.brand : C.border}` }}>
+                  {/* Fila principal */}
+                  <button onClick={() => !hecho && toggleItem(idx)}
+                    style={{ width: '100%', textAlign: 'left', border: 'none', cursor: hecho ? 'default' : 'pointer', background: 'transparent', padding: '12px 14px', display: 'flex', gap: 12, alignItems: 'center', fontFamily: 'inherit' }}>
+                    <div style={{ width: 26, height: 26, borderRadius: 8, flexShrink: 0, border: '2px solid', borderColor: item.hecho ? C.ok : item.critico ? C.brand : C.border, background: item.hecho ? C.okBg : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+                      {item.hecho && (!item.foto || item.foto_url) ? '✓' : item.hecho ? '📷' : ''}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: item.critico ? 600 : 400, color: item.hecho ? C.muted : C.text, textDecoration: item.hecho && (!item.foto || item.foto_url) ? 'line-through' : 'none' }}>
+                        {item.foto && '📷 '}{item.label}
+                      </div>
+                      {item.critico && !item.hecho && <span style={{ fontSize: 10, color: C.brand, fontWeight: 700 }}>CRÍTICO</span>}
+                      {item.foto && item.hecho && !item.foto_url && <span style={{ fontSize: 10, color: C.warn, fontWeight: 700 }}>⚠ Falta foto obligatoria</span>}
+                    </div>
+                    {item.foto_referencia_url && (
+                      <button onClick={e => { e.stopPropagation(); setFotoRef(item.foto_referencia_url) }}
+                        style={{ background: C.light, border: 'none', borderRadius: 8, padding: '4px 8px', fontSize: 11, color: C.brand, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+                        Ver cómo ✨
+                      </button>
                     )}
-                  </div>
-                </button>
+                  </button>
+                  {/* Upload foto si item.foto = true */}
+                  {!hecho && item.foto && item.hecho && !item.foto_url && (
+                    <div style={{ padding: '0 14px 12px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <label style={{ flex: 1, background: C.warnBg, border: `1px dashed ${C.warn}`, borderRadius: 8, padding: '8px', textAlign: 'center' as const, cursor: 'pointer', fontSize: 12, fontWeight: 700, color: C.warn }}>
+                        📷 Subir foto
+                        <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+                          onChange={async e => {
+                            const file = e.target.files?.[0]
+                            if (!file) return
+                            const fd = new FormData(); fd.append('file', file); fd.append('sesion_id', sesion.id); fd.append('tipo', item.id)
+                            const r = await fetch('/api/l/upload-photo', { method: 'POST', body: fd })
+                            const d = await r.json()
+                            if (d.url) {
+                              const nv = checklist.map((it, i) => i === idx ? { ...it, foto_url: d.url } : it)
+                              setChecklist(nv)
+                              await fetch(`/api/l/sesiones/${sesion.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'checklist', checklist_data: nv }) })
+                            }
+                          }} />
+                      </label>
+                    </div>
+                  )}
+                  {/* Foto ya subida */}
+                  {item.foto_url && (
+                    <div style={{ padding: '0 14px 12px' }}>
+                      <img src={item.foto_url} alt="foto" onClick={() => setFotoRef(item.foto_url)}
+                        style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, cursor: 'pointer', border: `2px solid ${C.ok}` }} />
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
