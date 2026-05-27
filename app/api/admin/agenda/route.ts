@@ -15,12 +15,14 @@ export async function GET(req: Request) {
     const sesiones = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT
         cs.id, cs.session_date, cs.property_name, cs.tipo_servicio, cs.origen,
-        cs.hora_inicio, cs.hora_checkout, cs.hora_checkin_siguiente,
+        cs.hora_inicio::text     AS hora_inicio,
+        cs.hora_checkout::text   AS hora_checkout,
+        cs.hora_checkin_siguiente::text AS hora_checkin_siguiente,
         cs.ventana_minutos, cs.alerta_ventana,
         cs.started_at, cs.completed_at, cs.notas,
         cs.limpiadora_id, cs.propiedad_id, cs.cliente_id,
         p.codigo_postal, p.duracion_estimada_min, p.flexibilidad_horaria,
-        p.hora_pactada,
+        p.hora_pactada::text AS hora_pactada,
         l.nombre AS limpiadora_nombre,
         c.nombre AS cliente_nombre,
         c.tipo   AS cliente_tipo
@@ -35,10 +37,9 @@ export async function GET(req: Request) {
       ORDER BY
         cs.limpiadora_id NULLS LAST,
         p.codigo_postal NULLS LAST,
-        COALESCE(cs.hora_checkout, cs.hora_inicio, p.hora_pactada) NULLS LAST
+        COALESCE(cs.hora_checkout::text, cs.hora_inicio::text, p.hora_pactada::text) NULLS LAST
     `)
 
-    // Agrupar por limpiadora
     const grupos: Record<string, any> = {}
     for (const s of sesiones) {
       const key = s.limpiadora_id || '__sin_asignar__'
@@ -64,16 +65,16 @@ export async function GET(req: Request) {
       horas_total: (g.minutos_total / 60).toFixed(1)
     }))
 
-    return NextResponse.json({
+    return NextResponse.json(serialize({
       agenda,
       stats: {
         total:           sesiones.length,
-        sin_asignar:     sesiones.filter(s => !s.limpiadora_id).length,
+        sin_asignar:     sesiones.filter((s: any) => !s.limpiadora_id).length,
         alertas_ventana: sesiones.filter((s: any) => s.alerta_ventana).length,
         completadas:     sesiones.filter((s: any) => s.completed_at).length,
       },
       date
-    })
+    }))
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
