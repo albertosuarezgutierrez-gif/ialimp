@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
-import { serialize } from '@/lib/serialize'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
   try {
@@ -11,23 +12,28 @@ export async function GET(req: Request) {
     const sesion_id = searchParams.get('sesion_id')
 
     const mensajes = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT * FROM chat_mensajes
+      SELECT id::text, remitente_tipo, remitente_nombre, texto, creado_at, leido
+      FROM chat_mensajes
       WHERE empresa_id = ${empresa_id}::uuid
-        ${sesion_id ? Prisma.sql`AND sesion_id = ${sesion_id}::uuid` : Prisma.sql``}
+        ${sesion_id
+          ? Prisma.sql`AND sesion_id = ${sesion_id}::uuid`
+          : Prisma.sql`AND sesion_id IS NULL`}
       ORDER BY creado_at ASC
-      LIMIT 100
+      LIMIT 200
     `)
 
-    // Marcar como leídos
-    if (sesion_id) {
-      await prisma.$executeRaw(Prisma.sql`
-        UPDATE chat_mensajes SET leido = true
-        WHERE sesion_id = ${sesion_id}::uuid AND empresa_id = ${empresa_id}::uuid
-          AND remitente_tipo = 'limpiadora'
-      `)
-    }
+    // Marcar como leídos (los de limpiadora)
+    await prisma.$executeRaw(Prisma.sql`
+      UPDATE chat_mensajes SET leido = true
+      WHERE empresa_id = ${empresa_id}::uuid
+        AND remitente_tipo = 'limpiadora'
+        AND leido = false
+        ${sesion_id
+          ? Prisma.sql`AND sesion_id = ${sesion_id}::uuid`
+          : Prisma.sql`AND sesion_id IS NULL`}
+    `)
 
-    return NextResponse.json(serialize({ mensajes }))
+    return NextResponse.json({ mensajes })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
@@ -37,10 +43,21 @@ export async function POST(req: Request) {
   try {
     const empresa_id = await requireEmpresaId()
     const { sesion_id, texto } = await req.json()
+    if (!texto?.trim()) return NextResponse.json({ error: 'Texto vacío' }, { status: 400 })
+
+    const emp = await prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT nombre FROM empresas WHERE id = ${empresa_id}::uuid LIMIT 1
+    `)
 
     await prisma.$executeRaw(Prisma.sql`
       INSERT INTO chat_mensajes (empresa_id, sesion_id, remitente_tipo, remitente_nombre, texto)
-      VALUES (${empresa_id}::uuid, ${sesion_id ? sesion_id + '::uuid' : null}, 'admin', 'Sique Brilla', ${texto})
+      VALUES (
+        ${empresa_id}::uuid,
+        ${sesion_id || null},
+        'admin',
+        ${emp[0]?.nombre || 'Admin'},
+        ${texto.trim()}
+      )
     `)
 
     return NextResponse.json({ ok: true })
