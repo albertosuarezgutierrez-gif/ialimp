@@ -18,6 +18,10 @@
     {
       "path": "/api/admin/ausencias",
       "schedule": "30 9 * * *"
+    },
+    {
+      "path": "/api/admin/fotos-cleanup",
+      "schedule": "0 3 * * *"
     }
   ]
 }
