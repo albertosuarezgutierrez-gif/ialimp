@@ -11,7 +11,10 @@ export async function POST(req: Request) {
     const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY || ''
 
     if (!VAPID_PRIVATE) {
-      return NextResponse.json({ ok: true, sent: 0, msg: 'VAPID no configurado — añade NEXT_PUBLIC_VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY en Vercel' })
+      return NextResponse.json({
+        ok: true, sent: 0,
+        msg: 'VAPID no configurado. Genera claves en /api/admin/vapid-keys y añádelas a Vercel'
+      })
     }
 
     const subs = await prisma.$queryRaw<any[]>(Prisma.sql`
@@ -21,7 +24,7 @@ export async function POST(req: Request) {
         AND limpiadora_id = ${limpiadora_id}::uuid
     `)
 
-    if (subs.length === 0) return NextResponse.json({ ok: true, sent: 0, msg: 'Sin suscripciones registradas' })
+    if (!subs.length) return NextResponse.json({ ok: true, sent: 0, msg: 'Sin suscripciones' })
 
     const webpush = (await import('web-push')).default
     webpush.setVapidDetails('mailto:hola@ialimp.com', VAPID_PUBLIC, VAPID_PRIVATE)
@@ -35,13 +38,11 @@ export async function POST(req: Request) {
         )
         sent++
       } catch (e: any) {
-        // Suscripción expirada o inválida — limpiar
         if (e.statusCode === 410) {
           await prisma.$executeRaw(Prisma.sql`DELETE FROM push_subscriptions WHERE endpoint = ${sub.endpoint}`)
         }
       }
     }
-
     return NextResponse.json({ ok: true, sent })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
