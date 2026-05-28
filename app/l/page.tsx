@@ -80,18 +80,21 @@ function SesionCard({ s, onTap }: { s: any; onTap: () => void }) {
         {hecho && <div style={{ fontSize: 22 }}>✅</div>}
         {enCurso && <div style={{ fontSize: 11, fontWeight: 700, color: C.brand, background: C.light, padding: '4px 10px', borderRadius: 8, whiteSpace: 'nowrap' }}>En curso</div>}
         {pendiente && <div style={{ fontSize: 20, color: C.border }}>›</div>}
+        {(s.unread_msgs > 0) && <div style={{ background: '#dc2626', color: 'white', borderRadius: '50%', width: 20, height: 20, fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>{s.unread_msgs}</div>}
       </div>
     </button>
   )
 }
 
 // ── Componente: detalle de sesión con checklist ───────────────────────────────
-function SesionDetalle({ s, onBack, onUpdate }: { s: any; onBack: () => void; onUpdate: (s: any) => void }) {
+function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: () => void; onUpdate: (s: any) => void; limpiadora: any }) {
   const [checklist, setChecklist] = useState<any[]>(() => getChecklist(s.tipo_servicio, s.checklist_data))
   const [incidencias, setIncidencias] = useState<any[]>(s.incidencias || [])
   const [showIncid, setShowIncid]     = useState(false)
   const [showChat, setShowChat]       = useState(false)
   const [showChatGlobal, setShowChatGlobal] = useState(false)
+  const [activeTab, setActiveTab]        = useState<'checklist'|'chat'>('checklist')
+  const [unreadSesion, setUnreadSesion]  = useState(0)
   const [fotoRef, setFotoRef]            = useState<string|null>(null)
   const [incDesc, setIncDesc]         = useState('')
   const [saving, setSaving]           = useState(false)
@@ -213,8 +216,28 @@ function SesionDetalle({ s, onBack, onUpdate }: { s: any; onBack: () => void; on
           </div>
         )}
 
-        {/* Checklist */}
+
+        {/* Tabs: Checklist / Chat de reserva */}
         {(enCurso || hecho) && (
+          <div style={{ display: 'flex', background: 'white', borderRadius: 12, padding: 4, marginBottom: 14, border: `1px solid ${C.border}` }}>
+            <button onClick={() => setActiveTab('checklist')}
+              style={{ flex: 1, padding: '9px', borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                background: activeTab === 'checklist' ? C.primary : 'transparent',
+                color: activeTab === 'checklist' ? 'white' : C.muted, fontSize: 13, fontWeight: 700, transition: 'all 0.15s' }}>
+              ✓ Checklist
+            </button>
+            <button onClick={() => { setActiveTab('chat'); setUnreadSesion(0) }}
+              style={{ flex: 1, padding: '9px', borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                background: activeTab === 'chat' ? C.primary : 'transparent',
+                color: activeTab === 'chat' ? 'white' : C.muted, fontSize: 13, fontWeight: 700,
+                transition: 'all 0.15s', position: 'relative' as const }}>
+              💬 Chat{unreadSesion > 0 && <span style={{ position: 'absolute' as const, top: 4, right: 8, background: '#dc2626', color: 'white', borderRadius: '50%', width: 16, height: 16, fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unreadSesion}</span>}
+            </button>
+          </div>
+        )}
+
+        {/* Checklist */}
+        {activeTab === 'checklist' && (enCurso || hecho) && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
               Checklist
@@ -314,6 +337,21 @@ function SesionDetalle({ s, onBack, onUpdate }: { s: any; onBack: () => void; on
           </div>
         )}
 
+        {/* Chat de esta sesión */}
+        {activeTab === 'chat' && (enCurso || hecho) && (
+          <div style={{ height: '55vh', borderRadius: 12, overflow: 'hidden', marginBottom: 16, border: `1px solid ${C.border}` }}>
+            <ChatSesion
+              sesionId={s.id}
+              apiBase="/api/l/chat"
+              miNombre={limpiadora?.nombre || 'Yo'}
+              miTipo="limpiadora"
+              titulo={s.property_name}
+              height="100%"
+              compact
+            />
+          </div>
+        )}
+
         {/* Completar */}
         {enCurso && (
           <button onClick={completar} disabled={saving || !todosCriticos}
@@ -392,7 +430,7 @@ export default function LimpiadoarasApp() {
   }
 
   if (sesionActiva) {
-    return <SesionDetalle s={sesionActiva} onBack={() => setSesActiva(null)} onUpdate={onUpdate} />
+    return <SesionDetalle s={sesionActiva} onBack={() => setSesActiva(null)} onUpdate={onUpdate} limpiadora={limpiadora} />
   }
 
   const completadas = sesiones.filter(s => !!s.completed_at).length
