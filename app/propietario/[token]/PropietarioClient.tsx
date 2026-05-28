@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import FirmaPad from '@/components/FirmaPad'
 import ChatSesion from '@/components/ChatSesion'
+import GastosTab from '@/components/GastosTab'
 
 const C = {
   primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff',
@@ -120,7 +121,7 @@ function QuejaModal({ sesion, token, onClose, onSent }: QuejaModalProps) {
 }
 
 export default function PropietarioClient({ cliente, propiedades, historial, token }: any) {
-  const [tab, setTab]           = useState<'hoy'|'historial'|'chat'>('hoy')
+  const [tab, setTab]           = useState<'hoy'|'historial'|'gastos'|'chat'>('hoy')
   const [fotoModal, setFoto]    = useState<string|null>(null)
   const [quejaModal, setQueja]  = useState<any>(null)
   const [firmaModal, setFirma]  = useState<any>(null)
