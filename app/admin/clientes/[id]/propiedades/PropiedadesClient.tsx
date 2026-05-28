@@ -570,6 +570,52 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
 
               {error && <p className="text-red-500 text-sm">{error}</p>}
 
+
+              {/* Calendarios iCal */}
+              <div style={{ marginTop: 20, borderTop: '1px solid #e5e7eb', paddingTop: 16 }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700">Calendarios iCal</label>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Pega la URL iCal de Booking, Airbnb, VRBO… Las limpiezas se crean automáticamente.
+                    </p>
+                  </div>
+                  <button type="button"
+                    onClick={() => f('ical_urls', [...(form.ical_urls || []), ''])}
+                    className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100">
+                    + Añadir
+                  </button>
+                </div>
+                {(form.ical_urls || []).length === 0 && (
+                  <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-4 text-center">
+                    <div className="text-2xl mb-1">📅</div>
+                    <p className="text-xs text-gray-500 font-medium">Sin calendarios conectados</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Copia la URL iCal desde tu plataforma</p>
+                  </div>
+                )}
+                {(form.ical_urls || []).map((url: string, idx: number) => (
+                  <div key={idx} className="flex gap-2 mb-2 items-center">
+                    <input
+                      value={url}
+                      onChange={e => { const nv = [...form.ical_urls]; nv[idx] = e.target.value; f('ical_urls', nv) }}
+                      placeholder="https://ical.booking.com/v1/export?t=..."
+                      className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400 font-mono bg-gray-50"
+                    />
+                    <button type="button"
+                      onClick={() => f('ical_urls', (form.ical_urls || []).filter((_: string, i: number) => i !== idx))}
+                      className="text-gray-400 hover:text-red-500 text-lg leading-none flex-shrink-0">
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {(form.ical_urls || []).some((u: string) => u.startsWith('http')) && (
+                  <div className="mt-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 flex gap-2 items-center">
+                    <span className="text-green-600 text-sm">✓</span>
+                    <span className="text-xs text-green-700 font-medium">Sync automático cada 10 min.</span>
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={() => setShowModal(false)}
                   className="flex-1 border border-gray-200 text-gray-600 py-3 rounded-xl text-sm">
