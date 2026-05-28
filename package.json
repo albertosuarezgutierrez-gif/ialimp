@@ -20,7 +20,8 @@
     "jose": "^5.9.3",
     "node-ical": "^0.19.0",
     "nodemailer": "^8.0.7",
-    "stripe": "^16.0.0"
+    "stripe": "^16.0.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -30,7 +31,8 @@
     "typescript": "^5",
     "tailwindcss": "^3.4.1",
     "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.49"
+    "postcss": "^8.4.49",
+    "@types/web-push": "^3.6.4"
   },
   "installCommand": "npm install --legacy-peer-deps"
 }
