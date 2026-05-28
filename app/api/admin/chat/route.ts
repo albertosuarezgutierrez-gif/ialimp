@@ -49,16 +49,17 @@ export async function POST(req: Request) {
       SELECT nombre FROM empresas WHERE id = ${empresa_id}::uuid LIMIT 1
     `)
 
-    await prisma.$executeRaw(Prisma.sql`
-      INSERT INTO chat_mensajes (empresa_id, sesion_id, remitente_tipo, remitente_nombre, texto)
-      VALUES (
-        ${empresa_id}::uuid,
-        ${sesion_id || null},
-        'admin',
-        ${emp[0]?.nombre || 'Admin'},
-        ${texto.trim()}
-      )
-    `)
+    if (sesion_id) {
+      await prisma.$executeRaw(Prisma.sql`
+        INSERT INTO chat_mensajes (empresa_id, sesion_id, remitente_tipo, remitente_nombre, texto)
+        VALUES (${empresa_id}::uuid, ${sesion_id}::uuid, 'admin', ${emp[0]?.nombre || 'Admin'}, ${texto.trim()})
+      `)
+    } else {
+      await prisma.$executeRaw(Prisma.sql`
+        INSERT INTO chat_mensajes (empresa_id, sesion_id, remitente_tipo, remitente_nombre, texto)
+        VALUES (${empresa_id}::uuid, NULL, 'admin', ${emp[0]?.nombre || 'Admin'}, ${texto.trim()})
+      `)
+    }
 
     return NextResponse.json({ ok: true })
   } catch (e: any) {
