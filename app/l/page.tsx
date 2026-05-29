@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ChatSesion from '@/components/ChatSesion'
 import ConsumoProductos from '@/components/ConsumoProductos'
@@ -532,7 +532,7 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
 }
 
 // ── PÁGINA PRINCIPAL ───────────────────────────────────────────────────────
-export default function LimpiadoarasApp() {
+function LimpiadoarasApp() {
   const router       = useRouter()
   const searchParams = useSearchParams()
   const sesionId     = searchParams.get('sesion')
@@ -670,3 +670,12 @@ export default function LimpiadoarasApp() {
   )
 }
 
+import { Suspense } from 'react'
+
+export default function LimpiadoarasAppWrapper() {
+  return (
+    <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',background:'#f1f5f9',color:'#4f46e5',fontSize:32}}>⏳</div>}>
+      <LimpiadoarasApp />
+    </Suspense>
+  )
+}
