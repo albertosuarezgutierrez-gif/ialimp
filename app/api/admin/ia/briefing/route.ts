@@ -37,7 +37,7 @@ export async function GET() {
         ORDER BY cs.hora_inicio ASC NULLS LAST
       `),
       prisma.$queryRaw<any[]>(Prisma.sql`
-        SELECT tipo, mensaje FROM alertas
+        SELECT tipo, COALESCE(titulo, descripcion, tipo) AS mensaje FROM alertas
         WHERE empresa_id = ${empresa_id}::uuid AND leida = false
         ORDER BY created_at DESC LIMIT 5
       `),
