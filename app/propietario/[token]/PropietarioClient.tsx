@@ -3,6 +3,7 @@ import { useState } from 'react'
 import FirmaPad from '@/components/FirmaPad'
 import ChatSesion from '@/components/ChatSesion'
 import GastosTab from '@/components/GastosTab'
+import ContabilidadTab from '@/components/ContabilidadTab'
 import AccesoPropiedad from '@/components/AccesoPropiedad'
 import EscanerDocumento from '@/components/EscanerDocumento'
 
@@ -123,7 +124,7 @@ function QuejaModal({ sesion, token, onClose, onSent }: QuejaModalProps) {
 }
 
 export default function PropietarioClient({ cliente, propiedades, historial, token }: any) {
-  const [tab, setTab]           = useState<'hoy'|'historial'|'gastos'|'acceso'|'chat'|'docs'>('hoy')
+  const [tab, setTab]           = useState<'hoy'|'historial'|'gastos'|'acceso'|'chat'|'docs'|'finanzas'>('hoy')
   const [fotoModal, setFoto]    = useState<string|null>(null)
   const [quejaModal, setQueja]  = useState<any>(null)
   const [firmaModal, setFirma]  = useState<any>(null)
@@ -161,10 +162,10 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
           <div style={{ fontSize: 40 }}>{completadas === total ? '✅' : completadas > 0 ? '🧹' : '⏳'}</div>
         </div>
 
-        <div style={{ display: 'flex', marginTop: 16 }}>
-          {[['hoy','Hoy'],['historial','Historial'],['docs','📄 Docs'],['acceso','🔑 Acceso'],['chat','💬 Chat']].map(([id, label]) => (
+        <div style={{ display: 'flex', marginTop: 16, overflowX: 'auto' }}>
+          {[['hoy','Hoy'],['historial','Historial'],['finanzas','📊 Finanzas'],['docs','📄 Docs'],['acceso','🔑 Acceso'],['chat','💬 Chat']].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id as any)}
-              style={{ flex: 1, padding: '11px', border: 'none', cursor: 'pointer', background: 'transparent', color: tab === id ? 'white' : 'rgba(255,255,255,0.5)', fontWeight: tab === id ? 700 : 500, fontSize: 14, borderBottom: `2.5px solid ${tab === id ? 'white' : 'transparent'}`, fontFamily: 'inherit' }}>
+              style={{ flexShrink:0, padding: '11px 14px', border: 'none', cursor: 'pointer', background: 'transparent', color: tab === id ? 'white' : 'rgba(255,255,255,0.5)', fontWeight: tab === id ? 700 : 500, fontSize: 13, borderBottom: `2.5px solid ${tab === id ? 'white' : 'transparent'}`, fontFamily: 'inherit', whiteSpace:'nowrap' }}>
               {label}
             </button>
           ))}
@@ -274,6 +275,10 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
         </div>
       )}
 
+
+      {tab === 'finanzas' && (
+        <ContabilidadTab token={token} />
+      )}
 
       {tab === 'docs' && (
         <div>
