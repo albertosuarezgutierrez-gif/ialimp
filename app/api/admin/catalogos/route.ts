@@ -158,8 +158,7 @@ export async function PATCH(req: NextRequest) {
       INSERT INTO cotizador_config (empresa_id, ${Prisma.raw(updates.join(', '))})
       VALUES (${empresa_id}::uuid, ${Prisma.raw(updates.map(k => `'${JSON.stringify(values[k])}'::jsonb`).join(', '))})
       ON CONFLICT (empresa_id) DO UPDATE SET
-        ${Prisma.raw(updates.map(k => `${k} = '${JSON.stringify(values[k])}'::jsonb`).join(',
-        '))},
+        ${Prisma.raw(updates.map(k => `${k} = '${JSON.stringify(values[k])}'::jsonb`).join(', '))},
         updated_at = now()
     `)
 
