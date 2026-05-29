@@ -190,12 +190,12 @@ export async function POST(req: NextRequest) {
 
       // Crear alerta
       await prisma.$executeRaw(Prisma.sql`
-        INSERT INTO alertas (empresa_id, tipo, mensaje, referencia_id, leida)
+        INSERT INTO alertas (empresa_id, tipo, titulo, descripcion, leida)
         VALUES (
           ${empresa_id}::uuid,
           'incidencia_foto_ia',
-          ${`[IA] ${analisis.severidad.toUpperCase()}: ${analisis.descripcion} en ${property_name || 'propiedad'}`},
-          ${session_id}::uuid,
+          ${`[IA] ${analisis.severidad.toUpperCase()}: ${analisis.tipo} en ${property_name || 'propiedad'}`},
+          ${`${analisis.descripcion} · ${analisis.accion_recomendada}`},
           false
         )
       `)
