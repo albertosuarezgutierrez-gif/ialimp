@@ -41,7 +41,9 @@ export async function POST(req: Request) {
     const body = await req.json()
     const {
       cliente_id, nombre, tipo = 'piso_turistico', direccion,
-      codigo_postal, modelo_precio = 'precio_fijo',
+      via, numero, piso, puerta,
+      codigo_postal, municipio, provincia, referencia_catastral,
+      modelo_precio = 'precio_fijo',
       precio_limpieza, duracion_estimada_min = 120,
       hora_checkout_habitual = '11:00', hora_checkin_habitual = '16:00',
       num_camas_dobles = 0, num_camas_individuales = 0,
@@ -54,15 +56,20 @@ export async function POST(req: Request) {
 
     const result = await prisma.$queryRaw<any[]>(Prisma.sql`
       INSERT INTO propiedades (
-        empresa_id, cliente_id, nombre, tipo, direccion, codigo_postal,
+        empresa_id, cliente_id, nombre, tipo, direccion,
+        via, numero, piso, puerta,
+        codigo_postal, municipio, provincia, referencia_catastral,
         modelo_precio, precio_limpieza, duracion_estimada_min,
         hora_checkout_habitual, hora_checkin_habitual,
         num_camas_dobles, num_camas_individuales, num_banos, num_huespedes_max,
         tiene_piscina, tiene_terraza, notas_material, limpiadora_principal_id, activa
       ) VALUES (
         ${empresa_id}::uuid,
-        ${cliente_id ? cliente_id + '::uuid' : null},
-        ${nombre.trim()}, ${tipo}, ${direccion || null}, ${codigo_postal || null},
+        ${cliente_id ? cliente_id : null}::uuid,
+        ${nombre.trim()}, ${tipo}, ${direccion || null},
+        ${via || null}, ${numero || null}, ${piso || null}, ${puerta || null},
+        ${codigo_postal || null}, ${municipio || null}, ${provincia || null},
+        ${referencia_catastral || null},
         ${modelo_precio}, ${precio_limpieza ? Number(precio_limpieza) : null},
         ${Number(duracion_estimada_min)},
         ${hora_checkout_habitual}, ${hora_checkin_habitual},
@@ -70,7 +77,7 @@ export async function POST(req: Request) {
         ${Number(num_banos)}, ${Number(num_huespedes_max)},
         ${Boolean(tiene_piscina)}, ${Boolean(tiene_terraza)},
         ${notas_material || null},
-        ${limpiadora_principal_id ? limpiadora_principal_id + '::uuid' : null},
+        ${limpiadora_principal_id ? limpiadora_principal_id : null}::uuid,
         true
       )
       RETURNING *

@@ -1,6 +1,6 @@
 'use client'
 import CaracteristicasApartamento from '@/components/CaracteristicasApartamento'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
 const TIPO_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
   piso_turistico: { label: 'Piso turístico', icon: '🏠', color: '#6366f1' },
@@ -22,11 +22,16 @@ const MODELO_CONFIG: Record<string, { label: string; icon: string; desc: string 
 const ZONAS_COMUNIDAD = ['Portal','Escaleras','Garaje','Jardín','Piscina','Ascensor','Local social','Trasteros']
 
 const EMPTY = {
-  nombre: '', tipo: 'piso_turistico', direccion: '',
+  nombre: '', tipo: 'piso_turistico',
+  // Dirección desglosada (manual) + catastro
+  via: '', numero: '', piso: '', puerta: '',
+  codigo_postal: '', municipio: '', provincia: '',
+  referencia_catastral: '',
+  // campo legacy direccion — se construye automáticamente al guardar
+  direccion: '',
   m2: '', habitaciones: '', pms_propiedad_id: '',
     ical_urls: [],
   asignacion_fija: false,
-  codigo_postal: '',
   duracion_estimada_min: '120',
   flexibilidad_horaria: 'ventana',
   hora_pactada: '',
@@ -64,20 +69,77 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
   const [form, setForm]           = useState({ ...EMPTY })
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState('')
+  // CP autocompletado
+  const [cpLoading, setCpLoading]   = useState(false)
+  const [cpOk, setCpOk]             = useState(false)
+  const [cpError, setCpError]       = useState('')
+  const cpTimerRef                  = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const t  = (tipo: string)   => TIPO_CONFIG[tipo]   || TIPO_CONFIG.otro
   const mp = (modelo: string) => MODELO_CONFIG[modelo] || MODELO_CONFIG.precio_fijo
   const f  = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }))
 
+  // ── CP → municipio/provincia ──────────────────────────────────────
+  function handleCpChange(cp: string) {
+    f('codigo_postal', cp)
+    setCpOk(false)
+    setCpError('')
+    if (cpTimerRef.current) clearTimeout(cpTimerRef.current)
+    if (cp.length === 5 && /^\d{5}$/.test(cp)) {
+      cpTimerRef.current = setTimeout(() => lookupCP(cp), 500)
+    }
+  }
+
+  async function lookupCP(cp: string) {
+    setCpLoading(true)
+    setCpError('')
+    try {
+      const res = await fetch(`/api/catastro/municipio?cp=${cp}`)
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        setCpError(data.error || 'CP no encontrado')
+        f('municipio', ''); f('provincia', '')
+      } else {
+        f('municipio', data.municipio)
+        f('provincia', data.provincia)
+        setCpOk(true)
+      }
+    } catch {
+      setCpError('Error de conexión')
+    } finally {
+      setCpLoading(false)
+    }
+  }
+
+  // ── Construye el campo direccion legacy al guardar ────────────────
+  function buildDireccion(fm: typeof form): string {
+    const parts = [
+      fm.via?.trim(),
+      fm.numero?.trim() ? `nº ${fm.numero.trim()}` : '',
+      fm.piso?.trim(),
+      fm.puerta?.trim(),
+    ].filter(Boolean)
+    return parts.join(', ')
+  }
+
   function abrirNueva() {
-    setEditando(null); setForm({ ...EMPTY }); setError(''); setShowModal(true)
+    setEditando(null); setForm({ ...EMPTY })
+    setError(''); setCpOk(false); setCpError('')
+    setShowModal(true)
   }
 
   function abrirEditar(p: any) {
     setEditando(p)
     setForm({
+      ...EMPTY,
       nombre: p.nombre || '', tipo: p.tipo || 'piso_turistico',
-      direccion: p.direccion || '', m2: p.m2 || '', habitaciones: p.habitaciones || '',
+      direccion: p.direccion || '',
+      via: p.via || '', numero: p.numero || '',
+      piso: p.piso || '', puerta: p.puerta || '',
+      codigo_postal: p.codigo_postal || '',
+      municipio: p.municipio || '', provincia: p.provincia || '',
+      referencia_catastral: p.referencia_catastral || '',
+      m2: p.m2 || '', habitaciones: p.habitaciones || '',
       pms_propiedad_id: p.pms_propiedad_id || '',
       ical_urls: p.ical_urls || [],
       modelo_precio: p.modelo_precio || 'precio_fijo',
@@ -90,7 +152,8 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
       recargo_nocturno: p.recargo_nocturno || '',
       notas: p.notas || '', zonas: p.zonas || []
     })
-    setError(''); setShowModal(true)
+    setCpOk(!!p.municipio); setCpError(''); setError('')
+    setShowModal(true)
   }
 
   function toggleZona(zona: string) {
@@ -117,8 +180,14 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
     e.preventDefault()
     setLoading(true); setError('')
     try {
+      // Construir direccion legacy desde campos desglosados
+      const direccionBuilt = buildDireccion(form)
       const body = {
         cliente_id: cliente.id, ...form,
+        direccion:        direccionBuilt || form.direccion || null,
+        municipio:        form.municipio || null,
+        provincia:        form.provincia || null,
+        referencia_catastral: form.referencia_catastral?.trim() || null,
         m2:               form.m2               ? Number(form.m2)               : null,
         habitaciones:     form.habitaciones      ? Number(form.habitaciones)      : null,
         precio_limpieza:  form.precio_limpieza   ? Number(form.precio_limpieza)   : null,
@@ -406,12 +475,117 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                 </div>
               </div>
 
-              {/* Dirección / m² / habitaciones */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Dirección</label>
-                <input value={form.direccion} onChange={e => f('direccion', e.target.value)}
-                  placeholder="Calle, número, piso…"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              {/* ── LOCALIZACIÓN ── */}
+              <div className="bg-indigo-50 rounded-2xl p-4 space-y-3">
+                <div className="text-sm font-semibold text-indigo-700">📍 Localización</div>
+
+                {/* CP → municipio automático */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    Código postal
+                    {cpLoading && <span className="ml-2 text-indigo-400 font-normal">buscando…</span>}
+                    {cpOk && <span className="ml-2 text-green-600 font-normal">✓ localizado</span>}
+                    {cpError && <span className="ml-2 text-red-500 font-normal">{cpError}</span>}
+                  </label>
+                  <input
+                    value={form.codigo_postal}
+                    onChange={e => handleCpChange(e.target.value.replace(/\D/g,'').slice(0,5))}
+                    placeholder="41003"
+                    maxLength={5}
+                    inputMode="numeric"
+                    className={`w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      cpOk ? 'border-green-400 bg-green-50' : cpError ? 'border-red-300' : 'border-gray-200'
+                    }`}
+                  />
+                </div>
+
+                {/* Municipio + Provincia — readonly, vienen del CP */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Municipio</label>
+                    <input
+                      value={form.municipio}
+                      onChange={e => f('municipio', e.target.value)}
+                      placeholder="Autocompletado con el CP"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Provincia</label>
+                    <input
+                      value={form.provincia}
+                      onChange={e => f('provincia', e.target.value)}
+                      placeholder="Autocompletado"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Dirección manual desglosada */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Vía y nombre</label>
+                  <input
+                    value={form.via}
+                    onChange={e => f('via', e.target.value)}
+                    placeholder="Ej: Calle Bustos Tavera, Avda. de la Paz…"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Número</label>
+                    <input
+                      value={form.numero}
+                      onChange={e => f('numero', e.target.value)}
+                      placeholder="22"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Piso</label>
+                    <input
+                      value={form.piso}
+                      onChange={e => f('piso', e.target.value)}
+                      placeholder="3º"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Puerta</label>
+                    <input
+                      value={form.puerta}
+                      onChange={e => f('puerta', e.target.value)}
+                      placeholder="B"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Preview dirección completa */}
+                {(form.via || form.numero) && (
+                  <div className="bg-white rounded-lg px-3 py-2 border border-indigo-200 text-xs text-indigo-700">
+                    📍 {[form.via, form.numero && `nº ${form.numero}`, form.piso, form.puerta].filter(Boolean).join(', ')}
+                    {form.municipio && <span className="text-gray-400"> · {form.cp || form.codigo_postal} {form.municipio}</span>}
+                  </div>
+                )}
+
+                {/* Referencia catastral — opcional, la añade el dueño */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    Referencia catastral <span className="font-normal text-gray-400">(opcional)</span>
+                  </label>
+                  <input
+                    value={form.referencia_catastral}
+                    onChange={e => f('referencia_catastral', e.target.value.toUpperCase().replace(/\s/g,''))}
+                    placeholder="Ej: 5732032TG3453B0001PK"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    maxLength={20}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Encuéntrala en la escritura, recibo del IBI o en{' '}
+                    <a href="https://www1.sedecatastro.gob.es" target="_blank" rel="noopener" className="text-indigo-500 underline">sedecatastro.gob.es</a>
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -464,12 +638,6 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                 <div className="text-sm font-semibold text-blue-700">📍 Zona y tiempos</div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Código postal</label>
-                    <input value={form.codigo_postal} onChange={e => f('codigo_postal', e.target.value)}
-                      placeholder="41003"
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">Duración estimada</label>
                     <select value={form.duracion_estimada_min} onChange={e => f('duracion_estimada_min', e.target.value)}
