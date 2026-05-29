@@ -4,6 +4,7 @@ import FirmaPad from '@/components/FirmaPad'
 import ChatSesion from '@/components/ChatSesion'
 import GastosTab from '@/components/GastosTab'
 import AccesoPropiedad from '@/components/AccesoPropiedad'
+import EscanerDocumento from '@/components/EscanerDocumento'
 
 const C = {
   primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff',
@@ -122,7 +123,7 @@ function QuejaModal({ sesion, token, onClose, onSent }: QuejaModalProps) {
 }
 
 export default function PropietarioClient({ cliente, propiedades, historial, token }: any) {
-  const [tab, setTab]           = useState<'hoy'|'historial'|'gastos'|'acceso'|'chat'>('hoy')
+  const [tab, setTab]           = useState<'hoy'|'historial'|'gastos'|'acceso'|'chat'|'docs'>('hoy')
   const [fotoModal, setFoto]    = useState<string|null>(null)
   const [quejaModal, setQueja]  = useState<any>(null)
   const [firmaModal, setFirma]  = useState<any>(null)
@@ -155,7 +156,7 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
         </div>
 
         <div style={{ display: 'flex', marginTop: 16 }}>
-          {[['hoy','Hoy'],['historial','Historial'],['acceso','🔑 Acceso'],['chat','💬 Chat']].map(([id, label]) => (
+          {[['hoy','Hoy'],['historial','Historial'],['docs','📄 Docs'],['acceso','🔑 Acceso'],['chat','💬 Chat']].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id as any)}
               style={{ flex: 1, padding: '11px', border: 'none', cursor: 'pointer', background: 'transparent', color: tab === id ? 'white' : 'rgba(255,255,255,0.5)', fontWeight: tab === id ? 700 : 500, fontSize: 14, borderBottom: `2.5px solid ${tab === id ? 'white' : 'transparent'}`, fontFamily: 'inherit' }}>
               {label}
@@ -264,6 +265,19 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
       {fotoModal && (
         <div onClick={() => setFoto(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 20 }}>
           <img src={fotoModal} style={{ maxWidth: '100%', maxHeight: '88vh', borderRadius: 14 }} />
+        </div>
+      )}
+
+
+      {tab === 'docs' && (
+        <div>
+          <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16, lineHeight: 1.5 }}>
+            Fotografía o sube facturas, albaranes y tickets. La IA los analiza, genera el apunte contable y actualiza el stock automáticamente.
+          </p>
+          <EscanerDocumento
+            token={token}
+            onGuardado={() => {}}
+          />
         </div>
       )}
 
