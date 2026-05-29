@@ -81,7 +81,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
         p.nombre AS propiedad_nombre,
         p.id::text AS propiedad_id,
         COUNT(*)::int AS num_limpiezas,
-        SUM(COALESCE(cs.precio_limpieza, 0))::float AS coste_limpiezas
+        SUM(COALESCE(cs.precio_final, 0))::float AS coste_limpiezas
       FROM cleaning_sessions cs
       LEFT JOIN propiedades p ON p.id = cs.propiedad_id
       WHERE cs.cliente_id = ${cliente.id}::uuid
