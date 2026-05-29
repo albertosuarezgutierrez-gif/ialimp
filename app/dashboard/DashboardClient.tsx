@@ -21,18 +21,12 @@ const TIPO_ICON: Record<string,string> = {
 }
 
 const NAV = [
-  { href:'/dashboard',       icon:'🏠', label:'Inicio'    },
-  { href:'/admin/clientes',  icon:'👥', label:'Clientes'  },
-  { href:'/admin/crm',       icon:'📅', label:'Agenda'    },
-  { href:'/admin/rrhh',      icon:'👤', label:'RRHH'      },
-  { href:'/admin/stock',     icon:'📦', label:'Stock'     },
-  { href:'/admin/lenceria',  icon:'🛏️', label:'Lencería'  },
-  { href:'/admin/facturas',  icon:'🧾', label:'Facturas'  },
-  { href:'/admin/informes',  icon:'📊', label:'Informes'  },
-  { href:'/admin/ia',        icon:'🤖', label:'IA'        },
-  { href:'/admin/usuarios',  icon:'🔐', label:'Usuarios'  },
-  { href:'/admin/cotizador',      icon:'💰', label:'Cotizador'    },
-  { href:'/admin/configuracion', icon:'⚙️', label:'Catálogos'   },
+  { href:'/dashboard',           icon:'🏠', label:'Inicio'        },
+  { href:'/admin',               icon:'🗓️', label:'Operaciones'   },
+  { href:'/admin/equipo',        icon:'👥', label:'Equipo'        },
+  { href:'/admin/negocio',       icon:'💼', label:'Negocio'       },
+  { href:'/admin/materiales',    icon:'📦', label:'Materiales'    },
+  { href:'/admin/configuracion', icon:'⚙️', label:'Configuración' },
 ]
 
 export default function DashboardClient({
@@ -727,14 +721,14 @@ export default function DashboardClient({
         <nav className="bottom-nav">
           <div className="bottom-nav-inner">
             <button className="bottom-nav-item active"><span>🏠</span><span>Inicio</span></button>
-            <button className="bottom-nav-item" onClick={() => window.location.href='/admin/clientes'}>
+            <button className="bottom-nav-item" onClick={() => window.location.href='/admin/negocio'}>
               <span>👥</span><span>Clientes</span>
             </button>
             <button className="bottom-nav-item" onClick={() => setShowNueva(true)}>
               <span style={{ background:'#4f46e5', borderRadius:12, width:42, height:42, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, color:'white', boxShadow:'0 3px 10px rgba(79,70,229,.4)' }}>＋</span>
               <span>Nueva</span>
             </button>
-            <button className="bottom-nav-item" onClick={() => window.location.href='/admin/rrhh'}>
+            <button className="bottom-nav-item" onClick={() => window.location.href='/admin/equipo'}>
               <span>👤</span><span>RRHH</span>
             </button>
             <button className="bottom-nav-item" onClick={() => window.location.href='/admin'}>
