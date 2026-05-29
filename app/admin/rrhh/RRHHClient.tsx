@@ -35,6 +35,8 @@ export default function RRHHClient({ limpiadoras: initialLimp, quejas }: Props) 
   const [limpSel, setLimpSel]   = useState<any>(null)
   const [analisis, setAnalisis] = useState<any>(null)
   const [loadingIA, setLoadingIA] = useState(false)
+  const [clasificandoId, setClasificandoId] = useState<string|null>(null)
+  const [clasificaciones, setClasificaciones] = useState<Record<string,any>>({})
   const [quejasList, setQuejas] = useState(quejas)
 
   // Estado limpiadoras
@@ -97,6 +99,28 @@ export default function RRHHClient({ limpiadoras: initialLimp, quejas }: Props) 
       if (d.ok) setAnalisis(d.analisis)
     } catch {}
     setLoadingIA(false)
+  }
+
+  async function clasificarQueja(quejaId: string) {
+    setClasificandoId(quejaId)
+    try {
+      const r = await fetch('/api/admin/ia/clasificar-queja', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ queja_id: quejaId })
+      })
+      const d = await r.json()
+      if (d.ok) {
+        const c = d.clasificacion
+        setClasificaciones(prev => ({ ...prev, [quejaId]: c }))
+        setQuejas(qs => qs.map(q => q.id === quejaId
+          ? { ...q, categoria: c.categoria, severidad: c.severidad }
+          : q
+        ))
+      }
+    } finally {
+      setClasificandoId(null)
+    }
   }
 
   async function cambiarEstado(id: string, estado: string) {
@@ -196,7 +220,39 @@ export default function RRHHClient({ limpiadoras: initialLimp, quejas }: Props) 
                         </div>
                       )}
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0, minWidth: 140 }}>
+                      {/* Botón clasificar IA */}
+                      <button
+                        onClick={() => clasificarQueja(q.id)}
+                        disabled={clasificandoId === q.id}
+                        style={{
+                          padding: '6px 10px', borderRadius: 8, border: '1px solid #c7d2fe',
+                          background: clasificandoId === q.id ? '#f1f5f9' : '#eef2ff',
+                          color: clasificandoId === q.id ? '#94a3b8' : '#4f46e5',
+                          fontSize: 11, fontWeight: 700,
+                          cursor: clasificandoId === q.id ? 'not-allowed' : 'pointer',
+                          width: '100%', textAlign: 'center'
+                        }}>
+                        {clasificandoId === q.id ? '⏳ Clasificando...' : '✨ Clasificar IA'}
+                      </button>
+                      {/* Resultado clasificación */}
+                      {clasificaciones[q.id] && (
+                        <div style={{ background: '#eef2ff', borderRadius: 8, padding: '8px 10px', fontSize: 11, border: '1px solid #c7d2fe' }}>
+                          <div style={{ fontWeight: 700, color: '#4f46e5', marginBottom: 4 }}>✨ IA</div>
+                          <div style={{ color: '#1e1b4b', marginBottom: 2 }}>
+                            <strong>Cat:</strong> {clasificaciones[q.id].categoria}
+                          </div>
+                          <div style={{ color: '#1e1b4b', marginBottom: 4, lineHeight: 1.4 }}>
+                            <strong>Resp:</strong> {clasificaciones[q.id].respuesta_propietario}
+                          </div>
+                          {clasificaciones[q.id].afecta_expediente_rrhh && (
+                            <div style={{ color: '#dc2626', fontWeight: 600 }}>⚠️ Expediente RRHH</div>
+                          )}
+                          {clasificaciones[q.id].patron_detectado && (
+                            <div style={{ color: '#d97706', fontWeight: 600 }}>📊 Patrón</div>
+                          )}
+                        </div>
+                      )}
                       {q.estado === 'pendiente' && (
                         <>
                           <button onClick={() => cambiarEstado(q.id, 'contactado')}
