@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { requireEmpresaId } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
@@ -22,7 +21,15 @@ export async function GET(req: Request) {
     ORDER BY cs.session_date DESC
     LIMIT 60
   `)
-  return NextResponse.json({ sessions })
+
+  // Serializar BigInt (COUNT devuelve BigInt en PostgreSQL)
+  const serialized = sessions.map((s) => ({
+    ...s,
+    items_completados: Number(s.items_completados ?? 0),
+    items_total: Number(s.items_total ?? 0),
+  }))
+
+  return NextResponse.json({ sessions: serialized })
 }
 
 export async function PATCH(req: Request) {
