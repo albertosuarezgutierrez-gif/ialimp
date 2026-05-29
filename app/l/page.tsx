@@ -576,7 +576,7 @@ function LimpiadoarasApp() {
   }
 
   if (sesionActiva) {
-    return <SesionDetalle s={sesionActiva} onBack={() => router.back()} onUpdate={onUpdate} limpiadora={limpiadora} />
+    return <SesionDetalle s={sesionActiva} onBack={() => router.push('/l')} onUpdate={onUpdate} limpiadora={limpiadora} />
   }
 
   const completadas = sesiones.filter(s => !!s.completed_at).length
