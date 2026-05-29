@@ -9,20 +9,18 @@ import AccesoPropiedad from '@/components/AccesoPropiedad'
 import EscanerDocumento from '@/components/EscanerDocumento'
 
 const C = {
-  primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff',
-  bg: '#f1f5f9', text: '#1e293b', muted: '#64748b', border: '#e2e8f0',
-  ok: '#16a34a', okBg: '#f0fdf4', okBorder: '#bbf7d0',
-  warn: '#d97706', warnBg: '#fffbeb', warnBorder: '#fcd34d',
-  info: '#2563eb', infoBg: '#eff6ff', infoBorder: '#bfdbfe',
-  red: '#dc2626', redBg: '#fef2f2',
+  primary:'#4f46e5', brand:'#6366f1', light:'#eef2ff',
+  bg:'#f1f5f9', text:'#1e293b', muted:'#64748b', border:'#e2e8f0',
+  ok:'#16a34a', okBg:'#f0fdf4', okBorder:'#bbf7d0',
+  warn:'#d97706', warnBg:'#fffbeb', warnBorder:'#fcd34d',
+  info:'#2563eb', infoBg:'#eff6ff', infoBorder:'#bfdbfe',
+  red:'#dc2626', redBg:'#fef2f2',
 }
-
 const ESTADO_CFG: Record<string,any> = {
-  completada: { label:'✅ Completada', bg:C.okBg,   color:C.ok,   border:C.okBorder,  dot:'#22c55e' },
-  en_curso:   { label:'🧹 Limpiando',  bg:C.infoBg, color:C.info, border:C.infoBorder, dot:'#3b82f6' },
-  pendiente:  { label:'⏳ Pendiente',  bg:C.bg,     color:C.muted,border:C.border,      dot:'#94a3b8' },
+  completada:{ label:'✅ Completada', bg:C.okBg,   color:C.ok,   border:C.okBorder,  dot:'#22c55e' },
+  en_curso:  { label:'🧹 Limpiando',  bg:C.infoBg, color:C.info, border:C.infoBorder, dot:'#3b82f6' },
+  pendiente: { label:'⏳ Pendiente',  bg:C.bg,     color:C.muted,border:C.border,      dot:'#94a3b8' },
 }
-
 const MENU_ITEMS = [
   { id:'hoy',      icon:'🏠', label:'Hoy' },
   { id:'reservas', icon:'📆', label:'Reservas' },
@@ -31,13 +29,40 @@ const MENU_ITEMS = [
   { id:'acceso',   icon:'🔑', label:'Acceso' },
   { id:'chat',     icon:'💬', label:'Chat' },
 ]
-
 const ESTADO_FILTROS = [
-  { id:'todas',     label:'Todas' },
-  { id:'pendiente', label:'⏳ Pendiente' },
-  { id:'en_curso',  label:'🧹 En curso' },
+  { id:'todas', label:'Todas' },
+  { id:'pendiente', label:'⏳ Pend.' },
+  { id:'en_curso',  label:'🧹 Curso' },
   { id:'completada',label:'✅ Hecha' },
 ]
+// Rangos rápidos de fecha
+const HOY = new Date().toISOString().split('T')[0]
+function addDays(base: string, n: number) {
+  const d = new Date(base + 'T12:00:00'); d.setDate(d.getDate() + n)
+  return d.toISOString().split('T')[0]
+}
+const RANGOS_RAPIDOS = [
+  { id:'todo',   label:'Todo' },
+  { id:'hoy',    label:'Hoy' },
+  { id:'7d',     label:'7 días' },
+  { id:'30d',    label:'30 días' },
+  { id:'mes',    label:'Este mes' },
+  { id:'custom', label:'Custom' },
+]
+function rangoFechas(id: string): { desde: string; hasta: string } | null {
+  const hoy = HOY
+  if (id === 'todo')  return null
+  if (id === 'hoy')   return { desde: hoy, hasta: hoy }
+  if (id === '7d')    return { desde: hoy, hasta: addDays(hoy, 7) }
+  if (id === '30d')   return { desde: hoy, hasta: addDays(hoy, 30) }
+  if (id === 'mes') {
+    const d = new Date(hoy + 'T12:00:00')
+    const ini = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`
+    const fin = new Date(d.getFullYear(), d.getMonth()+1, 0).toISOString().split('T')[0]
+    return { desde: ini, hasta: fin }
+  }
+  return null
+}
 
 function Stars({ value, onChange }: { value:number; onChange?:(n:number)=>void }) {
   return (
@@ -65,7 +90,7 @@ function QuejaModal({ sesion, token, onClose, onSent }: any) {
       <div style={{ background:'white', borderRadius:20, width:'100%', maxWidth:480, maxHeight:'88vh', overflowY:'auto' }}>
         <div style={{ padding:'18px 20px 16px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div><h3 style={{ fontWeight:800, fontSize:17, color:C.text }}>Queja del huésped</h3>
-            <p style={{ fontSize:12, color:C.muted, marginTop:2 }}>{sesion.property_name||sesion.nombre}</p></div>
+               <p style={{ fontSize:12, color:C.muted, marginTop:2 }}>{sesion.property_name||sesion.nombre}</p></div>
           <button onClick={onClose} style={{ background:'none', border:'none', fontSize:22, color:C.muted, cursor:'pointer' }}>✕</button>
         </div>
         <form onSubmit={enviar} style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:16 }}>
@@ -94,20 +119,15 @@ function SesionCard({ s, token, permisos, onChat, onChecklist, onQueja, quejaEnv
   const qEnv = quejaEnviada?.has(s.id)
   const sid  = s.sesion_id || s.id
   const nombre = s.nombre || s.propiedad_nombre || s.property_name || '—'
-  const puedeVerLimpieza = permisos?.ver_checklist || permisos?.ver_fotos
-
+  const puedeVer = permisos?.ver_checklist || permisos?.ver_fotos
   const fmtFecha = (d: string) => {
     if (!d) return ''
-    const dt = new Date(d + 'T12:00:00')
-    const hoy = new Date(); hoy.setHours(0,0,0,0)
-    const dif = Math.round((dt.getTime() - hoy.getTime()) / 86400000)
-    if (dif === 0) return 'Hoy'
-    if (dif === 1) return 'Mañana'
-    if (dif === -1) return 'Ayer'
-    if (dif > 0 && dif < 7) return `En ${dif} días`
-    return dt.toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' })
+    const dt = new Date(d + 'T12:00:00'); const hoy = new Date(); hoy.setHours(0,0,0,0)
+    const dif = Math.round((dt.getTime()-hoy.getTime())/86400000)
+    if (dif===0) return 'Hoy'; if (dif===1) return 'Mañana'; if (dif===-1) return 'Ayer'
+    if (dif>0&&dif<7) return `En ${dif}d`
+    return dt.toLocaleDateString('es-ES',{day:'numeric',month:'short'})
   }
-
   return (
     <div style={{ background:'white', borderRadius:14, border:`1px solid ${C.border}`, overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
       <div style={{ background:e.bg, borderBottom:`1px solid ${e.border}`, padding:'8px 14px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -117,12 +137,12 @@ function SesionCard({ s, token, permisos, onChat, onChecklist, onQueja, quejaEnv
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
           {s.session_date && <span style={{ fontSize:11, color:C.muted, fontWeight:600 }}>{fmtFecha(s.session_date)}</span>}
-          {sid && puedeVerLimpieza && (
-            <button onClick={() => onChecklist?.({id:sid, titulo:nombre})}
+          {sid && puedeVer && (
+            <button onClick={() => onChecklist?.({id:sid,titulo:nombre})}
               style={{ padding:'3px 8px', borderRadius:7, border:`1px solid ${C.border}`, background:'white', color:C.muted, fontSize:12, cursor:'pointer' }}>🔍</button>
           )}
           {sid && (
-            <button onClick={() => onChat?.({id:sid, titulo:nombre})}
+            <button onClick={() => onChat?.({id:sid,titulo:nombre})}
               style={{ padding:'3px 8px', borderRadius:7, border:`1px solid ${C.brand}`, background:C.light, color:C.brand, fontSize:12, fontWeight:700, cursor:'pointer' }}>💬</button>
           )}
         </div>
@@ -130,19 +150,19 @@ function SesionCard({ s, token, permisos, onChat, onChecklist, onQueja, quejaEnv
       <div style={{ padding:'12px 14px' }}>
         <div style={{ fontWeight:700, fontSize:15, color:C.text, marginBottom:2 }}>{nombre}</div>
         {s.direccion && <div style={{ fontSize:12, color:C.muted, marginBottom:6 }}>📍 {s.direccion}</div>}
-        {(s.hora_checkout || s.hora_checkin_siguiente) && (
+        {(s.hora_checkout||s.hora_checkin_siguiente) && (
           <div style={{ display:'flex', gap:8, alignItems:'center', background:C.light, borderRadius:8, padding:'5px 10px', marginBottom:8 }}>
             {s.hora_checkout && <span style={{ fontSize:11, color:C.primary, fontWeight:600 }}>🚪 {String(s.hora_checkout).slice(0,5)}</span>}
-            {s.hora_checkout && s.hora_checkin_siguiente && <span style={{ color:C.brand }}>→</span>}
+            {s.hora_checkout&&s.hora_checkin_siguiente && <span style={{ color:C.brand }}>→</span>}
             {s.hora_checkin_siguiente && <span style={{ fontSize:11, color:C.primary, fontWeight:600 }}>🔑 {String(s.hora_checkin_siguiente).slice(0,5)}</span>}
           </div>
         )}
-        {s.limpiadora_nombre && <div style={{ fontSize:12, color:C.muted }}>{compact ? '' : '🧹 '}{s.limpiadora_nombre}</div>}
-        {!compact && s.num_huespedes > 0 && <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>👥 {s.num_huespedes} huéspedes</div>}
+        {s.limpiadora_nombre && <div style={{ fontSize:12, color:C.muted }}>{s.limpiadora_nombre}</div>}
+        {!compact && s.num_huespedes>0 && <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>👥 {s.num_huespedes} huéspedes</div>}
         {!compact && (s.estado_hoy==='completada'||s.estado==='completada') && (
           qEnv
             ? <div style={{ marginTop:8, background:C.warnBg, border:`1px solid ${C.warnBorder}`, borderRadius:10, padding:'8px 14px', fontSize:12, color:C.warn, fontWeight:600, textAlign:'center' }}>⚠️ Queja enviada</div>
-            : <button onClick={() => onQueja?.(s)} style={{ marginTop:8, width:'100%', padding:8, borderRadius:10, border:`1px solid ${C.redBg}`, background:'white', color:C.red, fontSize:12, fontWeight:700, cursor:'pointer' }}>⚠️ El huésped tiene una queja</button>
+            : <button onClick={()=>onQueja?.(s)} style={{ marginTop:8, width:'100%', padding:8, borderRadius:10, border:`1px solid ${C.redBg}`, background:'white', color:C.red, fontSize:12, fontWeight:700, cursor:'pointer' }}>⚠️ El huésped tiene una queja</button>
         )}
       </div>
     </div>
@@ -151,10 +171,10 @@ function SesionCard({ s, token, permisos, onChat, onChecklist, onQueja, quejaEnv
 
 function Seccion({ titulo, items, defaultOpen=true, children }: any) {
   const [open, setOpen] = useState(defaultOpen)
-  if (items === 0) return null
+  if (items===0) return null
   return (
     <div>
-      <button onClick={() => setOpen(o=>!o)}
+      <button onClick={()=>setOpen(o=>!o)}
         style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0 8px', background:'transparent', border:'none', cursor:'pointer', fontFamily:'inherit' }}>
         <span style={{ fontSize:13, fontWeight:800, color:C.muted, textTransform:'uppercase', letterSpacing:'0.05em' }}>
           {titulo} <span style={{ fontWeight:500, marginLeft:4 }}>({items})</span>
@@ -166,32 +186,36 @@ function Seccion({ titulo, items, defaultOpen=true, children }: any) {
   )
 }
 
-// ── Barra de filtros ─────────────────────────────────────────────────
-function FiltrosBarra({ propiedades, filtroProp, setFiltroProp, filtroEstado, setFiltroEstado, total, filtradas }: any) {
+function FiltrosBarra({ propiedades, filtroProp, setFiltroProp, filtroEstado, setFiltroEstado,
+                        rangoId, setRangoId, fechaDesde, setFechaDesde, fechaHasta, setFechaHasta,
+                        total, filtradas }: any) {
+  const hayFiltro = filtroProp!=='todas' || filtroEstado!=='todas' || rangoId!=='todo'
   return (
     <div style={{ background:'white', borderBottom:`1px solid ${C.border}`, padding:'10px 14px', display:'flex', flexDirection:'column', gap:8 }}>
-      {/* Chips propiedad */}
-      <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:2 }}>
-        <button onClick={() => setFiltroProp('todas')}
+
+      {/* Fila 1: Propiedad */}
+      <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:1 }}>
+        <button onClick={()=>setFiltroProp('todas')}
           style={{ flexShrink:0, padding:'5px 12px', borderRadius:20, border:`1.5px solid ${filtroProp==='todas'?C.primary:C.border}`,
             background:filtroProp==='todas'?C.primary:'white', color:filtroProp==='todas'?'white':C.text,
             fontSize:12, fontWeight:filtroProp==='todas'?700:500, cursor:'pointer', fontFamily:'inherit' }}>
-          Todas
+          Todos
         </button>
         {propiedades.map((p:string) => (
-          <button key={p} onClick={() => setFiltroProp(p)}
+          <button key={p} onClick={()=>setFiltroProp(p)}
             style={{ flexShrink:0, padding:'5px 12px', borderRadius:20, border:`1.5px solid ${filtroProp===p?C.primary:C.border}`,
               background:filtroProp===p?C.primary:'white', color:filtroProp===p?'white':C.text,
               fontSize:12, fontWeight:filtroProp===p?700:500, cursor:'pointer', fontFamily:'inherit',
-              maxWidth:140, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+              maxWidth:130, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
             {p}
           </button>
         ))}
       </div>
-      {/* Chips estado */}
+
+      {/* Fila 2: Estado */}
       <div style={{ display:'flex', gap:6, overflowX:'auto' }}>
         {ESTADO_FILTROS.map(f => (
-          <button key={f.id} onClick={() => setFiltroEstado(f.id)}
+          <button key={f.id} onClick={()=>setFiltroEstado(f.id)}
             style={{ flexShrink:0, padding:'4px 10px', borderRadius:20,
               border:`1.5px solid ${filtroEstado===f.id?C.brand:C.border}`,
               background:filtroEstado===f.id?C.light:'white',
@@ -200,13 +224,53 @@ function FiltrosBarra({ propiedades, filtroProp, setFiltroProp, filtroEstado, se
             {f.label}
           </button>
         ))}
-        {/* Contador */}
-        {(filtroProp!=='todas' || filtroEstado!=='todas') && (
-          <span style={{ marginLeft:'auto', fontSize:11, color:C.muted, alignSelf:'center', flexShrink:0 }}>
-            {filtradas}/{total}
-          </span>
-        )}
       </div>
+
+      {/* Fila 3: Rango de fechas */}
+      <div style={{ display:'flex', gap:6, overflowX:'auto', alignItems:'center' }}>
+        <span style={{ fontSize:11, color:C.muted, flexShrink:0 }}>📅</span>
+        {RANGOS_RAPIDOS.filter(r=>r.id!=='custom').map(r => (
+          <button key={r.id} onClick={()=>{ setRangoId(r.id) }}
+            style={{ flexShrink:0, padding:'4px 10px', borderRadius:20,
+              border:`1.5px solid ${rangoId===r.id?C.primary:C.border}`,
+              background:rangoId===r.id?C.light:'white',
+              color:rangoId===r.id?C.primary:C.muted,
+              fontSize:11, fontWeight:rangoId===r.id?700:400, cursor:'pointer', fontFamily:'inherit' }}>
+            {r.label}
+          </button>
+        ))}
+        {/* Custom: abre inputs de fecha */}
+        <button onClick={()=>setRangoId(rangoId==='custom'?'todo':'custom')}
+          style={{ flexShrink:0, padding:'4px 10px', borderRadius:20,
+            border:`1.5px solid ${rangoId==='custom'?C.primary:C.border}`,
+            background:rangoId==='custom'?C.light:'white',
+            color:rangoId==='custom'?C.primary:C.muted,
+            fontSize:11, fontWeight:rangoId==='custom'?700:400, cursor:'pointer', fontFamily:'inherit' }}>
+          ✏️ Fechas
+        </button>
+      </div>
+
+      {/* Inputs custom — solo si rangoId === 'custom' */}
+      {rangoId === 'custom' && (
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          <input type="date" value={fechaDesde} onChange={e=>setFechaDesde(e.target.value)}
+            style={{ flex:1, border:`1px solid ${C.border}`, borderRadius:8, padding:'6px 10px', fontSize:12, fontFamily:'inherit', outline:'none', color:C.text }} />
+          <span style={{ color:C.muted, fontSize:12, flexShrink:0 }}>→</span>
+          <input type="date" value={fechaHasta} onChange={e=>setFechaHasta(e.target.value)}
+            style={{ flex:1, border:`1px solid ${C.border}`, borderRadius:8, padding:'6px 10px', fontSize:12, fontFamily:'inherit', outline:'none', color:C.text }} />
+        </div>
+      )}
+
+      {/* Contador + reset */}
+      {hayFiltro && (
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <span style={{ fontSize:11, color:C.muted }}>{filtradas} de {total} reservas</span>
+          <button onClick={()=>{ setFiltroProp('todas'); setFiltroEstado('todas'); setRangoId('todo') }}
+            style={{ fontSize:11, color:C.brand, background:'none', border:'none', cursor:'pointer', fontWeight:600, fontFamily:'inherit' }}>
+            Quitar filtros ×
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -220,65 +284,65 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
   const [chatSesion, setChatSesion]     = useState<{id:string;titulo:string}|null>(null)
   const [checklistSesion,setChecklist]  = useState<{id:string;titulo:string}|null>(null)
 
-  // Reservas
-  const [reservas, setReservas]         = useState<any[]>([])
-  const [loadingRes, setLoadingRes]     = useState(false)
+  const [reservas, setReservas]     = useState<any[]>([])
+  const [loadingRes, setLoadingRes] = useState(false)
+
   // Filtros
   const [filtroProp,   setFiltroProp]   = useState('todas')
   const [filtroEstado, setFiltroEstado] = useState('todas')
+  const [rangoId,      setRangoId]      = useState('todo')
+  const [fechaDesde,   setFechaDesde]   = useState(HOY)
+  const [fechaHasta,   setFechaHasta]   = useState(addDays(HOY, 30))
 
   useEffect(() => {
-    if (tab === 'reservas' && reservas.length === 0 && !loadingRes) {
+    if (tab==='reservas' && reservas.length===0 && !loadingRes) {
       setLoadingRes(true)
       fetch(`/api/propietario/${token}/sesiones`)
-        .then(r => r.json())
-        .then(d => { setReservas(d.sesiones || []); setLoadingRes(false) })
+        .then(r=>r.json())
+        .then(d=>{ setReservas(d.sesiones||[]); setLoadingRes(false) })
     }
   }, [tab])
 
-  // Propiedades únicas para chips
   const propiedadesUnicas = useMemo(() => {
     const set = new Set<string>()
-    reservas.forEach(s => {
-      const n = s.propiedad_nombre || s.property_name
-      if (n && n !== 'None') set.add(n)
-    })
+    reservas.forEach(s => { const n=s.propiedad_nombre||s.property_name; if(n&&n!=='None') set.add(n) })
     return Array.from(set).sort()
   }, [reservas])
 
-  // Reservas filtradas
   const reservasFiltradas = useMemo(() => {
+    const rango = rangoId==='custom' ? { desde:fechaDesde, hasta:fechaHasta } : rangoFechas(rangoId)
     return reservas.filter(s => {
-      const nombre = s.propiedad_nombre || s.property_name || ''
-      if (filtroProp !== 'todas' && nombre !== filtroProp) return false
-      if (filtroEstado !== 'todas' && s.estado !== filtroEstado) return false
+      const nombre = s.propiedad_nombre||s.property_name||''
+      if (filtroProp!=='todas' && nombre!==filtroProp) return false
+      if (filtroEstado!=='todas' && s.estado!==filtroEstado) return false
+      if (rango) {
+        if (s.session_date < rango.desde || s.session_date > rango.hasta) return false
+      }
       return true
     })
-  }, [reservas, filtroProp, filtroEstado])
+  }, [reservas, filtroProp, filtroEstado, rangoId, fechaDesde, fechaHasta])
 
-  const hoy      = new Date().toISOString().split('T')[0]
-  const proximas  = reservasFiltradas.filter(s => s.session_date > hoy)
-  const deHoy     = reservasFiltradas.filter(s => s.session_date === hoy)
-  const recientes = reservasFiltradas.filter(s => s.session_date < hoy)
-    .sort((a,b) => b.session_date.localeCompare(a.session_date))
+  const hoyStr    = HOY
+  const proximas  = reservasFiltradas.filter(s=>s.session_date>hoyStr)
+  const deHoy     = reservasFiltradas.filter(s=>s.session_date===hoyStr)
+  const recientes = reservasFiltradas.filter(s=>s.session_date<hoyStr).sort((a,b)=>b.session_date.localeCompare(a.session_date))
 
-  const puedeVerLimpieza = permisos?.ver_checklist || permisos?.ver_fotos
-  const completadas = propiedades.filter((p:any) => p.estado_hoy==='completada').length
-  const currentItem = MENU_ITEMS.find(m => m.id === tab)
-  const hayFiltro   = filtroProp !== 'todas' || filtroEstado !== 'todas'
+  const puedeVer    = permisos?.ver_checklist||permisos?.ver_fotos
+  const completadas = propiedades.filter((p:any)=>p.estado_hoy==='completada').length
+  const currentItem = MENU_ITEMS.find(m=>m.id===tab)
 
   if (chatSesion) return (
     <div style={{ fontFamily:"'DM Sans',-apple-system,sans-serif", minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
       <ChatSesionPropietario token={token} sesionId={chatSesion.id} miNombre={cliente.nombre}
-        titulo={chatSesion.titulo} height="100vh" onClose={() => setChatSesion(null)} />
+        titulo={chatSesion.titulo} height="100vh" onClose={()=>setChatSesion(null)} />
     </div>
   )
   if (checklistSesion) return (
     <div style={{ fontFamily:"'DM Sans',-apple-system,sans-serif", minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
       <ChecklistPropietario token={token} sesionId={checklistSesion.id}
-        titulo={checklistSesion.titulo} onClose={() => setChecklist(null)} />
+        titulo={checklistSesion.titulo} onClose={()=>setChecklist(null)} />
     </div>
   )
 
@@ -301,40 +365,45 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
           <div style={{ background:'rgba(255,255,255,0.15)', borderRadius:8, padding:'4px 10px', fontSize:12, color:'white', fontWeight:700 }}>
             {completadas}/{propiedades.length} ✓
           </div>
-          <button onClick={() => setMenu(true)}
+          <button onClick={()=>setMenu(true)}
             style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:8, width:36, height:36, cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4 }}>
-            {[0,1,2].map(i => <span key={i} style={{ display:'block', width:16, height:2, background:'white', borderRadius:2 }} />)}
+            {[0,1,2].map(i=><span key={i} style={{ display:'block', width:16, height:2, background:'white', borderRadius:2 }} />)}
           </button>
         </div>
       </div>
 
-      {/* Filtros — solo en tab reservas */}
-      {tab === 'reservas' && !loadingRes && reservas.length > 0 && (
-        <FiltrosBarra
-          propiedades={propiedadesUnicas}
-          filtroProp={filtroProp} setFiltroProp={setFiltroProp}
-          filtroEstado={filtroEstado} setFiltroEstado={setFiltroEstado}
-          total={reservas.length} filtradas={reservasFiltradas.length}
-        />
+      {/* Filtros — sticky bajo el header */}
+      {tab==='reservas' && !loadingRes && reservas.length>0 && (
+        <div style={{ position:'sticky', top:64, zIndex:40 }}>
+          <FiltrosBarra
+            propiedades={propiedadesUnicas}
+            filtroProp={filtroProp} setFiltroProp={setFiltroProp}
+            filtroEstado={filtroEstado} setFiltroEstado={setFiltroEstado}
+            rangoId={rangoId} setRangoId={setRangoId}
+            fechaDesde={fechaDesde} setFechaDesde={setFechaDesde}
+            fechaHasta={fechaHasta} setFechaHasta={setFechaHasta}
+            total={reservas.length} filtradas={reservasFiltradas.length}
+          />
+        </div>
       )}
 
       {/* Drawer */}
       {menuOpen && (
         <>
-          <div onClick={() => setMenu(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:100, backdropFilter:'blur(2px)' }} />
+          <div onClick={()=>setMenu(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:100, backdropFilter:'blur(2px)' }} />
           <div style={{ position:'fixed', top:0, right:0, bottom:0, width:240, background:'white', zIndex:101, display:'flex', flexDirection:'column', boxShadow:'-4px 0 24px rgba(0,0,0,0.15)', animation:'slideIn .2s ease' }}>
             <style>{`@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
             <div style={{ background:C.primary, padding:'20px 20px 16px' }}>
               <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
                 <div style={{ fontFamily:"'Syne',sans-serif", fontSize:18, fontWeight:800, color:'white' }}>ia<span style={{ color:'#a5b4fc' }}>limp</span></div>
-                <button onClick={() => setMenu(false)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:6, width:28, height:28, color:'white', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+                <button onClick={()=>setMenu(false)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:6, width:28, height:28, color:'white', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
               </div>
               <div style={{ color:'white', fontWeight:700, fontSize:13 }}>{cliente.nombre.split(' ').slice(0,2).join(' ')}</div>
               <div style={{ color:'rgba(255,255,255,0.6)', fontSize:11, marginTop:2 }}>{cliente.empresa_nombre}</div>
             </div>
             <nav style={{ flex:1, padding:'10px 0', overflowY:'auto' }}>
               {MENU_ITEMS.map(item => (
-                <button key={item.id} onClick={() => { setTab(item.id as any); setMenu(false) }}
+                <button key={item.id} onClick={()=>{ setTab(item.id as any); setMenu(false) }}
                   style={{ width:'100%', padding:'13px 20px', border:'none', background:tab===item.id?C.light:'transparent', display:'flex', alignItems:'center', gap:12, cursor:'pointer', borderLeft:`3px solid ${tab===item.id?C.primary:'transparent'}`, fontFamily:'inherit' }}>
                   <span style={{ fontSize:18, width:24, textAlign:'center' }}>{item.icon}</span>
                   <span style={{ fontSize:14, fontWeight:tab===item.id?700:500, color:tab===item.id?C.primary:C.text }}>{item.label}</span>
@@ -352,10 +421,9 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
       {/* Contenido */}
       <div style={{ padding:14 }}>
 
-        {/* HOY */}
-        {tab === 'hoy' && (
+        {tab==='hoy' && (
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-            {propiedades.length === 0 && (
+            {propiedades.length===0 && (
               <div style={{ textAlign:'center', padding:'48px 0', color:C.muted }}>
                 <div style={{ fontSize:40, marginBottom:10 }}>🏠</div>
                 <div style={{ fontWeight:600 }}>Sin limpiezas hoy</div>
@@ -365,52 +433,47 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
           </div>
         )}
 
-        {/* RESERVAS */}
-        {tab === 'reservas' && (
+        {tab==='reservas' && (
           <div>
             {loadingRes && (
               <div style={{ textAlign:'center', padding:'40px 0', color:C.muted }}>
                 <div style={{ fontSize:28, marginBottom:8 }}>📆</div>
-                <div style={{ fontSize:13, fontWeight:600 }}>Cargando reservas...</div>
+                <div style={{ fontSize:13, fontWeight:600 }}>Cargando...</div>
               </div>
             )}
-
-            {!loadingRes && reservas.length === 0 && (
+            {!loadingRes && reservas.length===0 && (
               <div style={{ textAlign:'center', padding:'48px 0', color:C.muted }}>
                 <div style={{ fontSize:40, marginBottom:10 }}>📆</div>
                 <div style={{ fontWeight:600 }}>Sin reservas</div>
               </div>
             )}
-
-            {!loadingRes && reservas.length > 0 && (
+            {!loadingRes && reservas.length>0 && (
               <>
-                {/* Sin resultados tras filtro */}
-                {reservasFiltradas.length === 0 && (
+                {reservasFiltradas.length===0 && (
                   <div style={{ textAlign:'center', padding:'40px 0', color:C.muted }}>
                     <div style={{ fontSize:32, marginBottom:8 }}>🔍</div>
                     <div style={{ fontWeight:600, marginBottom:8 }}>Sin resultados</div>
-                    <button onClick={() => { setFiltroProp('todas'); setFiltroEstado('todas') }}
+                    <button onClick={()=>{ setFiltroProp('todas'); setFiltroEstado('todas'); setRangoId('todo') }}
                       style={{ padding:'8px 18px', borderRadius:10, border:`1px solid ${C.border}`, background:'white', color:C.primary, fontSize:13, fontWeight:600, cursor:'pointer' }}>
                       Quitar filtros
                     </button>
                   </div>
                 )}
-
-                {reservasFiltradas.length > 0 && (
+                {reservasFiltradas.length>0 && (
                   <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
                     <Seccion titulo="🔜 Próximas" items={proximas.length} defaultOpen={true}>
                       <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
-                        {proximas.map(s => <SesionCard key={s.id} s={s} {...cardProps} />)}
+                        {proximas.map(s=><SesionCard key={s.id} s={s} {...cardProps} />)}
                       </div>
                     </Seccion>
                     <Seccion titulo="📅 Hoy" items={deHoy.length} defaultOpen={true}>
                       <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
-                        {deHoy.map(s => <SesionCard key={s.id} s={s} {...cardProps} />)}
+                        {deHoy.map(s=><SesionCard key={s.id} s={s} {...cardProps} />)}
                       </div>
                     </Seccion>
                     <Seccion titulo="🕐 Recientes" items={recientes.length} defaultOpen={false}>
                       <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
-                        {recientes.map(s => <SesionCard key={s.id} s={s} compact {...cardProps} />)}
+                        {recientes.map(s=><SesionCard key={s.id} s={s} compact {...cardProps} />)}
                       </div>
                     </Seccion>
                   </div>
@@ -420,18 +483,18 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
           </div>
         )}
 
-        {tab === 'finanzas' && <ContabilidadTab token={token} />}
+        {tab==='finanzas' && <ContabilidadTab token={token} />}
 
-        {tab === 'docs' && (
+        {tab==='docs' && (
           <div>
-            <p style={{ fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.5 }}>Fotografía o sube facturas, albaranes y tickets. La IA los analiza y genera el apunte contable.</p>
-            <EscanerDocumento token={token} onGuardado={() => {}} />
+            <p style={{ fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.5 }}>Fotografía o sube facturas. La IA los analiza y genera el apunte contable.</p>
+            <EscanerDocumento token={token} onGuardado={()=>{}} />
           </div>
         )}
 
-        {tab === 'acceso' && (
+        {tab==='acceso' && (
           <div>
-            <p style={{ fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.5 }}>Instrucciones de acceso para cada piso. La limpiadora las verá antes de cada sesión.</p>
+            <p style={{ fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.5 }}>Instrucciones de acceso para cada piso.</p>
             {propiedades.map((p:any) => (
               <AccesoPropiedad key={p.id} propiedadId={p.id} propiedadNombre={p.nombre} token={token}
                 instruccionesIniciales={p.instrucciones_acceso||''} tipoAccesoInicial={p.tipo_acceso||'llave'}
@@ -440,7 +503,7 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
           </div>
         )}
 
-        {tab === 'chat' && (
+        {tab==='chat' && (
           <div style={{ margin:'-14px', height:'calc(100vh - 64px)' }}>
             <ChatSesionPropietario token={token} sesionId={null} miNombre={cliente.nombre}
               titulo="Chat con la empresa" height="calc(100vh - 64px)" />
@@ -449,8 +512,8 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
       </div>
 
       {quejaModal && (
-        <QuejaModal sesion={quejaModal} token={token} onClose={() => setQueja(null)}
-          onSent={() => { setQuejaEnviada(s => new Set([...s, quejaModal.id])); setQueja(null) }} />
+        <QuejaModal sesion={quejaModal} token={token} onClose={()=>setQueja(null)}
+          onSent={()=>{ setQuejaEnviada(s=>new Set([...s,quejaModal.id])); setQueja(null) }} />
       )}
       {firmaModal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:150, padding:16 }}>
@@ -461,7 +524,7 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
                   body: JSON.stringify({ sesion_id:firmaModal.sesion_id, firma_svg:svg, firmante_nombre:nombre }) })
                 setFirma(null)
               }}
-              onCancelar={() => setFirma(null)} />
+              onCancelar={()=>setFirma(null)} />
           </div>
         </div>
       )}
