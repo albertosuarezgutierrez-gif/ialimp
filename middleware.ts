@@ -8,6 +8,7 @@ const PUBLIC_PATHS = [
   '/api/leads', '/api/propietario', '/propietario',
   '/api/superadmin/login', '/superadmin',
   '/api/cotizador',
+  '/propuesta',
 ]
 
 const SUPERADMIN_PATHS = ['/superadmin', '/api/superadmin']
