@@ -269,12 +269,12 @@ No menciones competidores. No uses exclamaciones. Responde SOLO con el texto de 
 
     // ── Crear alerta para coordinadora ───────────────────────────────
     await prisma.$executeRaw(Prisma.sql`
-      INSERT INTO alertas (empresa_id, tipo, mensaje, referencia_id, leida)
+      INSERT INTO alertas (empresa_id, tipo, titulo, descripcion, leida)
       VALUES (
         ${empresa_id}::uuid,
         'propuesta_generada',
-        ${`✨ Propuesta generada para ${lead.nombre} (${lead.precio_estimado ? lead.precio_estimado + '€/mes' : 'precio a confirmar'})`},
-        ${lead_id}::uuid,
+        ${`✨ Propuesta: ${lead.nombre}`},
+        ${`${lead.precio_estimado ? lead.precio_estimado + '€/mes' : 'precio a confirmar'} · generada automáticamente`},
         false
       )
     `)
