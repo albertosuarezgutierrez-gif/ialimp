@@ -21,6 +21,18 @@ const TIPO_ICON: Record<string, string> = {
   comunidad: '🏢', obra: '🏗️', mantenimiento: '🔧'
 }
 
+const NAV_LINKS = [
+  { href: '/admin/clientes', icon: '👥',  label: 'Clientes'   },
+  { href: '/admin/crm',      icon: '📋',  label: 'Agenda'     },
+  { href: '/admin/stock',    icon: '📦',  label: 'Stock'      },
+  { href: '/admin/ia',       icon: '🤖',  label: 'IA'         },
+  { href: '/admin/rrhh',     icon: '👤',  label: 'RRHH'       },
+  { href: '/admin/facturas', icon: '🧾',  label: 'Facturas'   },
+  { href: '/admin',          icon: '⚙️', label: 'Config'     },
+  { href: '/admin/usuarios', icon: '🔐',  label: 'Usuarios'   },
+  { href: '/admin/cotizador',icon: '💰',  label: 'Cotizador'  },
+]
+
 export default function DashboardClient({
   empresa, sesionesIniciales, conexiones, clientes, limpiadoras, today
 }: Props) {
@@ -28,6 +40,7 @@ export default function DashboardClient({
   const [tab, setTab]             = useState<'hoy'|'pms'>('hoy')
   const [showNueva, setShowNueva] = useState(false)
   const [fecha, setFecha]         = useState(today)
+  const [menuOpen, setMenuOpen]   = useState(false)
 
   const pendientes  = sesiones.filter(s => !s.started_at)
   const enCurso     = sesiones.filter(s => s.started_at && !s.completed_at)
@@ -66,24 +79,56 @@ export default function DashboardClient({
       {/* Header */}
       <header className="bg-indigo-600 text-white px-4 py-3">
         <div className="flex items-center justify-between">
+          {/* Brand */}
           <div>
             <h1 className="font-bold text-lg leading-tight">ialimp</h1>
-            <p className="text-indigo-200 text-xs">{empresa.nombre}</p>
+            <p className="text-indigo-200 text-xs truncate max-w-[140px]">{empresa.nombre}</p>
           </div>
+
+          {/* Right: alertas + hamburger */}
           <div className="flex items-center gap-3">
-            <a href="/admin/clientes" className="text-indigo-200 hover:text-white text-sm">👥</a>
-            <a href="/admin/crm" className="text-indigo-200 hover:text-white text-sm">📋</a>
-            <a href="/admin/stock" className="text-indigo-200 hover:text-white text-sm">📦</a>
-            <a href="/admin/ia" className="text-indigo-200 hover:text-white text-sm">🤖</a>
-            <a href="/admin/rrhh" className="text-indigo-200 hover:text-white text-sm">👤</a>
             <AlertasBadge />
-            <a href="/admin/facturas" className="text-indigo-200 hover:text-white text-sm">🧾</a>
-            <a href="/admin" className="text-indigo-200 hover:text-white text-sm">⚙️</a>
-            <a href="/admin/usuarios" className="text-indigo-200 hover:text-white text-sm">🔐</a>
-            <a href="/admin/cotizador" className="text-indigo-200 hover:text-white text-sm">💰</a>
-            <button onClick={logout} className="text-indigo-200 hover:text-white text-sm">Salir</button>
+            <button
+              onClick={() => setMenuOpen(o => !o)}
+              className="text-indigo-200 hover:text-white text-xl leading-none"
+              aria-label="Menú"
+            >
+              ☰
+            </button>
           </div>
         </div>
+
+        {/* Slide-down nav — visible when menuOpen */}
+        {menuOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setMenuOpen(false)}
+            />
+            <div className="absolute left-0 right-0 top-[56px] z-50 bg-indigo-700 shadow-lg px-4 py-3">
+              <div className="grid grid-cols-4 gap-2">
+                {NAV_LINKS.map(l => (
+                  <a
+                    key={l.href}
+                    href={l.href}
+                    className="flex flex-col items-center gap-1 py-2 rounded-xl hover:bg-indigo-600 transition"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <span className="text-xl">{l.icon}</span>
+                    <span className="text-indigo-200 text-[10px] text-center leading-tight">{l.label}</span>
+                  </a>
+                ))}
+                <button
+                  onClick={logout}
+                  className="flex flex-col items-center gap-1 py-2 rounded-xl hover:bg-indigo-600 transition col-span-1"
+                >
+                  <span className="text-xl">🚪</span>
+                  <span className="text-indigo-200 text-[10px]">Salir</span>
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </header>
 
       {/* Stats */}
