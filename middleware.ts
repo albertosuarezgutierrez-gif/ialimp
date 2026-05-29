@@ -15,6 +15,12 @@ const SUPERADMIN_PATHS = ['/superadmin', '/api/superadmin']
 
 // Módulos que protege cada ruta del panel admin
 const MODULO_MAP: Record<string, string> = {
+  // Módulos nuevos (fusionados)
+  '/admin/equipo':        'rrhh',
+  '/admin/negocio':       'clientes',
+  '/admin/materiales':    'stock',
+  '/admin/configuracion': 'configuracion',
+  // Rutas legacy (siguen funcionando)
   '/admin/clientes':    'clientes',
   '/admin/rrhh':        'rrhh',
   '/admin/lenceria':    'lenceria',
