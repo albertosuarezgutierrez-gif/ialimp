@@ -26,7 +26,6 @@ export default function CaracteristicasApartamento({ form, onChange }: Props) {
   const camas135 = Number(form.num_camas_135 || 0)
   const camas90  = Number(form.num_camas_90 || 0)
   const literas  = Number(form.num_literas || 0)       // cada litera = 2 camas de 90
-  const sofas    = Number(form.num_camas_sofas || 0)
   const banos    = Number(form.num_banos || 1)
 
   // Total sábanas de 90: camas individuales + literas × 2
@@ -35,7 +34,6 @@ export default function CaracteristicasApartamento({ form, onChange }: Props) {
   const material = {
     '🛏️ Sábanas 135cm':         camas135,
     '🛏️ Sábanas 90cm':          total90,
-    '🛋️ Fundas sofá-cama':      sofas,
     '🛁 Toallas baño':           huesps,
     '🤝 Toallas mano':           huesps,
     '🦶 Toallas pie ducha':      huesps,
@@ -65,8 +63,7 @@ export default function CaracteristicasApartamento({ form, onChange }: Props) {
           {[
             { key: 'num_camas_135', label: '🛏️ Camas 135cm',  desc: 'Matrimonio / doble' },
             { key: 'num_camas_90',  label: '🛏️ Camas 90cm',   desc: 'Individual' },
-            { key: 'num_camas_sofas', label: '🛋️ Sofá-cama',  desc: 'Con funda propia' },
-            { key: 'num_literas',   label: '🪜 Literas',       desc: 'Cada litera = 2 × 90cm' },
+              { key: 'num_literas',   label: '🪜 Literas',       desc: 'Cada litera = 2 × 90cm' },
           ].map(c => (
             <div key={c.key} className="bg-white rounded-xl p-2.5 border border-amber-100">
               <label className="block text-xs font-semibold text-gray-700 mb-0.5">{c.label}</label>
@@ -80,7 +77,7 @@ export default function CaracteristicasApartamento({ form, onChange }: Props) {
         </div>
 
         {/* Resumen sábanas en tiempo real */}
-        {(camas135 + total90 + sofas) > 0 && (
+        {(camas135 + total90) > 0 && (
           <div className="mt-2 bg-amber-100 rounded-lg px-3 py-2 flex gap-4 text-xs">
             {camas135 > 0 && (
               <span className="text-amber-800 font-semibold">
@@ -91,11 +88,6 @@ export default function CaracteristicasApartamento({ form, onChange }: Props) {
               <span className="text-amber-800 font-semibold">
                 🛏️ {total90} juego{total90 > 1 ? 's' : ''} 90cm
                 {literas > 0 && <span className="font-normal text-amber-600"> ({literas} litera{literas > 1 ? 's' : ''} × 2)</span>}
-              </span>
-            )}
-            {sofas > 0 && (
-              <span className="text-amber-800 font-semibold">
-                🛋️ {sofas} funda{sofas > 1 ? 's' : ''} sofá
               </span>
             )}
           </div>
@@ -173,7 +165,7 @@ export default function CaracteristicasApartamento({ form, onChange }: Props) {
       </div>
 
       {/* Material estimado por limpieza */}
-      {(camas135 + total90 + sofas + banos) > 0 && (
+      {(camas135 + total90 + banos) > 0 && (
         <div className="bg-white rounded-xl p-3 border border-amber-200">
           <p className="text-xs font-semibold text-amber-700 mb-2">📦 Material estimado por limpieza</p>
           <div className="grid grid-cols-2 gap-1">
@@ -189,3 +181,4 @@ export default function CaracteristicasApartamento({ form, onChange }: Props) {
     </div>
   )
 }
+
