@@ -1,6 +1,6 @@
 
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import FirmaPad from '@/components/FirmaPad'
 import ChatSesionPropietario from '@/components/ChatSesionPropietario'
 import ChecklistPropietario from '@/components/ChecklistPropietario'
@@ -18,79 +18,70 @@ const C = {
 }
 
 const ESTADO_CFG: Record<string,any> = {
-  completada: { label: '✅ Completada', bg: C.okBg,   color: C.ok,   border: C.okBorder,  dot: '#22c55e' },
-  en_curso:   { label: '🧹 Limpiando',  bg: C.infoBg, color: C.info, border: C.infoBorder, dot: '#3b82f6' },
-  pendiente:  { label: '⏳ Pendiente',  bg: C.bg,     color: C.muted,border: C.border,      dot: '#94a3b8' },
+  completada: { label:'✅ Completada', bg:C.okBg,   color:C.ok,   border:C.okBorder,  dot:'#22c55e' },
+  en_curso:   { label:'🧹 Limpiando',  bg:C.infoBg, color:C.info, border:C.infoBorder, dot:'#3b82f6' },
+  pendiente:  { label:'⏳ Pendiente',  bg:C.bg,     color:C.muted,border:C.border,      dot:'#94a3b8' },
 }
 
 const MENU_ITEMS = [
-  { id: 'hoy',       icon: '🏠', label: 'Hoy' },
-  { id: 'reservas',  icon: '📆', label: 'Reservas' },
-  { id: 'finanzas',  icon: '📊', label: 'Finanzas' },
-  { id: 'docs',      icon: '📄', label: 'Documentos' },
-  { id: 'acceso',    icon: '🔑', label: 'Acceso' },
-  { id: 'chat',      icon: '💬', label: 'Chat' },
+  { id:'hoy',      icon:'🏠', label:'Hoy' },
+  { id:'reservas', icon:'📆', label:'Reservas' },
+  { id:'finanzas', icon:'📊', label:'Finanzas' },
+  { id:'docs',     icon:'📄', label:'Documentos' },
+  { id:'acceso',   icon:'🔑', label:'Acceso' },
+  { id:'chat',     icon:'💬', label:'Chat' },
 ]
 
-function Stars({ value, onChange }: { value: number; onChange?: (n:number)=>void }) {
+const ESTADO_FILTROS = [
+  { id:'todas',     label:'Todas' },
+  { id:'pendiente', label:'⏳ Pendiente' },
+  { id:'en_curso',  label:'🧹 En curso' },
+  { id:'completada',label:'✅ Hecha' },
+]
+
+function Stars({ value, onChange }: { value:number; onChange?:(n:number)=>void }) {
   return (
     <div style={{ display:'flex', gap:4 }}>
       {[1,2,3,4,5].map(i => (
         <button key={i} type="button" onClick={() => onChange?.(i)}
-          style={{ background:'none', border:'none', cursor: onChange?'pointer':'default', fontSize:24, color: i<=value?'#f59e0b':'#e2e8f0' }}>★</button>
+          style={{ background:'none', border:'none', cursor:onChange?'pointer':'default', fontSize:24, color:i<=value?'#f59e0b':'#e2e8f0' }}>★</button>
       ))}
     </div>
   )
 }
 
 function QuejaModal({ sesion, token, onClose, onSent }: any) {
-  const [desc, setDesc]       = useState('')
-  const [phone, setPhone]     = useState('')
-  const [rating, setRating]   = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
+  const [desc,setDesc]=useState(''); const [phone,setPhone]=useState('')
+  const [rating,setRating]=useState(0); const [loading,setLoading]=useState(false); const [error,setError]=useState('')
   async function enviar(e: React.FormEvent) {
-    e.preventDefault()
-    if (!desc.trim()) { setError('Describe el problema'); return }
+    e.preventDefault(); if (!desc.trim()) { setError('Describe el problema'); return }
     setLoading(true)
-    const r = await fetch(`/api/propietario/${token}/queja`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ sesion_id:sesion.id, descripcion:desc, guest_phone:phone||null, rating:rating||null })
-    })
+    const r = await fetch(`/api/propietario/${token}/queja`, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ sesion_id:sesion.id, descripcion:desc, guest_phone:phone||null, rating:rating||null }) })
     if (r.ok) { onSent() } else { setError('Error al enviar'); setLoading(false) }
   }
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:200, padding:16 }}>
       <div style={{ background:'white', borderRadius:20, width:'100%', maxWidth:480, maxHeight:'88vh', overflowY:'auto' }}>
         <div style={{ padding:'18px 20px 16px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div>
-            <h3 style={{ fontWeight:800, fontSize:17, color:C.text }}>Queja del huésped</h3>
-            <p style={{ fontSize:12, color:C.muted, marginTop:2 }}>{sesion.property_name||sesion.nombre}</p>
-          </div>
+          <div><h3 style={{ fontWeight:800, fontSize:17, color:C.text }}>Queja del huésped</h3>
+            <p style={{ fontSize:12, color:C.muted, marginTop:2 }}>{sesion.property_name||sesion.nombre}</p></div>
           <button onClick={onClose} style={{ background:'none', border:'none', fontSize:22, color:C.muted, cursor:'pointer' }}>✕</button>
         </div>
         <form onSubmit={enviar} style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:16 }}>
-          <div>
-            <label style={{ display:'block', fontSize:12, fontWeight:700, color:C.muted, marginBottom:8 }}>Valoración del huésped</label>
-            <Stars value={rating} onChange={setRating} />
-          </div>
-          <div>
-            <label style={{ display:'block', fontSize:12, fontWeight:700, color:C.muted, marginBottom:6 }}>¿Qué ha dicho el huésped? *</label>
+          <div><label style={{ display:'block', fontSize:12, fontWeight:700, color:C.muted, marginBottom:8 }}>Valoración</label><Stars value={rating} onChange={setRating} /></div>
+          <div><label style={{ display:'block', fontSize:12, fontWeight:700, color:C.muted, marginBottom:6 }}>¿Qué ha dicho el huésped? *</label>
             <textarea value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Ej: El baño no estaba limpio..." rows={4}
-              style={{ width:'100%', border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', fontSize:14, resize:'none', fontFamily:'inherit', outline:'none' }} />
-          </div>
-          <div>
-            <label style={{ display:'block', fontSize:12, fontWeight:700, color:C.muted, marginBottom:6 }}>Teléfono del huésped</label>
+              style={{ width:'100%', border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', fontSize:14, resize:'none', fontFamily:'inherit', outline:'none' }} /></div>
+          <div><label style={{ display:'block', fontSize:12, fontWeight:700, color:C.muted, marginBottom:6 }}>Teléfono del huésped</label>
             <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+34 6xx xxx xxx"
-              style={{ width:'100%', border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', fontSize:14, fontFamily:'inherit', outline:'none' }} />
-          </div>
+              style={{ width:'100%', border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', fontSize:14, fontFamily:'inherit', outline:'none' }} /></div>
           <div style={{ background:C.light, borderRadius:10, padding:'10px 14px', fontSize:12, color:C.brand }}>💡 Sique Brilla recibirá un aviso inmediato.</div>
           {error && <p style={{ color:C.red, fontSize:13 }}>{error}</p>}
           <div style={{ display:'flex', gap:10 }}>
             <button type="button" onClick={onClose} style={{ flex:1, padding:12, borderRadius:10, border:`1px solid ${C.border}`, background:'white', color:C.muted, fontSize:13, cursor:'pointer' }}>Cancelar</button>
             <button type="submit" disabled={loading} style={{ flex:2, padding:12, borderRadius:10, border:'none', background:C.red, color:'white', fontSize:13, fontWeight:700, cursor:'pointer', opacity:loading?0.5:1 }}>
-              {loading?'Enviando...':'⚠️ Enviar queja'}
-            </button>
+              {loading?'Enviando...':'⚠️ Enviar queja'}</button>
           </div>
         </form>
       </div>
@@ -98,9 +89,8 @@ function QuejaModal({ sesion, token, onClose, onSent }: any) {
   )
 }
 
-// ── Tarjeta de reserva reutilizable ──────────────────────────────────
-function SesionCard({ s, token, permisos, onChat, onChecklist, onQueja, quejaEnviada, onFirma, compact = false }: any) {
-  const e    = ESTADO_CFG[s.estado_hoy || s.estado] || ESTADO_CFG.pendiente
+function SesionCard({ s, token, permisos, onChat, onChecklist, onQueja, quejaEnviada, compact=false }: any) {
+  const e    = ESTADO_CFG[s.estado_hoy||s.estado] || ESTADO_CFG.pendiente
   const qEnv = quejaEnviada?.has(s.id)
   const sid  = s.sesion_id || s.id
   const nombre = s.nombre || s.propiedad_nombre || s.property_name || '—'
@@ -109,49 +99,37 @@ function SesionCard({ s, token, permisos, onChat, onChecklist, onQueja, quejaEnv
   const fmtFecha = (d: string) => {
     if (!d) return ''
     const dt = new Date(d + 'T12:00:00')
-    const hoy = new Date()
-    const dif = Math.round((dt.getTime() - hoy.setHours(0,0,0,0)) / 86400000)
+    const hoy = new Date(); hoy.setHours(0,0,0,0)
+    const dif = Math.round((dt.getTime() - hoy.getTime()) / 86400000)
     if (dif === 0) return 'Hoy'
     if (dif === 1) return 'Mañana'
     if (dif === -1) return 'Ayer'
+    if (dif > 0 && dif < 7) return `En ${dif} días`
     return dt.toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' })
   }
 
   return (
     <div style={{ background:'white', borderRadius:14, border:`1px solid ${C.border}`, overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
-      {/* Barra estado */}
       <div style={{ background:e.bg, borderBottom:`1px solid ${e.border}`, padding:'8px 14px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
           <div style={{ width:7, height:7, borderRadius:'50%', background:e.dot }} />
           <span style={{ fontSize:12, fontWeight:700, color:e.color }}>{e.label}</span>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-          {(s.hora_completada || s.completed_at) && !compact &&
-            <span style={{ fontSize:11, color:e.color, fontWeight:600 }}>
-              {s.hora_completada || new Date(s.completed_at).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}
-            </span>
-          }
+          {s.session_date && <span style={{ fontSize:11, color:C.muted, fontWeight:600 }}>{fmtFecha(s.session_date)}</span>}
           {sid && puedeVerLimpieza && (
-            <button onClick={() => onChecklist?.({ id:sid, titulo:nombre })}
+            <button onClick={() => onChecklist?.({id:sid, titulo:nombre})}
               style={{ padding:'3px 8px', borderRadius:7, border:`1px solid ${C.border}`, background:'white', color:C.muted, fontSize:12, cursor:'pointer' }}>🔍</button>
           )}
           {sid && (
-            <button onClick={() => onChat?.({ id:sid, titulo:nombre })}
+            <button onClick={() => onChat?.({id:sid, titulo:nombre})}
               style={{ padding:'3px 8px', borderRadius:7, border:`1px solid ${C.brand}`, background:C.light, color:C.brand, fontSize:12, fontWeight:700, cursor:'pointer' }}>💬</button>
           )}
         </div>
       </div>
-
-      {/* Cuerpo */}
       <div style={{ padding:'12px 14px' }}>
-        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8, marginBottom:2 }}>
-          <div style={{ fontWeight:700, fontSize:15, color:C.text }}>{nombre}</div>
-          {!compact && s.session_date && (
-            <div style={{ fontSize:11, color:C.muted, fontWeight:600, flexShrink:0, marginTop:2 }}>{fmtFecha(s.session_date)}</div>
-          )}
-        </div>
+        <div style={{ fontWeight:700, fontSize:15, color:C.text, marginBottom:2 }}>{nombre}</div>
         {s.direccion && <div style={{ fontSize:12, color:C.muted, marginBottom:6 }}>📍 {s.direccion}</div>}
-
         {(s.hora_checkout || s.hora_checkin_siguiente) && (
           <div style={{ display:'flex', gap:8, alignItems:'center', background:C.light, borderRadius:8, padding:'5px 10px', marginBottom:8 }}>
             {s.hora_checkout && <span style={{ fontSize:11, color:C.primary, fontWeight:600 }}>🚪 {String(s.hora_checkout).slice(0,5)}</span>}
@@ -159,63 +137,98 @@ function SesionCard({ s, token, permisos, onChat, onChecklist, onQueja, quejaEnv
             {s.hora_checkin_siguiente && <span style={{ fontSize:11, color:C.primary, fontWeight:600 }}>🔑 {String(s.hora_checkin_siguiente).slice(0,5)}</span>}
           </div>
         )}
-
-        {s.limpiadora_nombre && <div style={{ fontSize:12, color:C.muted, marginBottom:compact?0:6 }}>🧹 {s.limpiadora_nombre}</div>}
-        {s.num_huespedes > 0 && <div style={{ fontSize:12, color:C.muted }}>👥 {s.num_huespedes} huéspedes</div>}
-
-        {!compact && s.foto_url && (
-          <button style={{ width:'100%', height:140, borderRadius:10, backgroundImage:`url(${s.foto_url})`, backgroundSize:'cover', backgroundPosition:'center', border:`1px solid ${C.border}`, cursor:'pointer', display:'block', marginTop:8 }} />
-        )}
-
-        {!compact && s.estado_hoy === 'completada' && (
-          qEnv ? (
-            <div style={{ marginTop:8, background:C.warnBg, border:`1px solid ${C.warnBorder}`, borderRadius:10, padding:'8px 14px', fontSize:12, color:C.warn, fontWeight:600, textAlign:'center' }}>
-              ⚠️ Queja enviada — Sique Brilla avisado
-            </div>
-          ) : (
-            <button onClick={() => onQueja?.(s)}
-              style={{ marginTop:8, width:'100%', padding:8, borderRadius:10, border:`1px solid ${C.redBg}`, background:'white', color:C.red, fontSize:12, fontWeight:700, cursor:'pointer' }}>
-              ⚠️ El huésped tiene una queja
-            </button>
-          )
+        {s.limpiadora_nombre && <div style={{ fontSize:12, color:C.muted }}>{compact ? '' : '🧹 '}{s.limpiadora_nombre}</div>}
+        {!compact && s.num_huespedes > 0 && <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>👥 {s.num_huespedes} huéspedes</div>}
+        {!compact && (s.estado_hoy==='completada'||s.estado==='completada') && (
+          qEnv
+            ? <div style={{ marginTop:8, background:C.warnBg, border:`1px solid ${C.warnBorder}`, borderRadius:10, padding:'8px 14px', fontSize:12, color:C.warn, fontWeight:600, textAlign:'center' }}>⚠️ Queja enviada</div>
+            : <button onClick={() => onQueja?.(s)} style={{ marginTop:8, width:'100%', padding:8, borderRadius:10, border:`1px solid ${C.redBg}`, background:'white', color:C.red, fontSize:12, fontWeight:700, cursor:'pointer' }}>⚠️ El huésped tiene una queja</button>
         )}
       </div>
     </div>
   )
 }
 
-// ── Sección con título colapsable ────────────────────────────────────
-function Seccion({ titulo, items, defaultOpen = true, children }: any) {
+function Seccion({ titulo, items, defaultOpen=true, children }: any) {
   const [open, setOpen] = useState(defaultOpen)
+  if (items === 0) return null
   return (
     <div>
       <button onClick={() => setOpen(o=>!o)}
         style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0 8px', background:'transparent', border:'none', cursor:'pointer', fontFamily:'inherit' }}>
         <span style={{ fontSize:13, fontWeight:800, color:C.muted, textTransform:'uppercase', letterSpacing:'0.05em' }}>
-          {titulo} <span style={{ fontWeight:500, color:C.muted, marginLeft:4 }}>({items})</span>
+          {titulo} <span style={{ fontWeight:500, marginLeft:4 }}>({items})</span>
         </span>
-        <span style={{ color:C.muted, fontSize:14, transition:'transform .2s', display:'inline-block', transform: open?'rotate(0)':'rotate(-90deg)' }}>▾</span>
+        <span style={{ color:C.muted, fontSize:14, display:'inline-block', transform:open?'rotate(0)':'rotate(-90deg)', transition:'transform .2s' }}>▾</span>
       </button>
       {open && children}
     </div>
   )
 }
 
-export default function PropietarioClient({ cliente, propiedades, historial, token, permisos }: any) {
-  const [tab, setTab]       = useState<'hoy'|'reservas'|'finanzas'|'docs'|'acceso'|'chat'>('hoy')
-  const [menuOpen, setMenu] = useState(false)
-  const [quejaModal, setQueja]            = useState<any>(null)
-  const [firmaModal, setFirma]            = useState<any>(null)
-  const [quejaEnviada, setQuejaEnviada]   = useState<Set<string>>(new Set())
-  const [chatSesion, setChatSesion]       = useState<{id:string;titulo:string}|null>(null)
-  const [checklistSesion, setChecklist]   = useState<{id:string;titulo:string}|null>(null)
+// ── Barra de filtros ─────────────────────────────────────────────────
+function FiltrosBarra({ propiedades, filtroProp, setFiltroProp, filtroEstado, setFiltroEstado, total, filtradas }: any) {
+  return (
+    <div style={{ background:'white', borderBottom:`1px solid ${C.border}`, padding:'10px 14px', display:'flex', flexDirection:'column', gap:8 }}>
+      {/* Chips propiedad */}
+      <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:2 }}>
+        <button onClick={() => setFiltroProp('todas')}
+          style={{ flexShrink:0, padding:'5px 12px', borderRadius:20, border:`1.5px solid ${filtroProp==='todas'?C.primary:C.border}`,
+            background:filtroProp==='todas'?C.primary:'white', color:filtroProp==='todas'?'white':C.text,
+            fontSize:12, fontWeight:filtroProp==='todas'?700:500, cursor:'pointer', fontFamily:'inherit' }}>
+          Todas
+        </button>
+        {propiedades.map((p:string) => (
+          <button key={p} onClick={() => setFiltroProp(p)}
+            style={{ flexShrink:0, padding:'5px 12px', borderRadius:20, border:`1.5px solid ${filtroProp===p?C.primary:C.border}`,
+              background:filtroProp===p?C.primary:'white', color:filtroProp===p?'white':C.text,
+              fontSize:12, fontWeight:filtroProp===p?700:500, cursor:'pointer', fontFamily:'inherit',
+              maxWidth:140, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+            {p}
+          </button>
+        ))}
+      </div>
+      {/* Chips estado */}
+      <div style={{ display:'flex', gap:6, overflowX:'auto' }}>
+        {ESTADO_FILTROS.map(f => (
+          <button key={f.id} onClick={() => setFiltroEstado(f.id)}
+            style={{ flexShrink:0, padding:'4px 10px', borderRadius:20,
+              border:`1.5px solid ${filtroEstado===f.id?C.brand:C.border}`,
+              background:filtroEstado===f.id?C.light:'white',
+              color:filtroEstado===f.id?C.brand:C.muted,
+              fontSize:11, fontWeight:filtroEstado===f.id?700:400, cursor:'pointer', fontFamily:'inherit' }}>
+            {f.label}
+          </button>
+        ))}
+        {/* Contador */}
+        {(filtroProp!=='todas' || filtroEstado!=='todas') && (
+          <span style={{ marginLeft:'auto', fontSize:11, color:C.muted, alignSelf:'center', flexShrink:0 }}>
+            {filtradas}/{total}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
 
-  // Reservas — carga lazy al entrar en tab
-  const [reservas,      setReservas]      = useState<any[]>([])
-  const [loadingReservas, setLoadingRes]  = useState(false)
+export default function PropietarioClient({ cliente, propiedades, historial, token, permisos }: any) {
+  const [tab, setTab]     = useState<'hoy'|'reservas'|'finanzas'|'docs'|'acceso'|'chat'>('hoy')
+  const [menuOpen, setMenu] = useState(false)
+  const [quejaModal, setQueja]          = useState<any>(null)
+  const [firmaModal, setFirma]          = useState<any>(null)
+  const [quejaEnviada, setQuejaEnviada] = useState<Set<string>>(new Set())
+  const [chatSesion, setChatSesion]     = useState<{id:string;titulo:string}|null>(null)
+  const [checklistSesion,setChecklist]  = useState<{id:string;titulo:string}|null>(null)
+
+  // Reservas
+  const [reservas, setReservas]         = useState<any[]>([])
+  const [loadingRes, setLoadingRes]     = useState(false)
+  // Filtros
+  const [filtroProp,   setFiltroProp]   = useState('todas')
+  const [filtroEstado, setFiltroEstado] = useState('todas')
 
   useEffect(() => {
-    if (tab === 'reservas' && reservas.length === 0 && !loadingReservas) {
+    if (tab === 'reservas' && reservas.length === 0 && !loadingRes) {
       setLoadingRes(true)
       fetch(`/api/propietario/${token}/sesiones`)
         .then(r => r.json())
@@ -223,18 +236,37 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
     }
   }, [tab])
 
+  // Propiedades únicas para chips
+  const propiedadesUnicas = useMemo(() => {
+    const set = new Set<string>()
+    reservas.forEach(s => {
+      const n = s.propiedad_nombre || s.property_name
+      if (n && n !== 'None') set.add(n)
+    })
+    return Array.from(set).sort()
+  }, [reservas])
+
+  // Reservas filtradas
+  const reservasFiltradas = useMemo(() => {
+    return reservas.filter(s => {
+      const nombre = s.propiedad_nombre || s.property_name || ''
+      if (filtroProp !== 'todas' && nombre !== filtroProp) return false
+      if (filtroEstado !== 'todas' && s.estado !== filtroEstado) return false
+      return true
+    })
+  }, [reservas, filtroProp, filtroEstado])
+
+  const hoy      = new Date().toISOString().split('T')[0]
+  const proximas  = reservasFiltradas.filter(s => s.session_date > hoy)
+  const deHoy     = reservasFiltradas.filter(s => s.session_date === hoy)
+  const recientes = reservasFiltradas.filter(s => s.session_date < hoy)
+    .sort((a,b) => b.session_date.localeCompare(a.session_date))
+
   const puedeVerLimpieza = permisos?.ver_checklist || permisos?.ver_fotos
-  const completadas = propiedades.filter((p:any) => p.estado_hoy === 'completada').length
-  const total       = propiedades.length
+  const completadas = propiedades.filter((p:any) => p.estado_hoy==='completada').length
   const currentItem = MENU_ITEMS.find(m => m.id === tab)
+  const hayFiltro   = filtroProp !== 'todas' || filtroEstado !== 'todas'
 
-  // Clasificar reservas en secciones
-  const hoy = new Date().toISOString().split('T')[0]
-  const proximas  = reservas.filter(s => s.session_date > hoy).sort((a,b) => a.session_date.localeCompare(b.session_date))
-  const deHoy     = reservas.filter(s => s.session_date === hoy)
-  const recientes = reservas.filter(s => s.session_date < hoy).sort((a,b) => b.session_date.localeCompare(a.session_date))
-
-  // Pantalla completa chat
   if (chatSesion) return (
     <div style={{ fontFamily:"'DM Sans',-apple-system,sans-serif", minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
@@ -242,8 +274,6 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
         titulo={chatSesion.titulo} height="100vh" onClose={() => setChatSesion(null)} />
     </div>
   )
-
-  // Pantalla completa checklist
   if (checklistSesion) return (
     <div style={{ fontFamily:"'DM Sans',-apple-system,sans-serif", minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
@@ -252,11 +282,11 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
     </div>
   )
 
-  const chatProps = { token, permisos, onChat:setChatSesion, onChecklist:setChecklist, onQueja:setQueja, quejaEnviada }
+  const cardProps = { token, permisos, onChat:setChatSesion, onChecklist:setChecklist, onQueja:setQueja, quejaEnviada }
 
   return (
     <div style={{ fontFamily:"'DM Sans',-apple-system,sans-serif", background:C.bg, minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
-      <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
+      <style>{`*{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{display:none}`}</style>
 
       {/* Header */}
       <div style={{ background:C.primary, padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', position:'sticky', top:0, zIndex:50 }}>
@@ -269,7 +299,7 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           <div style={{ background:'rgba(255,255,255,0.15)', borderRadius:8, padding:'4px 10px', fontSize:12, color:'white', fontWeight:700 }}>
-            {completadas}/{total} ✓
+            {completadas}/{propiedades.length} ✓
           </div>
           <button onClick={() => setMenu(true)}
             style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:8, width:36, height:36, cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4 }}>
@@ -277,6 +307,16 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
           </button>
         </div>
       </div>
+
+      {/* Filtros — solo en tab reservas */}
+      {tab === 'reservas' && !loadingRes && reservas.length > 0 && (
+        <FiltrosBarra
+          propiedades={propiedadesUnicas}
+          filtroProp={filtroProp} setFiltroProp={setFiltroProp}
+          filtroEstado={filtroEstado} setFiltroEstado={setFiltroEstado}
+          total={reservas.length} filtradas={reservasFiltradas.length}
+        />
+      )}
 
       {/* Drawer */}
       {menuOpen && (
@@ -295,9 +335,9 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
             <nav style={{ flex:1, padding:'10px 0', overflowY:'auto' }}>
               {MENU_ITEMS.map(item => (
                 <button key={item.id} onClick={() => { setTab(item.id as any); setMenu(false) }}
-                  style={{ width:'100%', padding:'13px 20px', border:'none', background: tab===item.id?C.light:'transparent', display:'flex', alignItems:'center', gap:12, cursor:'pointer', borderLeft:`3px solid ${tab===item.id?C.primary:'transparent'}`, fontFamily:'inherit' }}>
+                  style={{ width:'100%', padding:'13px 20px', border:'none', background:tab===item.id?C.light:'transparent', display:'flex', alignItems:'center', gap:12, cursor:'pointer', borderLeft:`3px solid ${tab===item.id?C.primary:'transparent'}`, fontFamily:'inherit' }}>
                   <span style={{ fontSize:18, width:24, textAlign:'center' }}>{item.icon}</span>
-                  <span style={{ fontSize:14, fontWeight: tab===item.id?700:500, color: tab===item.id?C.primary:C.text }}>{item.label}</span>
+                  <span style={{ fontSize:14, fontWeight:tab===item.id?700:500, color:tab===item.id?C.primary:C.text }}>{item.label}</span>
                   {tab===item.id && <span style={{ marginLeft:'auto', width:6, height:6, borderRadius:'50%', background:C.primary }} />}
                 </button>
               ))}
@@ -312,7 +352,7 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
       {/* Contenido */}
       <div style={{ padding:14 }}>
 
-        {/* ── HOY ── */}
+        {/* HOY */}
         {tab === 'hoy' && (
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
             {propiedades.length === 0 && (
@@ -321,93 +361,77 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
                 <div style={{ fontWeight:600 }}>Sin limpiezas hoy</div>
               </div>
             )}
-            {propiedades.map((p:any) => (
-              <SesionCard key={p.id} s={p} {...chatProps}
-                onChat={setChatSesion} onChecklist={setChecklist}
-                onFirma={setFirma} />
-            ))}
+            {propiedades.map((p:any) => <SesionCard key={p.id} s={p} {...cardProps} />)}
           </div>
         )}
 
-        {/* ── RESERVAS ── */}
+        {/* RESERVAS */}
         {tab === 'reservas' && (
           <div>
-            {loadingReservas && (
+            {loadingRes && (
               <div style={{ textAlign:'center', padding:'40px 0', color:C.muted }}>
                 <div style={{ fontSize:28, marginBottom:8 }}>📆</div>
                 <div style={{ fontSize:13, fontWeight:600 }}>Cargando reservas...</div>
               </div>
             )}
 
-            {!loadingReservas && reservas.length === 0 && (
+            {!loadingRes && reservas.length === 0 && (
               <div style={{ textAlign:'center', padding:'48px 0', color:C.muted }}>
                 <div style={{ fontSize:40, marginBottom:10 }}>📆</div>
                 <div style={{ fontWeight:600 }}>Sin reservas</div>
               </div>
             )}
 
-            {!loadingReservas && reservas.length > 0 && (
-              <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
-
-                {/* Próximas */}
-                {proximas.length > 0 && (
-                  <Seccion titulo="🔜 Próximas" items={proximas.length} defaultOpen={true}>
-                    <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
-                      {proximas.map(s => (
-                        <SesionCard key={s.id} s={s} compact={false} {...chatProps}
-                          onChat={setChatSesion} onChecklist={setChecklist} />
-                      ))}
-                    </div>
-                  </Seccion>
+            {!loadingRes && reservas.length > 0 && (
+              <>
+                {/* Sin resultados tras filtro */}
+                {reservasFiltradas.length === 0 && (
+                  <div style={{ textAlign:'center', padding:'40px 0', color:C.muted }}>
+                    <div style={{ fontSize:32, marginBottom:8 }}>🔍</div>
+                    <div style={{ fontWeight:600, marginBottom:8 }}>Sin resultados</div>
+                    <button onClick={() => { setFiltroProp('todas'); setFiltroEstado('todas') }}
+                      style={{ padding:'8px 18px', borderRadius:10, border:`1px solid ${C.border}`, background:'white', color:C.primary, fontSize:13, fontWeight:600, cursor:'pointer' }}>
+                      Quitar filtros
+                    </button>
+                  </div>
                 )}
 
-                {/* Hoy */}
-                {deHoy.length > 0 && (
-                  <Seccion titulo="📅 Hoy" items={deHoy.length} defaultOpen={true}>
-                    <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
-                      {deHoy.map(s => (
-                        <SesionCard key={s.id} s={s} compact={false} {...chatProps}
-                          onChat={setChatSesion} onChecklist={setChecklist} />
-                      ))}
-                    </div>
-                  </Seccion>
+                {reservasFiltradas.length > 0 && (
+                  <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
+                    <Seccion titulo="🔜 Próximas" items={proximas.length} defaultOpen={true}>
+                      <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
+                        {proximas.map(s => <SesionCard key={s.id} s={s} {...cardProps} />)}
+                      </div>
+                    </Seccion>
+                    <Seccion titulo="📅 Hoy" items={deHoy.length} defaultOpen={true}>
+                      <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
+                        {deHoy.map(s => <SesionCard key={s.id} s={s} {...cardProps} />)}
+                      </div>
+                    </Seccion>
+                    <Seccion titulo="🕐 Recientes" items={recientes.length} defaultOpen={false}>
+                      <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
+                        {recientes.map(s => <SesionCard key={s.id} s={s} compact {...cardProps} />)}
+                      </div>
+                    </Seccion>
+                  </div>
                 )}
-
-                {/* Recientes */}
-                {recientes.length > 0 && (
-                  <Seccion titulo="🕐 Recientes" items={recientes.length} defaultOpen={false}>
-                    <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
-                      {recientes.map(s => (
-                        <SesionCard key={s.id} s={s} compact={true} {...chatProps}
-                          onChat={setChatSesion} onChecklist={setChecklist} />
-                      ))}
-                    </div>
-                  </Seccion>
-                )}
-              </div>
+              </>
             )}
           </div>
         )}
 
-        {/* ── FINANZAS ── */}
         {tab === 'finanzas' && <ContabilidadTab token={token} />}
 
-        {/* ── DOCS ── */}
         {tab === 'docs' && (
           <div>
-            <p style={{ fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.5 }}>
-              Fotografía o sube facturas, albaranes y tickets. La IA los analiza y genera el apunte contable.
-            </p>
+            <p style={{ fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.5 }}>Fotografía o sube facturas, albaranes y tickets. La IA los analiza y genera el apunte contable.</p>
             <EscanerDocumento token={token} onGuardado={() => {}} />
           </div>
         )}
 
-        {/* ── ACCESO ── */}
         {tab === 'acceso' && (
           <div>
-            <p style={{ fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.5 }}>
-              Instrucciones de acceso para cada piso. La limpiadora las verá antes de cada sesión.
-            </p>
+            <p style={{ fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.5 }}>Instrucciones de acceso para cada piso. La limpiadora las verá antes de cada sesión.</p>
             {propiedades.map((p:any) => (
               <AccesoPropiedad key={p.id} propiedadId={p.id} propiedadNombre={p.nombre} token={token}
                 instruccionesIniciales={p.instrucciones_acceso||''} tipoAccesoInicial={p.tipo_acceso||'llave'}
@@ -416,7 +440,6 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
           </div>
         )}
 
-        {/* ── CHAT GENERAL ── */}
         {tab === 'chat' && (
           <div style={{ margin:'-14px', height:'calc(100vh - 64px)' }}>
             <ChatSesionPropietario token={token} sesionId={null} miNombre={cliente.nombre}
@@ -425,7 +448,6 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
         )}
       </div>
 
-      {/* Modales */}
       {quejaModal && (
         <QuejaModal sesion={quejaModal} token={token} onClose={() => setQueja(null)}
           onSent={() => { setQuejaEnviada(s => new Set([...s, quejaModal.id])); setQueja(null) }} />
@@ -435,10 +457,8 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
           <div style={{ background:'white', borderRadius:20, width:'100%', maxWidth:480 }}>
             <FirmaPad
               onFirmar={async (svg:string, nombre:string) => {
-                await fetch('/api/propietario/'+token+'/firmar', {
-                  method:'POST', headers:{'Content-Type':'application/json'},
-                  body: JSON.stringify({ sesion_id:firmaModal.sesion_id, firma_svg:svg, firmante_nombre:nombre })
-                })
+                await fetch('/api/propietario/'+token+'/firmar', { method:'POST', headers:{'Content-Type':'application/json'},
+                  body: JSON.stringify({ sesion_id:firmaModal.sesion_id, firma_svg:svg, firmante_nombre:nombre }) })
                 setFirma(null)
               }}
               onCancelar={() => setFirma(null)} />
