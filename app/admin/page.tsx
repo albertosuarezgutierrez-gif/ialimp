@@ -15,6 +15,7 @@ const TIPO_LIMPIEZA = [
   { value: 'profunda',      label: '🫧 Profunda',       color: '#2563eb' },
   { value: 'gran_suciedad', label: '⚠️ Gran suciedad',  color: '#dc2626' },
 ]
+// Valores por defecto para categorías — se sobreescriben con /api/admin/catalogos
 const CAT_PROVEEDOR = ['general', 'limpieza', 'lenceria', 'lavanderia', 'mantenimiento']
 const CAT_PRODUCTO  = ['limpieza', 'lenceria', 'amenities', 'consumible', 'herramienta']
 const TIPO_LENCERIA = [
