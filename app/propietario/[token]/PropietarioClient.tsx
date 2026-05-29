@@ -160,20 +160,43 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
           </div>
         </div>
 
-        <div style={{ margin: '16px 20px 0', background: 'rgba(255,255,255,0.13)', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Hoy</div>
-            <div style={{ color: 'white', fontSize: 24, fontWeight: 800, marginTop: 2, letterSpacing: '-0.02em' }}>
-              {completadas}/{total} <span style={{ fontSize: 13, fontWeight: 400, opacity: 0.65, marginLeft: 4 }}>listos</span>
+        <div style={{ margin: '12px 20px 0', display:'grid', gridTemplateColumns:'2fr 1fr', gap:8 }}>
+          {/* Estado limpiezas hoy — tappable */}
+          <div onClick={() => setTab('hoy')}
+            style={{ background: 'rgba(255,255,255,0.13)', borderRadius: 12, padding: '12px 16px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor:'pointer' }}>
+            <div>
+              <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Hoy</div>
+              <div style={{ color: 'white', fontSize: 22, fontWeight: 800, marginTop: 2, letterSpacing: '-0.02em' }}>
+                {completadas}/{total} <span style={{ fontSize: 12, fontWeight: 400, opacity: 0.65 }}>listos</span>
+              </div>
             </div>
+            <div style={{ fontSize: 32 }}>{completadas === total ? '✅' : completadas > 0 ? '🧹' : '⏳'}</div>
           </div>
-          <div style={{ fontSize: 40 }}>{completadas === total ? '✅' : completadas > 0 ? '🧹' : '⏳'}</div>
+          {/* Acceso rápido finanzas */}
+          <div onClick={() => setTab('finanzas')}
+            style={{ background: 'rgba(255,255,255,0.13)', borderRadius: 12, padding: '12px 14px',
+              display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', cursor:'pointer', gap:4 }}>
+            <div style={{ fontSize:24 }}>📊</div>
+            <div style={{ color:'rgba(255,255,255,.8)', fontSize:11, fontWeight:700 }}>Finanzas</div>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', marginTop: 16, overflowX: 'auto' }}>
-          {[['hoy','Hoy'],['historial','Historial'],['finanzas','📊 Finanzas'],['docs','📄 Docs'],['acceso','🔑 Acceso'],['chat','💬 Chat']].map(([id, label]) => (
+        <div style={{ display: 'flex', marginTop: 16, overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {[
+            ['hoy',       '🏠 Hoy'],
+            ['finanzas',  '📊 Finanzas'],
+            ['acceso',    '🔑 Acceso'],
+            ['chat',      '💬 Chat'],
+            ['historial', 'Historial'],
+            ['docs',      '📄 Docs'],
+          ].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id as any)}
-              style={{ flexShrink:0, padding: '11px 14px', border: 'none', cursor: 'pointer', background: 'transparent', color: tab === id ? 'white' : 'rgba(255,255,255,0.5)', fontWeight: tab === id ? 700 : 500, fontSize: 13, borderBottom: `2.5px solid ${tab === id ? 'white' : 'transparent'}`, fontFamily: 'inherit', whiteSpace:'nowrap' }}>
+              style={{ flexShrink:0, padding: '11px 14px', border: 'none', cursor: 'pointer', background: 'transparent',
+                color: tab === id ? 'white' : 'rgba(255,255,255,0.5)',
+                fontWeight: tab === id ? 700 : 500, fontSize: 13,
+                borderBottom: `2.5px solid ${tab === id ? 'white' : 'transparent'}`,
+                fontFamily: 'inherit', whiteSpace:'nowrap' }}>
               {label}
             </button>
           ))}

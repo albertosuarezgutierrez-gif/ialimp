@@ -192,14 +192,14 @@ function NuevoGastoModal({ token, propiedades, onClose, onGuardado }: any) {
           {/* Categoría */}
           <div>
             <label style={{ fontSize:11, fontWeight:700, color:C.muted, display:'block', marginBottom:6, textTransform:'uppercase', letterSpacing:'.05em' }}>Categoría</label>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:5 }}>
+            <div style={{ display:'flex', gap:6, overflowX:'auto', scrollbarWidth:'none', paddingBottom:2 }}>
               {Object.entries(CATEGORIAS).filter(([k]) => k !== 'limpieza').map(([k, v]) => (
                 <button key={k} onClick={() => set('categoria', k)}
-                  style={{ padding:'8px 10px', borderRadius:8, border:`2px solid ${form.categoria===k ? v.color : C.border}`,
+                  style={{ flexShrink:0, padding:'7px 10px', borderRadius:20, border:`2px solid ${form.categoria===k ? v.color : C.border}`,
                     background: form.categoria===k ? v.color+'15' : 'white', cursor:'pointer', fontFamily:'inherit',
-                    display:'flex', alignItems:'center', gap:6, textAlign:'left' }}>
-                  <span style={{ fontSize:16 }}>{v.icon}</span>
-                  <span style={{ fontSize:11, fontWeight: form.categoria===k ? 700 : 500, color: form.categoria===k ? v.color : C.muted }}>{v.label}</span>
+                    display:'flex', alignItems:'center', gap:4 }}>
+                  <span style={{ fontSize:14 }}>{v.icon}</span>
+                  <span style={{ fontSize:11, fontWeight: form.categoria===k ? 700 : 500, color: form.categoria===k ? v.color : C.muted, whiteSpace:'nowrap' }}>{v.label}</span>
                 </button>
               ))}
             </div>

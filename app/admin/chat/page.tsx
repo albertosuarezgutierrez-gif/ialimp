@@ -121,14 +121,14 @@ function NuevoHiloModal({ onClose, onCreado }: { onClose: () => void; onCreado: 
           {/* Visibilidad */}
           <div>
             <div style={{ fontSize:12, fontWeight:700, color:C.muted, marginBottom:8, textTransform:'uppercase', letterSpacing:'.05em' }}>¿Quién puede ver este hilo?</div>
-            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            <div style={{ display:'flex', gap:6 }}>
               {Object.entries(VIS_CFG).map(([k, v]) => (
                 <button key={k} onClick={() => setVisib(k)}
-                  style={{ padding:'10px 14px', borderRadius:8, border:`2px solid ${visib===k ? C.primary : C.border}`,
+                  style={{ flex:1, padding:'9px 6px', borderRadius:10, border:`2px solid ${visib===k ? C.primary : C.border}`,
                     background: visib===k ? C.light : 'white', cursor:'pointer', fontFamily:'inherit',
-                    display:'flex', alignItems:'center', gap:10, textAlign:'left' }}>
+                    display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
                   <span style={{ fontSize:18 }}>{v.icon}</span>
-                  <span style={{ fontSize:13, fontWeight: visib===k ? 700 : 500, color: visib===k ? C.primary : C.text }}>{v.label}</span>
+                  <span style={{ fontSize:10, fontWeight: visib===k ? 700 : 500, color: visib===k ? C.primary : C.muted, textAlign:'center', lineHeight:1.2 }}>{v.label}</span>
                 </button>
               ))}
             </div>
