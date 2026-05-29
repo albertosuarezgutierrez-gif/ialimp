@@ -2,89 +2,206 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-export default function LimpiadoarasLogin() {
-  const [pin, setPin]       = useState('')
-  const [error, setError]   = useState('')
+export default function LLoginPage() {
+  const [pin,     setPin]     = useState('')
+  const [error,   setError]   = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  async function handlePin(digit: string) {
-    if (pin.length >= 4) return
-    const newPin = pin + digit
-    setPin(newPin)
-    setError('')
-    if (newPin.length === 4) {
-      setLoading(true)
-      const r = await fetch('/api/l/auth', {
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (pin.length < 4) { setError('El PIN debe tener al menos 4 dígitos'); return }
+    setLoading(true); setError('')
+    try {
+      const res  = await fetch('/api/l/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: newPin }),
+        body: JSON.stringify({ pin }),
       })
-      const d = await r.json()
-      if (d.ok) { router.push('/l') }
-      else { setError('PIN incorrecto'); setPin('') }
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || 'PIN incorrecto'); return }
+      router.push('/l')
+    } catch {
+      setError('Error de conexión')
+    } finally {
       setLoading(false)
     }
   }
 
+  function pressDigit(d: string) {
+    if (pin.length < 6) setPin(p => p + d)
+  }
+  function backspace() { setPin(p => p.slice(0, -1)) }
+
+  const DIGITS = ['1','2','3','4','5','6','7','8','9','','0','⌫']
+
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      background: '#f1f5f9', padding: '24px',
-      fontFamily: "'DM Sans', -apple-system, sans-serif"
-    }}>
-      {/* Logo */}
-      <div style={{ marginBottom: 40, textAlign: 'center' }}>
-        <div style={{
-          width: 72, height: 72, borderRadius: 20, margin: '0 auto 16px',
-          background: '#4f46e5',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 36, boxShadow: '0 8px 24px rgba(79,70,229,0.3)'
-        }}>🧹</div>
-        <div style={{ fontWeight: 800, fontSize: 22, color: '#1e1b4b', letterSpacing: '-0.02em' }}>ialimp</div>
-        <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Introduce tu PIN</div>
-        {error && (
-          <div style={{ color: '#dc2626', fontSize: 13, marginTop: 10, fontWeight: 600 }}>{error}</div>
-        )}
-      </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Syne:wght@800&display=swap');
+        .ll-root {
+          min-height: 100dvh;
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          padding: clamp(24px, 6vw, 60px) clamp(16px, 4vw, 40px);
+          font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+          background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 60%, #312e81 100%);
+          position: relative; overflow: hidden;
+        }
+        .ll-blob {
+          position: absolute; pointer-events: none; border-radius: 50%;
+          background: radial-gradient(circle, rgba(99,102,241,.2) 0%, transparent 70%);
+          width: min(420px, 90vw); height: min(420px, 90vw);
+          top: -15%; right: -15%;
+        }
+        .ll-wrap {
+          position: relative; z-index: 1;
+          width: 100%; max-width: 360px;
+          display: flex; flex-direction: column; align-items: center;
+        }
+        .ll-logo {
+          font-family: 'Syne', sans-serif;
+          font-size: clamp(32px, 8vw, 44px);
+          font-weight: 800; color: white;
+          letter-spacing: -.03em; margin-bottom: 4px;
+        }
+        .ll-logo span { color: #818cf8; }
+        .ll-sub {
+          font-size: 11px; color: rgba(255,255,255,.35);
+          letter-spacing: .12em; text-transform: uppercase;
+          margin-bottom: clamp(28px, 6vw, 44px);
+        }
+        .ll-card {
+          background: rgba(255,255,255,.06);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,.12);
+          border-radius: 24px;
+          padding: clamp(20px, 5vw, 32px);
+          width: 100%;
+        }
+        .ll-label {
+          text-align: center;
+          font-size: 12px; font-weight: 700;
+          color: rgba(255,255,255,.4);
+          text-transform: uppercase; letter-spacing: .1em;
+          margin-bottom: 18px;
+        }
+        /* PIN dots */
+        .ll-dots {
+          display: flex; justify-content: center; gap: 12px; margin-bottom: 28px;
+        }
+        .ll-dot {
+          width: clamp(14px, 4vw, 18px);
+          height: clamp(14px, 4vw, 18px);
+          border-radius: 50%;
+          border: 2px solid rgba(255,255,255,.25);
+          background: transparent;
+          transition: all .15s;
+        }
+        .ll-dot.filled {
+          background: #818cf8;
+          border-color: #818cf8;
+          box-shadow: 0 0 8px rgba(129,140,248,.5);
+        }
+        /* Teclado */
+        .ll-keypad {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: clamp(8px, 2vw, 12px);
+          margin-bottom: 16px;
+        }
+        .ll-key {
+          aspect-ratio: 1.4;
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,.1);
+          background: rgba(255,255,255,.07);
+          color: white;
+          font-family: inherit;
+          font-size: clamp(18px, 4.5vw, 22px);
+          font-weight: 700;
+          cursor: pointer;
+          transition: all .12s;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .ll-key:hover:not(:disabled) { background: rgba(255,255,255,.13); }
+        .ll-key:active:not(:disabled) { transform: scale(.94); }
+        .ll-key.empty { background: transparent; border: none; cursor: default; }
+        .ll-key.back { font-size: clamp(16px, 4vw, 20px); }
+        .ll-btn {
+          width: 100%;
+          background: #4f46e5; border: none;
+          border-radius: 12px; padding: 14px;
+          color: white; font-family: inherit;
+          font-size: 15px; font-weight: 800;
+          cursor: pointer;
+          box-shadow: 0 4px 20px rgba(79,70,229,.5);
+          transition: all .15s;
+        }
+        .ll-btn:hover:not(:disabled) { background: #3730a3; transform: translateY(-1px); }
+        .ll-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+        .ll-error {
+          background: rgba(239,68,68,.15);
+          border: 1px solid rgba(239,68,68,.3);
+          border-radius: 10px; padding: 10px 14px;
+          color: #fca5a5; font-size: 13px;
+          text-align: center; margin-top: 12px;
+        }
+        .ll-back-link {
+          margin-top: 20px;
+          font-size: 12px; color: rgba(255,255,255,.3);
+          text-align: center;
+        }
+        .ll-back-link a {
+          color: #818cf8; font-weight: 700; text-decoration: none;
+        }
+      `}</style>
 
-      {/* Puntos PIN */}
-      <div style={{ display: 'flex', gap: 18, marginBottom: 40 }}>
-        {[0,1,2,3].map(i => (
-          <div key={i} style={{
-            width: 16, height: 16, borderRadius: '50%',
-            background: i < pin.length ? '#4f46e5' : '#e2e8f0',
-            boxShadow: i < pin.length ? '0 2px 8px rgba(79,70,229,0.4)' : 'none',
-            transition: 'all 0.15s',
-          }} />
-        ))}
-      </div>
+      <div className="ll-root">
+        <div className="ll-blob" />
+        <div className="ll-wrap">
+          <div className="ll-logo">i<span>alimp</span></div>
+          <div className="ll-sub">Acceso equipo de limpieza</div>
 
-      {/* Teclado */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, width: 264 }}>
-        {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((d, i) => (
-          <button key={i}
-            disabled={loading || d === ''}
-            onClick={() => d === '⌫' ? setPin(p => p.slice(0,-1)) : handlePin(d)}
-            style={{
-              height: 70, borderRadius: 16, border: 'none',
-              fontSize: d === '⌫' ? 22 : 26, fontWeight: 500,
-              cursor: d === '' ? 'default' : 'pointer',
-              background: d === '' ? 'transparent' : 'white',
-              color: d === '⌫' ? '#94a3b8' : '#1e293b',
-              boxShadow: d === '' ? 'none' : '0 1px 4px rgba(0,0,0,0.08)',
-              transition: 'all 0.1s', opacity: loading ? 0.5 : 1,
-              fontFamily: 'inherit'
-            }}>
-            {d}
-          </button>
-        ))}
-      </div>
+          <div className="ll-card">
+            <form onSubmit={handleSubmit}>
+              <div className="ll-label">Introduce tu PIN</div>
 
-      <div style={{ marginTop: 40, fontSize: 11, color: '#94a3b8' }}>
-        Powered by ialimp
+              {/* Dots */}
+              <div className="ll-dots">
+                {Array.from({length: 4}).map((_, i) => (
+                  <div key={i} className={`ll-dot ${i < pin.length ? 'filled' : ''}`} />
+                ))}
+              </div>
+
+              {/* Teclado numérico */}
+              <div className="ll-keypad">
+                {DIGITS.map((d, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className={`ll-key ${d === '' ? 'empty' : d === '⌫' ? 'back' : ''}`}
+                    onClick={() => d === '⌫' ? backspace() : d !== '' ? pressDigit(d) : undefined}
+                    disabled={d === '' || loading}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+
+              <button className="ll-btn" type="submit" disabled={loading || pin.length < 4}>
+                {loading ? 'Verificando...' : 'Entrar →'}
+              </button>
+            </form>
+
+            {error && <div className="ll-error">⚠ {error}</div>}
+          </div>
+
+          <div className="ll-back-link">
+            ¿Eres la empresa? <a href="/login">Acceso admin</a>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
