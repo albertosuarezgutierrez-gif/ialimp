@@ -35,7 +35,6 @@ const ESTADO_FILTROS = [
   { id:'en_curso',  label:'🧹 Curso' },
   { id:'completada',label:'✅ Hecha' },
 ]
-// Rangos rápidos de fecha
 const HOY = new Date().toISOString().split('T')[0]
 function addDays(base: string, n: number) {
   const d = new Date(base + 'T12:00:00'); d.setDate(d.getDate() + n)
@@ -62,6 +61,29 @@ function rangoFechas(id: string): { desde: string; hasta: string } | null {
     return { desde: ini, hasta: fin }
   }
   return null
+}
+
+const PORTAL_STYLE: Record<string, { bg: string; color: string; label: string }> = {
+  booking:  { bg:'#003580', color:'white',   label:'Booking' },
+  airbnb:   { bg:'#ff385c', color:'white',   label:'Airbnb'  },
+  directo:  { bg:'#d1fae5', color:'#065f46', label:'Directo' },
+  expedia:  { bg:'#ffc72c', color:'#1a1a1a', label:'Expedia' },
+  vrbo:     { bg:'#1c3f7f', color:'white',   label:'VRBO'    },
+  agoda:    { bg:'#e11d48', color:'white',   label:'Agoda'   },
+}
+function PortalChip({ portal }: { portal?: string }) {
+  const key = (portal||'directo').toLowerCase()
+  const s = PORTAL_STYLE[key] || { bg:'#f1f5f9', color:C.muted, label: portal||'—' }
+  return (
+    <span style={{ display:'inline-flex', alignItems:'center', fontSize:11, fontWeight:700,
+      padding:'2px 8px', borderRadius:6, background:s.bg, color:s.color, letterSpacing:'0.02em' }}>
+      {s.label}
+    </span>
+  )
+}
+
+function fmt(n: number) {
+  return '€' + n.toFixed(2).replace('.', ',')
 }
 
 function Stars({ value, onChange }: { value:number; onChange?:(n:number)=>void }) {
@@ -114,6 +136,152 @@ function QuejaModal({ sesion, token, onClose, onSent }: any) {
   )
 }
 
+// ─── TARJETA HOY (expandible con datos de reserva) ───────────────────────────
+function SesionCardHoy({ p, token, ingresosPorPropiedad, onChat, onChecklist, onQueja, quejaEnviada }: any) {
+  const [open, setOpen] = useState(false)
+  const e = ESTADO_CFG[p.estado_hoy||'pendiente'] || ESTADO_CFG.pendiente
+  const nombre = p.nombre || '—'
+  const sid = p.sesion_id
+  const qEnv = quejaEnviada?.has(p.id)
+  const puedeVer = true
+
+  // Buscar ingresos de hoy para esta propiedad
+  const ingresos: any[] = (ingresosPorPropiedad[p.id] || [])
+  const ingresoHoy = ingresos.find((i: any) => i.fecha === HOY) || ingresos[0] || null
+  const bruto  = ingresoHoy?.importe || null
+  const neto   = bruto ? Math.round(bruto * 0.8028 * 100) / 100 : null
+  const portal = ingresoHoy?.portal || null
+  const noches = ingresoHoy?.num_noches || null
+
+  const hcheckout = p.hora_checkout ? String(p.hora_checkout).slice(0,5) : null
+  const hcheckin  = p.hora_checkin_siguiente ? String(p.hora_checkin_siguiente).slice(0,5) : null
+
+  return (
+    <div style={{ background:'white', borderRadius:14, border:`1px solid ${C.border}`,
+      overflow:'hidden', boxShadow:open?'0 4px 16px rgba(0,0,0,0.10)':'0 1px 3px rgba(0,0,0,0.04)',
+      transition:'box-shadow .2s' }}>
+
+      {/* Cabecera de estado */}
+      <div style={{ background:e.bg, borderBottom:`1px solid ${e.border}`, padding:'7px 14px',
+        display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <div style={{ width:7, height:7, borderRadius:'50%', background:e.dot }} />
+          <span style={{ fontSize:12, fontWeight:700, color:e.color }}>{e.label}</span>
+        </div>
+        <div style={{ display:'flex', gap:6 }}>
+          {sid && puedeVer && (
+            <button onClick={e2=>{ e2.stopPropagation(); onChecklist?.({id:sid,titulo:nombre}) }}
+              style={{ padding:'3px 8px', borderRadius:7, border:`1px solid ${C.border}`, background:'white', color:C.muted, fontSize:12, cursor:'pointer' }}>🔍</button>
+          )}
+          {sid && (
+            <button onClick={e2=>{ e2.stopPropagation(); onChat?.({id:sid,titulo:nombre}) }}
+              style={{ padding:'3px 8px', borderRadius:7, border:`1px solid ${C.brand}`, background:C.light, color:C.brand, fontSize:12, fontWeight:700, cursor:'pointer' }}>💬</button>
+          )}
+        </div>
+      </div>
+
+      {/* Cuerpo clickable */}
+      <div onClick={() => setOpen(o => !o)} style={{ padding:'12px 14px', cursor:'pointer', userSelect:'none' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div>
+            <div style={{ fontWeight:700, fontSize:15, color:C.text }}>{nombre}</div>
+            {p.direccion && <div style={{ fontSize:12, color:C.muted, marginTop:1 }}>📍 {p.direccion}</div>}
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            {bruto && <span style={{ fontSize:13, fontWeight:700, color:C.primary }}>{fmt(bruto)}</span>}
+            <span style={{ color:C.muted, fontSize:13, display:'inline-block',
+              transform:open?'rotate(180deg)':'rotate(0)', transition:'transform .2s' }}>▾</span>
+          </div>
+        </div>
+
+        {/* Timeline compacta (visible siempre) */}
+        {(hcheckout || hcheckin) && (
+          <div style={{ display:'flex', gap:6, alignItems:'center', marginTop:8,
+            background:C.light, borderRadius:8, padding:'5px 10px' }}>
+            {hcheckout && <span style={{ fontSize:11, color:C.primary, fontWeight:600 }}>🚪 {hcheckout}</span>}
+            {hcheckout && hcheckin && <span style={{ color:C.brand, fontSize:12 }}>→</span>}
+            {hcheckin  && <span style={{ fontSize:11, color:C.primary, fontWeight:600 }}>🔑 {hcheckin}</span>}
+            {portal && <span style={{ marginLeft:'auto' }}><PortalChip portal={portal} /></span>}
+          </div>
+        )}
+      </div>
+
+      {/* Panel expandido */}
+      {open && (
+        <div style={{ borderTop:`1px solid ${C.border}`, padding:'12px 14px 14px' }}>
+
+          {/* KPIs de la reserva */}
+          {(bruto || portal || noches) && (
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:12 }}>
+              <div style={{ background:C.light, borderRadius:10, padding:'8px 10px', textAlign:'center' }}>
+                <div style={{ fontSize:10, color:C.muted, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.04em' }}>Bruto</div>
+                <div style={{ fontSize:16, fontWeight:800, color:C.primary, marginTop:2 }}>{bruto ? fmt(bruto) : '—'}</div>
+              </div>
+              <div style={{ background:C.light, borderRadius:10, padding:'8px 10px', textAlign:'center' }}>
+                <div style={{ fontSize:10, color:C.muted, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.04em' }}>Neto</div>
+                <div style={{ fontSize:16, fontWeight:800, color:C.primary, marginTop:2 }}>{neto ? fmt(neto) : '—'}</div>
+              </div>
+              <div style={{ background:C.light, borderRadius:10, padding:'8px 10px', textAlign:'center' }}>
+                <div style={{ fontSize:10, color:C.muted, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.04em' }}>Noches</div>
+                <div style={{ fontSize:16, fontWeight:800, color:C.primary, marginTop:2 }}>{noches ?? '—'}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Portal + limpiadora */}
+          <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:12 }}>
+            {portal && (
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                background:C.bg, borderRadius:8, padding:'7px 12px' }}>
+                <span style={{ fontSize:12, color:C.muted, fontWeight:500 }}>Portal</span>
+                <PortalChip portal={portal} />
+              </div>
+            )}
+            {p.limpiadora_nombre && (
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                background:C.bg, borderRadius:8, padding:'7px 12px' }}>
+                <span style={{ fontSize:12, color:C.muted, fontWeight:500 }}>Limpiadora</span>
+                <span style={{ fontSize:12, fontWeight:600, color:C.text }}>🧹 {p.limpiadora_nombre}</span>
+              </div>
+            )}
+            {p.num_huespedes > 0 && (
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                background:C.bg, borderRadius:8, padding:'7px 12px' }}>
+                <span style={{ fontSize:12, color:C.muted, fontWeight:500 }}>Huéspedes</span>
+                <span style={{ fontSize:12, fontWeight:600, color:C.text }}>👥 {p.num_huespedes}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Queja */}
+          {(p.estado_hoy === 'completada') && (
+            qEnv
+              ? <div style={{ marginBottom:10, background:C.warnBg, border:`1px solid ${C.warnBorder}`, borderRadius:10, padding:'8px 14px', fontSize:12, color:C.warn, fontWeight:600, textAlign:'center' }}>⚠️ Queja enviada</div>
+              : <button onClick={() => onQueja?.(p)} style={{ marginBottom:10, width:'100%', padding:8, borderRadius:10, border:`1px solid ${C.redBg}`, background:'white', color:C.red, fontSize:12, fontWeight:700, cursor:'pointer' }}>⚠️ El huésped tiene una queja</button>
+          )}
+
+          {/* Acciones */}
+          <div style={{ display:'flex', gap:8 }}>
+            {sid && (
+              <button onClick={() => onChecklist?.({id:sid,titulo:nombre})}
+                style={{ flex:1, padding:'9px 0', borderRadius:10, border:`1px solid ${C.border}`, background:C.bg, color:C.muted, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                🔍 Checklist
+              </button>
+            )}
+            {sid && (
+              <button onClick={() => onChat?.({id:sid,titulo:nombre})}
+                style={{ flex:1, padding:'9px 0', borderRadius:10, border:`1px solid ${C.brand}`, background:C.light, color:C.brand, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                💬 Chat sesión
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── TARJETA RESERVAS (tab reservas, sin cambios) ────────────────────────────
 function SesionCard({ s, token, permisos, onChat, onChecklist, onQueja, quejaEnviada, compact=false }: any) {
   const e    = ESTADO_CFG[s.estado_hoy||s.estado] || ESTADO_CFG.pendiente
   const qEnv = quejaEnviada?.has(s.id)
@@ -192,8 +360,6 @@ function FiltrosBarra({ propiedades, filtroProp, setFiltroProp, filtroEstado, se
   const hayFiltro = filtroProp!=='todas' || filtroEstado!=='todas' || rangoId!=='todo'
   return (
     <div style={{ background:'white', borderBottom:`1px solid ${C.border}`, padding:'10px 14px', display:'flex', flexDirection:'column', gap:8 }}>
-
-      {/* Fila 1: Propiedad */}
       <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:1 }}>
         <button onClick={()=>setFiltroProp('todas')}
           style={{ flexShrink:0, padding:'5px 12px', borderRadius:20, border:`1.5px solid ${filtroProp==='todas'?C.primary:C.border}`,
@@ -211,8 +377,6 @@ function FiltrosBarra({ propiedades, filtroProp, setFiltroProp, filtroEstado, se
           </button>
         ))}
       </div>
-
-      {/* Fila 2: Estado */}
       <div style={{ display:'flex', gap:6, overflowX:'auto' }}>
         {ESTADO_FILTROS.map(f => (
           <button key={f.id} onClick={()=>setFiltroEstado(f.id)}
@@ -225,8 +389,6 @@ function FiltrosBarra({ propiedades, filtroProp, setFiltroProp, filtroEstado, se
           </button>
         ))}
       </div>
-
-      {/* Fila 3: Rango de fechas */}
       <div style={{ display:'flex', gap:6, overflowX:'auto', alignItems:'center' }}>
         <span style={{ fontSize:11, color:C.muted, flexShrink:0 }}>📅</span>
         {RANGOS_RAPIDOS.filter(r=>r.id!=='custom').map(r => (
@@ -239,7 +401,6 @@ function FiltrosBarra({ propiedades, filtroProp, setFiltroProp, filtroEstado, se
             {r.label}
           </button>
         ))}
-        {/* Custom: abre inputs de fecha */}
         <button onClick={()=>setRangoId(rangoId==='custom'?'todo':'custom')}
           style={{ flexShrink:0, padding:'4px 10px', borderRadius:20,
             border:`1.5px solid ${rangoId==='custom'?C.primary:C.border}`,
@@ -249,8 +410,6 @@ function FiltrosBarra({ propiedades, filtroProp, setFiltroProp, filtroEstado, se
           ✏️ Fechas
         </button>
       </div>
-
-      {/* Inputs custom — solo si rangoId === 'custom' */}
       {rangoId === 'custom' && (
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
           <input type="date" value={fechaDesde} onChange={e=>setFechaDesde(e.target.value)}
@@ -260,8 +419,6 @@ function FiltrosBarra({ propiedades, filtroProp, setFiltroProp, filtroEstado, se
             style={{ flex:1, border:`1px solid ${C.border}`, borderRadius:8, padding:'6px 10px', fontSize:12, fontFamily:'inherit', outline:'none', color:C.text }} />
         </div>
       )}
-
-      {/* Contador + reset */}
       {hayFiltro && (
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <span style={{ fontSize:11, color:C.muted }}>{filtradas} de {total} reservas</span>
@@ -275,6 +432,7 @@ function FiltrosBarra({ propiedades, filtroProp, setFiltroProp, filtroEstado, se
   )
 }
 
+// ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
 export default function PropietarioClient({ cliente, propiedades, historial, token, permisos }: any) {
   const [tab, setTab]     = useState<'hoy'|'reservas'|'finanzas'|'docs'|'acceso'|'chat'>('hoy')
   const [menuOpen, setMenu] = useState(false)
@@ -287,12 +445,49 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
   const [reservas, setReservas]     = useState<any[]>([])
   const [loadingRes, setLoadingRes] = useState(false)
 
-  // Filtros
+  // Ingresos de hoy (para KPIs y tarjetas)
+  const [ingresosHoy, setIngresosHoy]   = useState<any[]>([])
+  const [loadingIngresos, setLoadingIngresos] = useState(false)
+
   const [filtroProp,   setFiltroProp]   = useState('todas')
   const [filtroEstado, setFiltroEstado] = useState('todas')
   const [rangoId,      setRangoId]      = useState('todo')
   const [fechaDesde,   setFechaDesde]   = useState(HOY)
   const [fechaHasta,   setFechaHasta]   = useState(addDays(HOY, 30))
+
+  // Cargar ingresos del mes actual para tener los de hoy
+  useEffect(() => {
+    if (loadingIngresos || ingresosHoy.length > 0) return
+    setLoadingIngresos(true)
+    const anio = new Date().getFullYear()
+    fetch(`/api/propietario/${token}/contabilidad?anio=${anio}`)
+      .then(r => r.json())
+      .then(d => {
+        const todos: any[] = d.ingresos || []
+        setIngresosHoy(todos)
+        setLoadingIngresos(false)
+      })
+      .catch(() => setLoadingIngresos(false))
+  }, [token])
+
+  // Ingresos de hoy agrupados por propiedad_id
+  const ingresosPorPropiedad = useMemo(() => {
+    const map: Record<string, any[]> = {}
+    ingresosHoy.forEach(i => {
+      const pid = i.propiedad_id || '__sin__'
+      if (!map[pid]) map[pid] = []
+      map[pid].push(i)
+    })
+    return map
+  }, [ingresosHoy])
+
+  // KPIs del día
+  const kpiHoy = useMemo(() => {
+    const hoyIngresos = ingresosHoy.filter(i => i.fecha === HOY)
+    const bruto = hoyIngresos.reduce((a, i) => a + (i.importe || 0), 0)
+    const neto  = Math.round(bruto * 0.8028 * 100) / 100
+    return { bruto, neto, count: hoyIngresos.length }
+  }, [ingresosHoy])
 
   useEffect(() => {
     if (tab==='reservas' && reservas.length===0 && !loadingRes) {
@@ -327,7 +522,6 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
   const deHoy     = reservasFiltradas.filter(s=>s.session_date===hoyStr)
   const recientes = reservasFiltradas.filter(s=>s.session_date<hoyStr).sort((a,b)=>b.session_date.localeCompare(a.session_date))
 
-  const puedeVer    = permisos?.ver_checklist||permisos?.ver_fotos
   const completadas = propiedades.filter((p:any)=>p.estado_hoy==='completada').length
   const currentItem = MENU_ITEMS.find(m=>m.id===tab)
 
@@ -352,27 +546,47 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
     <div style={{ fontFamily:"'DM Sans',-apple-system,sans-serif", background:C.bg, minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{display:none}`}</style>
 
-      {/* Header */}
-      <div style={{ background:C.primary, padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', position:'sticky', top:0, zIndex:50 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <div style={{ fontFamily:"'Syne',sans-serif", fontSize:18, fontWeight:800, color:'white', letterSpacing:'-.02em' }}>
-            ia<span style={{ color:'#a5b4fc' }}>limp</span>
+      {/* ── Header ── */}
+      <div style={{ background:C.primary, padding:'14px 16px 16px', position:'sticky', top:0, zIndex:50 }}>
+        {/* Fila 1: logo + título + menú */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: tab==='hoy' ? 12 : 0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ fontFamily:"'Syne',sans-serif", fontSize:18, fontWeight:800, color:'white', letterSpacing:'-.02em' }}>
+              ia<span style={{ color:'#a5b4fc' }}>limp</span>
+            </div>
+            <div style={{ width:1, height:14, background:'rgba(255,255,255,.25)' }} />
+            <div style={{ color:'white', fontSize:13, fontWeight:600 }}>{currentItem?.icon} {currentItem?.label}</div>
           </div>
-          <div style={{ width:1, height:14, background:'rgba(255,255,255,.25)' }} />
-          <div style={{ color:'white', fontSize:13, fontWeight:600 }}>{currentItem?.icon} {currentItem?.label}</div>
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <div style={{ background:'rgba(255,255,255,0.15)', borderRadius:8, padding:'4px 10px', fontSize:12, color:'white', fontWeight:700 }}>
-            {completadas}/{propiedades.length} ✓
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <div style={{ background:'rgba(255,255,255,0.15)', borderRadius:8, padding:'4px 10px', fontSize:12, color:'white', fontWeight:700 }}>
+              {completadas}/{propiedades.length} ✓
+            </div>
+            <button onClick={()=>setMenu(true)}
+              style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:8, width:36, height:36, cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4 }}>
+              {[0,1,2].map(i=><span key={i} style={{ display:'block', width:16, height:2, background:'white', borderRadius:2 }} />)}
+            </button>
           </div>
-          <button onClick={()=>setMenu(true)}
-            style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:8, width:36, height:36, cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4 }}>
-            {[0,1,2].map(i=><span key={i} style={{ display:'block', width:16, height:2, background:'white', borderRadius:2 }} />)}
-          </button>
         </div>
+
+        {/* KPIs del día — solo en tab hoy */}
+        {tab==='hoy' && (
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:6 }}>
+            {[
+              { val: propiedades.length,                  lbl: 'Pisos'   },
+              { val: propiedades.filter((p:any)=>p.estado_hoy).length, lbl: 'Con limpieza' },
+              { val: kpiHoy.bruto > 0 ? fmt(kpiHoy.bruto) : '—', lbl: 'Bruto hoy' },
+              { val: kpiHoy.neto  > 0 ? fmt(kpiHoy.neto)  : '—', lbl: 'Neto hoy'  },
+            ].map((k,i) => (
+              <div key={i} style={{ background:'rgba(255,255,255,0.13)', borderRadius:10, padding:'8px 6px', textAlign:'center' }}>
+                <div style={{ fontSize:i>1?13:18, fontWeight:800, color:'white', lineHeight:1 }}>{k.val}</div>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,0.65)', marginTop:3 }}>{k.lbl}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Filtros — sticky bajo el header */}
+      {/* Filtros sticky — tab reservas */}
       {tab==='reservas' && !loadingRes && reservas.length>0 && (
         <div style={{ position:'sticky', top:64, zIndex:40 }}>
           <FiltrosBarra
@@ -418,9 +632,10 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
         </>
       )}
 
-      {/* Contenido */}
+      {/* ── Contenido ── */}
       <div style={{ padding:14 }}>
 
+        {/* TAB HOY */}
         {tab==='hoy' && (
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
             {propiedades.length===0 && (
@@ -429,10 +644,20 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
                 <div style={{ fontWeight:600 }}>Sin limpiezas hoy</div>
               </div>
             )}
-            {propiedades.map((p:any) => <SesionCard key={p.id} s={p} {...cardProps} />)}
+            {propiedades.map((p:any) => (
+              <SesionCardHoy key={p.id} p={p}
+                token={token}
+                ingresosPorPropiedad={ingresosPorPropiedad}
+                onChat={setChatSesion}
+                onChecklist={setChecklist}
+                onQueja={setQueja}
+                quejaEnviada={quejaEnviada}
+              />
+            ))}
           </div>
         )}
 
+        {/* TAB RESERVAS */}
         {tab==='reservas' && (
           <div>
             {loadingRes && (
