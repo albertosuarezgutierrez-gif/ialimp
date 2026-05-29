@@ -1,5 +1,5 @@
 'use client'
-import { TabChecklists, TabInformes, TabFacturacion } from './extra-tabs'
+// Módulos movidos a: /admin/materiales, /admin/negocio, /admin/equipo
 import { useState, useEffect, useCallback } from 'react'
 
 // ─── Constantes ────────────────────────────────────────────────
@@ -22,7 +22,7 @@ const TIPO_LENCERIA = [
   'sabana_bajera', 'sabana_encimera', 'funda_almohada', 'toalla_bano',
   'toalla_mano', 'alfombrin', 'colcha', 'almohada', 'nórdico', 'otro',
 ]
-const TABS = ['Hoy', 'Semana', 'Limpiadoras', 'Disponibilidad', 'Proveedores', 'Stock', 'Lencería', 'Checklists', 'Informes', 'Facturación']
+const TABS = ['Hoy', 'Semana']
 
 function pBy(id: string) { return PROPS.find(p => p.id === id) }
 function todayISO() { return new Date().toISOString().split('T')[0] }
@@ -991,14 +991,6 @@ export default function AdminLimpiadoras() {
       <div style={{ maxWidth: 960, margin: '0 auto', padding: 20 }}>
         {activeTab === 0 && <TabHoy />}
         {activeTab === 1 && <TabSemana />}
-        {activeTab === 2 && <TabLimpiadoras />}
-        {activeTab === 3 && <TabDisponibilidad />}
-        {activeTab === 4 && <TabProveedores />}
-        {activeTab === 5 && <TabStock />}
-        {activeTab === 6 && <TabLenceria />}
-        {activeTab === 7 && <TabChecklists />}
-        {activeTab === 8 && <TabInformes />}
-        {activeTab === 9 && <TabFacturacion />}
       </div>
     </div>
   )
