@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
+const APP_URL = process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app'
+
 export async function GET() {
   return NextResponse.json({ ok: true, message: 'Endpoint público de leads' })
 }
@@ -15,7 +17,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Nombre obligatorio' }, { status: 400 })
     }
 
-    // empresa_id es UUID — usar cast solo si viene en el body
     const emp_val = empresa_id ? Prisma.sql`${empresa_id}::uuid` : Prisma.sql`NULL`
 
     const result = await prisma.$queryRaw<any[]>(Prisma.sql`
@@ -34,7 +35,18 @@ export async function POST(req: Request) {
       RETURNING id
     `)
 
-    return NextResponse.json({ ok: true, id: result[0]?.id }, { status: 201 })
+    const lead_id = result[0]?.id
+
+    // Disparar agente-cotizador en background si hay empresa_id y precio
+    if (empresa_id && lead_id && precio_estimado) {
+      fetch(APP_URL + '/api/admin/ia/agente-cotizador', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lead_id, empresa_id })
+      }).catch(() => { /* agente no crítico */ })
+    }
+
+    return NextResponse.json({ ok: true, id: lead_id }, { status: 201 })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
