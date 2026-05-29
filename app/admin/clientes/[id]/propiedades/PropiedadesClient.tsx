@@ -45,8 +45,8 @@ const EMPTY = {
   materiales_incluidos: true, precio_materiales: '',
   recargo_festivo: '', recargo_urgencia: '', recargo_nocturno: '',
   notas: '', zonas: [] as string[],
-  num_camas_dobles: 0, num_camas_individuales: 0,
-  num_camas_sofas: 0, num_camas_literas: 0,
+  num_camas_135: 0, num_camas_90: 0,
+  num_camas_sofas: 0, num_literas: 0,
   num_huespedes_max: 2, num_banos: 1, num_aseos: 0,
   tiene_piscina: false, tiene_terraza: false, tiene_barbacoa: false,
   tiene_jacuzzi: false, tiene_lavadora: false, tiene_secadora: false,
@@ -901,4 +901,5 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
     </div>
   )
 }
+
 
