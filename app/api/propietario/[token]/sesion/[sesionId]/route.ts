@@ -23,12 +23,12 @@ export async function GET(
 
     const cfg = cliente.chat_config as any
     const puedeChecklist = cfg?.ver_checklist === true
-    const puedeFotos     = cfg?.ver_fotos === true
+    const puedeFotos     = cfg?.ver_fotos     === true
 
-    // Datos básicos de la sesión (siempre)
+    // Datos básicos de la sesión (siempre visibles)
     const sesiones = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT cs.id::text, cs.session_date::text, cs.property_name,
-             cs.started_at, cs.completed_at, cs.incidencias,
+             cs.started_at, cs.completed_at, cs.notes AS incidencias,
              cs.foto_antes_url, cs.foto_despues_url,
              l.nombre AS limpiadora_nombre
       FROM cleaning_sessions cs
@@ -43,18 +43,16 @@ export async function GET(
     // Fotos — solo si tiene permiso
     let fotos: any[] = []
     if (puedeFotos) {
-      fotos = [
-        sesion.foto_antes_url   ? { tipo: 'antes',   url: sesion.foto_antes_url }   : null,
-        sesion.foto_despues_url ? { tipo: 'despues',  url: sesion.foto_despues_url } : null,
-      ].filter(Boolean)
+      if (sesion.foto_antes_url)   fotos.push({ tipo: 'antes',   url: sesion.foto_antes_url })
+      if (sesion.foto_despues_url) fotos.push({ tipo: 'despues', url: sesion.foto_despues_url })
 
-      // Fotos de session_completions (items con foto)
+      // Fotos de items del checklist
       const fotosItems = await prisma.$queryRaw<any[]>(Prisma.sql`
         SELECT sc.item_description, sc.photo_url, sc.photo_url_2, sc.photo_url_3, sc.notes
         FROM session_completions sc
         WHERE sc.session_id = ${sesionId}::uuid
           AND (sc.photo_url IS NOT NULL OR sc.photo_url_2 IS NOT NULL OR sc.photo_url_3 IS NOT NULL)
-        ORDER BY sc.completed_at ASC
+        ORDER BY sc.completed_at ASC NULLS LAST
       `)
       for (const fi of fotosItems) {
         if (fi.photo_url)   fotos.push({ tipo: 'item', descripcion: fi.item_description, url: fi.photo_url,   notas: fi.notes })
@@ -72,8 +70,8 @@ export async function GET(
           ci.description,
           ci.es_critico,
           ci.requires_photo,
-          ci.orden,
-          ci.categoria,
+          ci.sort_order,
+          ci.frequency,
           COALESCE(sc.checked, false) AS checked,
           sc.notes,
           sc.photo_url,
@@ -85,7 +83,7 @@ export async function GET(
         LEFT JOIN session_completions sc
           ON sc.item_id = ci.id AND sc.session_id = ${sesionId}::uuid
         WHERE ci.active = true
-        ORDER BY ci.orden ASC
+        ORDER BY ci.sort_order ASC NULLS LAST
       `)
     }
 
