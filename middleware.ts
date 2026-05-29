@@ -22,6 +22,7 @@ const MODULO_MAP: Record<string, string> = {
   '/admin/agenda':      'agenda',
   '/admin/crm':         'clientes',
   '/admin/planes':      'configuracion',
+  '/admin/cotizador':   'configuracion',
   '/admin/usuarios':    'configuracion',
 }
 

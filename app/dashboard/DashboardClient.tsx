@@ -80,6 +80,7 @@ export default function DashboardClient({
             <a href="/admin/facturas" className="text-indigo-200 hover:text-white text-sm">🧾</a>
             <a href="/admin" className="text-indigo-200 hover:text-white text-sm">⚙️</a>
             <a href="/admin/usuarios" className="text-indigo-200 hover:text-white text-sm">🔐</a>
+            <a href="/admin/cotizador" className="text-indigo-200 hover:text-white text-sm">💰</a>
             <button onClick={logout} className="text-indigo-200 hover:text-white text-sm">Salir</button>
           </div>
         </div>
