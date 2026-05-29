@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import ChatSesion from '@/components/ChatSesion'
+import ConsumoProductos from '@/components/ConsumoProductos'
 
 // ── Colores corporativos ialimp ───────────────────────────────────────────────
 const C = {
@@ -99,6 +100,7 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
   const [incDesc, setIncDesc]         = useState('')
   const [saving, setSaving]           = useState(false)
   const [sesion, setSesion]           = useState(s)
+  const [showConsumo, setShowConsumo] = useState(false)
 
   const hecho    = !!sesion.completed_at
   const enCurso  = !hecho && !!sesion.started_at
@@ -128,6 +130,11 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
 
   async function completar() {
     if (!todosCriticos) { alert('Hay tareas críticas sin marcar'); return }
+    // Mostrar pantalla de consumo antes de finalizar definitivamente
+    setShowConsumo(true)
+  }
+
+  async function finalizarDefinitivo() {
     setSaving(true)
     const r = await fetch(`/api/l/sesiones/${sesion.id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -136,6 +143,8 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
     const d = await r.json()
     if (d.ok) { setSesion(d.sesion); onUpdate(d.sesion) }
     setSaving(false)
+    setShowConsumo(false)
+
   }
 
   async function añadirIncidencia() {
@@ -394,6 +403,30 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
         <div onClick={() => setFotoRef(null)} style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginBottom: 12 }}>Toca para cerrar</div>
           <img src={fotoRef} alt="Referencia" style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: 12 }} />
+        </div>
+      )}
+
+      {/* Modal consumo de productos */}
+      {showConsumo && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', fontFamily: "'DM Sans',sans-serif" }}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', maxHeight: '85vh', overflow: 'auto' }}>
+            <div style={{ background: '#4f46e5', borderRadius: '20px 20px 0 0', padding: '16px 16px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ color: 'white', fontWeight: 800, fontSize: 16 }}>Productos usados</div>
+                <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12 }}>Anota lo que has utilizado en esta limpieza</div>
+              </div>
+              <button onClick={() => setShowConsumo(false)}
+                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', width: 34, height: 34, borderRadius: 9, fontSize: 18, cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ paddingTop: 16 }}>
+              <ConsumoProductos
+                sessionId={sesion.id}
+                limpadoraId={limpiadora?.id}
+                onGuardado={() => { setTimeout(finalizarDefinitivo, 800) }}
+                onSaltar={finalizarDefinitivo}
+              />
+            </div>
+          </div>
         </div>
       )}
 
