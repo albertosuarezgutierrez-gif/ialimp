@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
     if (producto_id) {
       const rows = await prisma.$queryRaw<any[]>(Prisma.sql`
-        SELECT sc.*, cs.property_name, cs.fecha_servicio, cs.tipo_servicio
+        SELECT sc.*, cs.property_name, cs.session_date, cs.tipo_servicio
         FROM stock_consumos sc
         JOIN cleaning_sessions cs ON cs.id = sc.session_id
         WHERE sc.producto_id = ${producto_id}::uuid AND sc.empresa_id = ${empresa_id}::uuid
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       SELECT
         sc.session_id,
         cs.property_name,
-        cs.fecha_servicio,
+        cs.session_date,
         cs.tipo_servicio,
         COUNT(sc.id)        AS num_productos,
         SUM(sc.cantidad)    AS total_cantidad,
@@ -50,8 +50,8 @@ export async function GET(req: NextRequest) {
       FROM stock_consumos sc
       JOIN cleaning_sessions cs ON cs.id = sc.session_id
       WHERE sc.empresa_id = ${empresa_id}::uuid
-      GROUP BY sc.session_id, cs.property_name, cs.fecha_servicio, cs.tipo_servicio
-      ORDER BY cs.fecha_servicio DESC
+      GROUP BY sc.session_id, cs.property_name, cs.session_date, cs.tipo_servicio
+      ORDER BY cs.session_date DESC
       LIMIT 30
     `)
     return NextResponse.json(serialize({ resumen: rows }))
