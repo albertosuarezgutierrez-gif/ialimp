@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       modelo_precio = 'precio_fijo',
       precio_limpieza, duracion_estimada_min = 120,
       hora_checkout_habitual = '11:00', hora_checkin_habitual = '16:00',
-      num_camas_135 = 0, num_camas_90 = 0, num_camas_sofas = 0, num_literas = 0,
+      num_camas_135 = 0, num_camas_90 = 0, num_literas = 0,
       num_banos = 1, num_huespedes_max = 2,
       tiene_piscina = false, tiene_terraza = false,
       notas_material, limpiadora_principal_id
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
         codigo_postal, municipio, provincia, referencia_catastral,
         modelo_precio, precio_limpieza, duracion_estimada_min,
         hora_checkout_habitual, hora_checkin_habitual,
-        num_camas_135, num_camas_90, num_camas_sofas, num_literas, num_banos, num_huespedes_max,
+        num_camas_135, num_camas_90, num_literas, num_banos, num_huespedes_max,
         tiene_piscina, tiene_terraza, notas_material, limpiadora_principal_id, activa
       ) VALUES (
         ${empresa_id}::uuid,
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
         ${modelo_precio}, ${precio_limpieza ? Number(precio_limpieza) : null},
         ${Number(duracion_estimada_min)},
         ${hora_checkout_habitual}, ${hora_checkin_habitual},
-        ${Number(num_camas_135)}, ${Number(num_camas_90)}, ${Number(num_camas_sofas)}, ${Number(num_literas)},
+        ${Number(num_camas_135)}, ${Number(num_camas_90)}, ${Number(num_literas)},
         ${Number(num_banos)}, ${Number(num_huespedes_max)},
         ${Boolean(tiene_piscina)}, ${Boolean(tiene_terraza)},
         ${notas_material || null},
