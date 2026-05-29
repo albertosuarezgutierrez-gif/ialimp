@@ -3,20 +3,30 @@ import { useState, useEffect } from 'react'
 
 const C = { primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff', bg: '#f1f5f9', text: '#1e293b', muted: '#64748b', border: '#e2e8f0', ok: '#16a34a', okBg: '#f0fdf4', warn: '#d97706', warnBg: '#fffbeb', red: '#dc2626', redBg: '#fef2f2' }
 
-const CATEGORIAS = { limpieza: '🧴', lenceria: '🛏️', consumible: '🧻', herramienta: '🧹' }
-
 export default function StockPage() {
   const [productos, setProductos] = useState<any[]>([])
   const [loading, setLoading]     = useState(true)
   const [showForm, setShowForm]   = useState(false)
-  const [form, setForm]           = useState({ nombre: '', categoria: 'limpieza', unidad: 'unidad', stock_actual: '', stock_minimo: '', precio_unitario: '' })
-  const [saving, setSaving]       = useState(false)
+  const [categorias, setCategorias] = useState<any[]>([])
+  const [unidades,   setUnidades]   = useState<any[]>([])
+  const [form, setForm] = useState({ nombre: '', categoria: '', unidad: '', stock_actual: '', stock_minimo: '', precio_unitario: '' })
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => { cargar() }, [])
+
   async function cargar() {
-    const r = await fetch('/api/admin/stock')
-    const d = await r.json()
-    setProductos(d.productos || [])
+    const [rP, rC] = await Promise.all([
+      fetch('/api/admin/stock'),
+      fetch('/api/admin/catalogos')
+    ])
+    const dP = await rP.json()
+    const dC = await rC.json()
+    const cats = dC.catalogos?.categorias_stock?.filter((c: any) => c.activo !== false) || []
+    const unis = dC.catalogos?.unidades_stock || []
+    setCategorias(cats)
+    setUnidades(unis)
+    setProductos(dP.productos || [])
+    setForm(f => ({ ...f, categoria: cats[0]?.id || 'limpieza', unidad: unis[0]?.id || 'unidad' }))
     setLoading(false)
   }
 
@@ -24,10 +34,11 @@ export default function StockPage() {
     e.preventDefault(); setSaving(true)
     await fetch('/api/admin/stock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
     await cargar(); setShowForm(false); setSaving(false)
-    setForm({ nombre: '', categoria: 'limpieza', unidad: 'unidad', stock_actual: '', stock_minimo: '', precio_unitario: '' })
+    setForm(f => ({ ...f, nombre: '', stock_actual: '', stock_minimo: '', precio_unitario: '' }))
   }
 
-  const alertas = productos.filter(p => p.alerta_stock).length
+  const getEmoji = (catId: string) => categorias.find(c => c.id === catId)?.emoji || '📦'
+  const alertas  = productos.filter(p => p.alerta_stock).length
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'DM Sans', sans-serif" }}>
@@ -53,13 +64,9 @@ export default function StockPage() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
           {productos.map((p: any) => (
-            <div key={p.id} style={{
-              background: 'white', borderRadius: 12, border: `1px solid ${p.alerta_stock ? '#fcd34d' : C.border}`,
-              padding: '16px', borderLeft: `4px solid ${p.alerta_stock ? C.warn : C.ok}`,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
-            }}>
+            <div key={p.id} style={{ background: 'white', borderRadius: 12, border: `1px solid ${p.alerta_stock ? '#fcd34d' : C.border}`, padding: '16px', borderLeft: `4px solid ${p.alerta_stock ? C.warn : C.ok}`, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <span style={{ fontSize: 22 }}>{CATEGORIAS[p.categoria as keyof typeof CATEGORIAS] || '📦'}</span>
+                <span style={{ fontSize: 22 }}>{getEmoji(p.categoria)}</span>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{p.nombre}</div>
                   <div style={{ fontSize: 11, color: C.muted }}>{p.categoria} · {p.unidad}</div>
@@ -90,16 +97,16 @@ export default function StockPage() {
             </div>
             <form onSubmit={guardar} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
-                { k: 'nombre',          label: 'Nombre *',         ph: 'Gel de baño 1L' },
-                { k: 'stock_actual',    label: 'Stock actual',     ph: '50', type: 'number' },
-                { k: 'stock_minimo',    label: 'Stock mínimo (alerta)', ph: '10', type: 'number' },
-                { k: 'precio_unitario', label: 'Precio unitario €', ph: '2.50', type: 'number' },
+                { k: 'nombre',          label: 'Nombre *',              ph: 'Gel de baño 1L' },
+                { k: 'stock_actual',    label: 'Stock actual',          ph: '50',   type: 'number' },
+                { k: 'stock_minimo',    label: 'Stock mínimo (alerta)', ph: '10',   type: 'number' },
+                { k: 'precio_unitario', label: 'Precio unitario €',     ph: '2.50', type: 'number' },
               ].map(f => (
                 <div key={f.k}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 4 }}>{f.label}</label>
                   <input type={f.type || 'text'} step="0.01" value={(form as any)[f.k]} onChange={e => setForm(p => ({ ...p, [f.k]: e.target.value }))}
                     placeholder={f.ph} required={f.k === 'nombre'}
-                    style={{ width: '100%', padding: '10px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 14, outline: 'none', fontFamily: 'inherit' }} />
+                    style={{ width: '100%', padding: '10px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 14, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
                 </div>
               ))}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -107,21 +114,14 @@ export default function StockPage() {
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 4 }}>Categoría</label>
                   <select value={form.categoria} onChange={e => setForm(p => ({ ...p, categoria: e.target.value }))}
                     style={{ width: '100%', padding: '10px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 14, background: 'white', fontFamily: 'inherit' }}>
-                    <option value="limpieza">🧴 Limpieza</option>
-                    <option value="lenceria">🛏️ Lencería</option>
-                    <option value="consumible">🧻 Consumible</option>
-                    <option value="herramienta">🧹 Herramienta</option>
+                    {categorias.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 4 }}>Unidad</label>
                   <select value={form.unidad} onChange={e => setForm(p => ({ ...p, unidad: e.target.value }))}
                     style={{ width: '100%', padding: '10px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 14, background: 'white', fontFamily: 'inherit' }}>
-                    <option value="unidad">Unidad</option>
-                    <option value="litro">Litro</option>
-                    <option value="kg">Kg</option>
-                    <option value="rollo">Rollo</option>
-                    <option value="juego">Juego</option>
+                    {unidades.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
                   </select>
                 </div>
               </div>
