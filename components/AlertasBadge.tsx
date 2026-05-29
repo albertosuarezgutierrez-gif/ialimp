@@ -9,7 +9,6 @@ export default function AlertasBadge() {
 
   useEffect(() => {
     cargar()
-    // Poll cada 2 min
     const t = setInterval(cargar, 2 * 60 * 1000)
     return () => clearInterval(t)
   }, [])
@@ -62,22 +61,34 @@ export default function AlertasBadge() {
           {/* Overlay */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
 
-          {/* Panel */}
-          <div className="absolute right-0 top-8 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+          {/* Panel — responsive: full-width drawer en móvil, dropdown en desktop */}
+          <div className={`
+            z-50 bg-white shadow-2xl border border-gray-100 overflow-hidden
+            fixed left-0 right-0 bottom-0 rounded-t-2xl max-h-[80vh]
+            sm:absolute sm:left-auto sm:right-0 sm:bottom-auto sm:top-8
+            sm:w-80 sm:rounded-2xl sm:max-h-[32rem] sm:fixed-auto
+          `}>
             <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-gray-800 text-sm">Alertas</h3>
                 {count > 0 && <p className="text-xs text-red-500">{count} sin leer</p>}
               </div>
-              {count > 0 && (
-                <button onClick={marcarTodas} disabled={loading}
-                  className="text-xs text-indigo-600 hover:underline">
-                  Leer todas
+              <div className="flex items-center gap-3">
+                {count > 0 && (
+                  <button onClick={marcarTodas} disabled={loading}
+                    className="text-xs text-indigo-600 hover:underline">
+                    Leer todas
+                  </button>
+                )}
+                {/* Botón cerrar visible en móvil */}
+                <button onClick={() => setOpen(false)}
+                  className="sm:hidden text-gray-400 hover:text-gray-600 text-xl leading-none">
+                  ×
                 </button>
-              )}
+              </div>
             </div>
 
-            <div className="max-h-96 overflow-y-auto">
+            <div className="overflow-y-auto max-h-[calc(80vh-56px)] sm:max-h-80">
               {alertas.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 text-sm">
                   <div className="text-2xl mb-1">✅</div>
