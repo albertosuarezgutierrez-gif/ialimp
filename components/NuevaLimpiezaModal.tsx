@@ -1,12 +1,12 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
-const TIPOS_SERVICIO = [
-  { id: 'rotacion',      label: 'Rotación',      icon: '🔄', desc: 'Entre huéspedes' },
-  { id: 'profunda',      label: 'Profunda',       icon: '🧽', desc: 'Limpieza a fondo' },
-  { id: 'comunidad',     label: 'Comunidad',      icon: '🏢', desc: 'Zonas comunes' },
-  { id: 'obra',          label: 'Final obra',     icon: '🏗️', desc: 'Post-construcción' },
-  { id: 'mantenimiento', label: 'Mantenimiento',  icon: '🔧', desc: 'Revisión y orden' },
+const TIPOS_SERVICIO_DEFAULT = [
+  { id: 'rotacion',      label: 'Rotación',      emoji: '🔄', icon: '🔄', desc: 'Entre huéspedes' },
+  { id: 'profunda',      label: 'Profunda',       emoji: '🧽', icon: '🧽', desc: 'Limpieza a fondo' },
+  { id: 'comunidad',     label: 'Comunidad',      emoji: '🏢', icon: '🏢', desc: 'Zonas comunes' },
+  { id: 'obra',          label: 'Final obra',     emoji: '🏗️', icon: '🏗️', desc: 'Post-construcción' },
+  { id: 'mantenimiento', label: 'Mantenimiento',  emoji: '🔧', icon: '🔧', desc: 'Revisión y orden' },
 ]
 
 interface Props {
@@ -22,6 +22,27 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
   const hoy = new Date().toISOString().split('T')[0]
 
   // ── Stepper state ──
+  const [tiposServicio, setTiposServicio] = useState(TIPOS_SERVICIO_DEFAULT)
+
+  useEffect(() => {
+    fetch('/api/admin/catalogos')
+      .then(r => r.json())
+      .then(d => {
+        const tipos = d.catalogos?.tipos_servicio_op?.filter((t: any) => t.activo !== false)
+        if (tipos?.length) {
+          const mapped = tipos.map((t: any) => ({ ...t, icon: t.emoji || t.icon || '🔄' }))
+          setTiposServicio(mapped)
+          // Actualizar tipo_servicio al primer tipo disponible si el actual no existe
+          setForm(prev => ({
+            ...prev,
+            tipo_servicio: mapped.find((t: any) => t.id === prev.tipo_servicio)
+              ? prev.tipo_servicio
+              : mapped[0]?.id || prev.tipo_servicio
+          }))
+        }
+      }).catch(() => {})
+  }, [])
+
   const [paso, setPaso] = useState<Paso>(1)
 
   // ── Paso 1: Cliente ──
@@ -289,7 +310,7 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de servicio</label>
                 <div className="grid grid-cols-3 gap-2">
-                  {TIPOS_SERVICIO.map(t => (
+                  {tiposServicio.map(t => (
                     <button key={t.id} type="button"
                       onClick={() => f('tipo_servicio', t.id)}
                       className="p-2.5 rounded-xl border-2 text-center transition"
