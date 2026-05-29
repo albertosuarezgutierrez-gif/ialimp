@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import ChatSesion from '@/components/ChatSesion'
 import ConsumoProductos from '@/components/ConsumoProductos'
+import AccesoPropiedad from '@/components/AccesoPropiedad'
 
 // ── Colores corporativos ialimp ───────────────────────────────────────────────
 const C = {
@@ -185,6 +186,22 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
           </div>
         )}
       </div>
+
+        {/* 🔑 Banner instrucciones de acceso — siempre visible si hay datos */}
+        {(sesion.instrucciones_acceso || sesion.codigo_acceso || (sesion.archivos_acceso?.length > 0)) && (
+          <div style={{ padding: '0 16px 4px' }}>
+            <AccesoPropiedad
+              propiedadId={sesion.propiedad_id}
+              propiedadNombre={sesion.property_name}
+              token=""
+              instruccionesIniciales={sesion.instrucciones_acceso || ''}
+              tipoAccesoInicial={sesion.tipo_acceso || 'llave'}
+              codigoAccesoInicial={sesion.codigo_acceso || ''}
+              archivosIniciales={sesion.archivos_acceso || []}
+              soloLectura={true}
+            />
+          </div>
+        )}
 
         {/* Cómo llegar + Chat grupal */}
         <div style={{ display: 'flex', gap: 8, padding: '0 16px 12px' }}>

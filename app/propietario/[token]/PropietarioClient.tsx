@@ -3,6 +3,7 @@ import { useState } from 'react'
 import FirmaPad from '@/components/FirmaPad'
 import ChatSesion from '@/components/ChatSesion'
 import GastosTab from '@/components/GastosTab'
+import AccesoPropiedad from '@/components/AccesoPropiedad'
 
 const C = {
   primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff',
@@ -121,7 +122,7 @@ function QuejaModal({ sesion, token, onClose, onSent }: QuejaModalProps) {
 }
 
 export default function PropietarioClient({ cliente, propiedades, historial, token }: any) {
-  const [tab, setTab]           = useState<'hoy'|'historial'|'gastos'|'chat'>('hoy')
+  const [tab, setTab]           = useState<'hoy'|'historial'|'gastos'|'acceso'|'chat'>('hoy')
   const [fotoModal, setFoto]    = useState<string|null>(null)
   const [quejaModal, setQueja]  = useState<any>(null)
   const [firmaModal, setFirma]  = useState<any>(null)
@@ -154,7 +155,7 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
         </div>
 
         <div style={{ display: 'flex', marginTop: 16 }}>
-          {[['hoy','Hoy'],['historial','Historial'],['chat','💬 Chat']].map(([id, label]) => (
+          {[['hoy','Hoy'],['historial','Historial'],['acceso','🔑 Acceso'],['chat','💬 Chat']].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id as any)}
               style={{ flex: 1, padding: '11px', border: 'none', cursor: 'pointer', background: 'transparent', color: tab === id ? 'white' : 'rgba(255,255,255,0.5)', fontWeight: tab === id ? 700 : 500, fontSize: 14, borderBottom: `2.5px solid ${tab === id ? 'white' : 'transparent'}`, fontFamily: 'inherit' }}>
               {label}
@@ -267,6 +268,26 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
       )}
 
       {/* Tab chat */}
+      {tab === 'acceso' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16, lineHeight: 1.5 }}>
+            Añade las instrucciones de acceso para cada piso: tipo de llave, código, ubicación de la caja... La empresa de limpieza las verá antes de cada sesión.
+          </p>
+          {propiedades.map((p: any) => (
+            <AccesoPropiedad
+              key={p.id}
+              propiedadId={p.id}
+              propiedadNombre={p.nombre}
+              token={token}
+              instruccionesIniciales={p.instrucciones_acceso || ''}
+              tipoAccesoInicial={p.tipo_acceso || 'llave'}
+              codigoAccesoInicial={p.codigo_acceso || ''}
+              archivosIniciales={p.archivos_acceso || []}
+            />
+          ))}
+        </div>
+      )}
+
       {tab === 'chat' && (
         <div style={{ height: 'calc(100vh - 200px)' }}>
           <ChatSesion sesionId={null} apiBase={'/api/propietario/' + token + '/chat'} miNombre={cliente.nombre} miTipo="propietario" />
