@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const C = {
   primary:'#4f46e5', brand:'#6366f1', light:'#eef2ff',
@@ -53,10 +53,63 @@ function NuevoGastoModal({ token, propiedades, onClose, onGuardado }: any) {
     recurrente:false, proveedor:'', notas:'', propiedad_id:'',
     fecha_vencimiento:'', es_ingreso:false,
   })
-  const [saving, setSaving] = useState(false)
-  const [err, setErr]       = useState('')
+  const [saving, setSaving]     = useState(false)
+  const [err, setErr]           = useState('')
+  const [scanning, setScanning] = useState(false)
+  const [imgPreview, setImgPreview] = useState<string|null>(null)
+  const [iaResultado, setIaResultado] = useState<any>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const set = (k: string, v: any) => setForm(p => ({...p, [k]: v}))
+
+  // Mapeo categorías IA → categorías del formulario
+  const mapCategoria = (cat: string) => {
+    const m: Record<string,string> = {
+      limpieza:'limpieza', suministros:'suministros', mantenimiento:'reparacion',
+      lenceria:'menaje', alimentacion:'otros', otros:'otros',
+      seguro:'seguro', hipoteca:'hipoteca', comunidad:'comunidad',
+      impuesto:'impuesto', gestion:'gestion',
+    }
+    return m[cat] || 'otros'
+  }
+
+  async function escanearFoto(file: File) {
+    setScanning(true); setErr('')
+    try {
+      const base64 = await new Promise<string>((res, rej) => {
+        const r = new FileReader()
+        r.onload = e => res((e.target?.result as string).split(',')[1])
+        r.onerror = () => rej(new Error('Error leyendo imagen'))
+        r.readAsDataURL(file)
+      })
+      setImgPreview(URL.createObjectURL(file))
+
+      const resp = await fetch(`/api/propietario/${token}/escanear`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ imagen_base64: base64, media_type: file.type || 'image/jpeg' })
+      })
+      const d = await resp.json()
+      if (!resp.ok) throw new Error(d.error || 'Error IA')
+
+      const ia = d.datos_ia
+      setIaResultado(d)
+
+      // Rellenar formulario con datos IA
+      setForm(prev => ({
+        ...prev,
+        nombre:    ia.descripcion_corta || ia.proveedor || prev.nombre,
+        categoria: mapCategoria(ia.categoria || 'otros'),
+        importe:   d.total ? String(d.total) : prev.importe,
+        proveedor: ia.proveedor || prev.proveedor,
+        notas:     ia.notas || prev.notas,
+        mes:       ia.fecha ? String(new Date(ia.fecha).getMonth()+1) : prev.mes,
+        anio:      ia.fecha ? String(new Date(ia.fecha).getFullYear()) : prev.anio,
+      }))
+    } catch(e: any) {
+      setErr('IA: ' + e.message)
+    }
+    setScanning(false)
+  }
 
   async function guardar() {
     if (!form.nombre || !form.importe) { setErr('Nombre e importe obligatorios'); return }
@@ -86,7 +139,49 @@ function NuevoGastoModal({ token, propiedades, onClose, onGuardado }: any) {
         </div>
         <div style={{ padding:'16px 20px', display:'flex', flexDirection:'column', gap:14 }}>
 
-          {/* Nombre */}
+          {/* ── Escáner IA ── */}
+          <div>
+            <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display:'none' }}
+              onChange={e => { const f = e.target.files?.[0]; if(f) escanearFoto(f); e.target.value='' }} />
+
+            {!imgPreview && !scanning && (
+              <button onClick={() => fileRef.current?.click()}
+                style={{ width:'100%', padding:'14px', borderRadius:12, border:`2px dashed ${C.primary}`,
+                  background:C.light, color:C.primary, fontSize:14, fontWeight:700, cursor:'pointer',
+                  fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                <span style={{ fontSize:22 }}>📷</span> Fotografiar ticket o factura · IA rellena sola
+              </button>
+            )}
+
+            {scanning && (
+              <div style={{ width:'100%', padding:'18px', borderRadius:12, background:C.light, textAlign:'center' }}>
+                <div style={{ fontSize:28, marginBottom:6 }}>🤖</div>
+                <div style={{ fontSize:13, fontWeight:700, color:C.primary }}>Analizando con IA...</div>
+                <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>Extrayendo importe, proveedor y categoría</div>
+              </div>
+            )}
+
+            {imgPreview && !scanning && (
+              <div style={{ position:'relative', borderRadius:10, overflow:'hidden', marginBottom:2 }}>
+                <img src={imgPreview} style={{ width:'100%', maxHeight:140, objectFit:'cover', display:'block' }} />
+                <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.35)', display:'flex', alignItems:'center', justifyContent:'center', gap:10 }}>
+                  {iaResultado && (
+                    <div style={{ background:'rgba(79,70,229,.9)', borderRadius:10, padding:'8px 14px', textAlign:'center' }}>
+                      <div style={{ fontSize:11, color:'rgba(255,255,255,.7)' }}>✨ IA extrajo</div>
+                      <div style={{ fontSize:15, fontWeight:800, color:'white' }}>{iaResultado.total?.toFixed(2)} €</div>
+                      <div style={{ fontSize:11, color:'#a5b4fc' }}>{iaResultado.datos_ia?.proveedor || '—'}</div>
+                    </div>
+                  )}
+                  <button onClick={() => { setImgPreview(null); setIaResultado(null); fileRef.current?.click() }}
+                    style={{ background:'rgba(255,255,255,.2)', border:'1px solid rgba(255,255,255,.4)', color:'white', borderRadius:8, padding:'6px 10px', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                    🔄 Cambiar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Concepto */}
           <div>
             <label style={{ fontSize:11, fontWeight:700, color:C.muted, display:'block', marginBottom:5, textTransform:'uppercase', letterSpacing:'.05em' }}>Concepto *</label>
             <input value={form.nombre} onChange={e => set('nombre', e.target.value)}
