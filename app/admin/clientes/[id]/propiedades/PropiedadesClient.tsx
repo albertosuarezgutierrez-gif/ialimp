@@ -52,7 +52,8 @@ const EMPTY = {
   tiene_jacuzzi: false, tiene_lavadora: false, tiene_secadora: false,
   tiene_cocina_completa: true, tiene_lavavajillas: false,
   tiene_parking: false, kit_bienvenida: false,
-  gestion_lenceria: 'propietario', notas_material: ''
+  gestion_lenceria: 'propietario', notas_material: '',
+  tipo_suelo: 'ceramica', admite_mascotas: false, num_plantas: 1
 }
 
 interface Props {
@@ -180,6 +181,17 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
     e.preventDefault()
     setLoading(true); setError('')
     try {
+      // ── Validaciones campos obligatorios para modelo de coste ──
+      if (!form.m2 || Number(form.m2) <= 0)
+        return setError('Los m² son obligatorios para calcular el coste de limpieza')
+      if (!form.habitaciones || Number(form.habitaciones) <= 0)
+        return setError('El número de dormitorios es obligatorio')
+      if (!form.num_banos || Number(form.num_banos) <= 0)
+        return setError('El número de baños es obligatorio')
+      if (!form.num_huespedes_max || Number(form.num_huespedes_max) <= 0)
+        return setError('La capacidad máxima de huéspedes es obligatoria')
+      if (!form.tipo_suelo)
+        return setError('El tipo de suelo es obligatorio')
       // Construir direccion legacy desde campos desglosados
       const direccionBuilt = buildDireccion(form)
       const body = {
@@ -588,18 +600,107 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* ── DATOS PARA MODELO DE COSTE ── */}
+              <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-bold text-indigo-700">📐 Datos para cálculo de coste</div>
+                  <span className="text-xs font-bold text-red-500 bg-red-50 border border-red-100 rounded-full px-2 py-0.5">Obligatorio</span>
+                </div>
+                <p className="text-xs text-indigo-500 -mt-2">
+                  Estos datos permiten calcular el coste real de cada limpieza y mejorar el modelo con el tiempo.
+                </p>
+
+                {/* m², dormitorios, baños, plantas */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">M² <span className="text-red-400">*</span></label>
+                    <input type="number" value={form.m2} onChange={e => f('m2', e.target.value)}
+                      placeholder="90" min="1"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Dormitorios <span className="text-red-400">*</span></label>
+                    <input type="number" value={form.habitaciones} onChange={e => f('habitaciones', e.target.value)}
+                      placeholder="3" min="0"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Baños <span className="text-red-400">*</span></label>
+                    <input type="number" value={form.num_banos} onChange={e => f('num_banos', Number(e.target.value))}
+                      placeholder="1" min="1"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Plantas</label>
+                    <input type="number" value={form.num_plantas} onChange={e => f('num_plantas', Number(e.target.value))}
+                      placeholder="1" min="1"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                </div>
+
+                {/* Capacidad máx huéspedes */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">M²</label>
-                  <input type="number" value={form.m2} onChange={e => f('m2', e.target.value)}
-                    placeholder="90"
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    Capacidad máx. huéspedes <span className="text-red-400">*</span>
+                  </label>
+                  <input type="number" value={form.num_huespedes_max} onChange={e => f('num_huespedes_max', Number(e.target.value))}
+                    placeholder="4" min="1"
                     className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
+
+                {/* Tipo de suelo */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Habitaciones</label>
-                  <input type="number" value={form.habitaciones} onChange={e => f('habitaciones', e.target.value)}
-                    placeholder="3"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  <label className="block text-xs font-semibold text-gray-600 mb-2">
+                    Tipo de suelo <span className="text-red-400">*</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { id: 'ceramica', label: '🟫 Cerámica', desc: 'Baldosa, gresite' },
+                      { id: 'marmol',   label: '⬜ Mármol',   desc: 'Pulido, sin ácidos' },
+                      { id: 'parquet',  label: '🪵 Parquet',  desc: 'Madera, sin ácidos' },
+                      { id: 'mixto',    label: '🔀 Mixto',    desc: 'Varios tipos' },
+                    ] as const).map(s => (
+                      <button key={s.id} type="button" onClick={() => f('tipo_suelo', s.id)}
+                        className="p-2.5 rounded-xl border-2 text-left transition"
+                        style={{
+                          borderColor: form.tipo_suelo === s.id ? '#4f46e5' : '#e5e7eb',
+                          background:  form.tipo_suelo === s.id ? '#eef2ff' : 'white',
+                        }}>
+                        <div className="text-xs font-bold" style={{ color: form.tipo_suelo === s.id ? '#4f46e5' : '#1e293b' }}>{s.label}</div>
+                        <div className="text-xs text-gray-400">{s.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Terraza + mascotas */}
+                <div className="grid grid-cols-2 gap-3">
+                  <button type="button" onClick={() => f('tiene_terraza', !form.tiene_terraza)}
+                    className="flex items-center gap-3 p-3 rounded-xl border-2 transition text-left"
+                    style={{
+                      borderColor: form.tiene_terraza ? '#4f46e5' : '#e5e7eb',
+                      background:  form.tiene_terraza ? '#eef2ff' : 'white',
+                    }}>
+                    <span className="text-xl">🪴</span>
+                    <div>
+                      <div className="text-xs font-bold" style={{ color: form.tiene_terraza ? '#4f46e5' : '#374151' }}>Terraza / patio</div>
+                      <div className="text-xs text-gray-400">Superficie extra</div>
+                    </div>
+                    {form.tiene_terraza && <span className="ml-auto text-indigo-500 font-bold text-sm">✓</span>}
+                  </button>
+                  <button type="button" onClick={() => f('admite_mascotas', !form.admite_mascotas)}
+                    className="flex items-center gap-3 p-3 rounded-xl border-2 transition text-left"
+                    style={{
+                      borderColor: form.admite_mascotas ? '#4f46e5' : '#e5e7eb',
+                      background:  form.admite_mascotas ? '#eef2ff' : 'white',
+                    }}>
+                    <span className="text-xl">🐾</span>
+                    <div>
+                      <div className="text-xs font-bold" style={{ color: form.admite_mascotas ? '#4f46e5' : '#374151' }}>Admite mascotas</div>
+                      <div className="text-xs text-gray-400">+consumo productos</div>
+                    </div>
+                    {form.admite_mascotas && <span className="ml-auto text-indigo-500 font-bold text-sm">✓</span>}
+                  </button>
                 </div>
               </div>
 
@@ -800,3 +901,4 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
     </div>
   )
 }
+
