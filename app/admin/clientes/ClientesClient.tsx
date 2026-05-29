@@ -1,14 +1,17 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 
-const TIPOS = {
-  apartamentos_turisticos: { label: 'Pisos turísticos', icon: '🏨', color: '#6366f1' },
-  particular:              { label: 'Casa particular',  icon: '🏡', color: '#ec4899' },
-  comunidad:               { label: 'Comunidad',        icon: '🏢', color: '#0ea5e9' },
-  final_obra:              { label: 'Final de obra',    icon: '🏗️', color: '#f59e0b' },
-  oficinas:                { label: 'Oficinas',         icon: '💼', color: '#10b981' },
-  otro:                    { label: 'Otro',             icon: '📋', color: '#64748b' },
-} as const
+// Tipos por defecto (fallback si aún no cargó la config)
+const TIPOS_DEFAULT = [
+  { id: 'apartamentos_turisticos', label: 'Pisos turísticos', emoji: '🏨', icon: '🏨', color: '#6366f1', activo: true },
+  { id: 'particular',              label: 'Casa particular',  emoji: '🏡', icon: '🏡', color: '#ec4899', activo: true },
+  { id: 'comunidad',               label: 'Comunidad',        emoji: '🏢', icon: '🏢', color: '#0ea5e9', activo: true },
+  { id: 'final_obra',              label: 'Final de obra',    emoji: '🏗️', icon: '🏗️', color: '#f59e0b', activo: true },
+  { id: 'oficinas',                label: 'Oficinas',         emoji: '💼', icon: '💼', color: '#10b981', activo: true },
+  { id: 'otro',                    label: 'Otro',             emoji: '📋', icon: '📋', color: '#64748b', activo: true },
+]
+
+
 
 const EMPTY_FORM = {
   nombre: '', tipo: 'apartamentos_turisticos',
@@ -18,6 +21,16 @@ const EMPTY_FORM = {
 
 export default function ClientesClient({ clientesIniciales }: { clientesIniciales: any[] }) {
   const [clientes, setClientes]     = useState<any[]>(clientesIniciales)
+  const [tiposCliente, setTiposCliente] = useState<any[]>(TIPOS_DEFAULT)
+
+  useEffect(() => {
+    fetch('/api/admin/catalogos')
+      .then(r => r.json())
+      .then(d => {
+        const tipos = d.catalogos?.tipos_cliente?.filter((t: any) => t.activo !== false)
+        if (tipos?.length) setTiposCliente(tipos.map((t: any) => ({ ...t, icon: t.emoji || t.icon || '📋' })))
+      }).catch(() => {})
+  }, [])
   const [search, setSearch]         = useState('')
   const [filtroTipo, setFiltroTipo] = useState('')
   const [showModal, setShowModal]   = useState(false)
@@ -101,7 +114,7 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
     setClientes(cs => cs.map(x => x.id === c.id ? { ...x, activo: !c.activo } : x))
   }
 
-  const t = (tipo: string) => (TIPOS as any)[tipo] || TIPOS.otro
+  const t = (tipo: string) => tiposCliente.find(tc => tc.id === tipo) || tiposCliente.find(tc => tc.id === 'otro') || { label: tipo, icon: '📋', color: '#64748b' }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -126,7 +139,7 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
           className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
         />
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {['', ...Object.keys(TIPOS)].map(tipo => (
+          {['', ...tiposCliente.map(tc => tc.id)].map(tipo => (
             <button key={tipo} onClick={() => setFiltroTipo(tipo)}
               className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition"
               style={{
@@ -238,7 +251,7 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de cliente</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(TIPOS).map(([key, val]) => (
+                  {tiposCliente.map(val => { const key = val.id; return (
                     <button key={key} type="button"
                       onClick={() => setForm(f => ({ ...f, tipo: key }))}
                       className="p-2.5 rounded-xl border-2 text-left transition text-sm"
@@ -326,7 +339,7 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
             <div className="p-5 border-b border-gray-100 flex items-center justify-between">
               <h2 className="font-bold text-gray-800 truncate pr-4">
-                {(TIPOS as any)[detalle.cliente?.tipo]?.icon} {detalle.cliente?.nombre}
+                {t(detalle.cliente?.tipo || '').icon} {detalle.cliente?.nombre}
               </h2>
               <button onClick={() => setDetalle(null)} className="text-gray-400 hover:text-gray-600 text-xl flex-shrink-0">✕</button>
             </div>
