@@ -1,3 +1,4 @@
+
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
@@ -8,12 +9,20 @@ export default async function PropietarioPage({ params }: { params: Promise<{ to
   const { token } = await params
 
   const clientes = await prisma.$queryRaw<any[]>(Prisma.sql`
-    SELECT c.*, e.nombre AS empresa_nombre, e.email AS empresa_email
+    SELECT c.*, e.nombre AS empresa_nombre, e.email AS empresa_email,
+           COALESCE(c.chat_config, '{"ver_checklist":false,"ver_fotos":false}'::jsonb) AS chat_config
     FROM clientes c JOIN empresas e ON e.id = c.empresa_id
     WHERE c.access_token = ${token} AND c.notif_activa = true
   `)
   if (!clientes.length) redirect('/')
   const cliente = clientes[0]
+
+  // Extraer permisos del chat_config
+  const cfg      = (cliente.chat_config as any) || {}
+  const permisos = {
+    ver_checklist: cfg.ver_checklist === true,
+    ver_fotos:     cfg.ver_fotos     === true,
+  }
 
   const propiedades = await prisma.$queryRaw<any[]>(Prisma.sql`
     SELECT
@@ -64,16 +73,13 @@ export default async function PropietarioPage({ params }: { params: Promise<{ to
     LIMIT 20
   `)
 
-  const safeCliente   = serialize(cliente)
-  const safeProps     = serialize(propiedades)
-  const safeHistorial = serialize(historial)
-
   return (
     <PropietarioClient
-      cliente={safeCliente}
-      propiedades={safeProps}
-      historial={safeHistorial}
+      cliente={serialize(cliente)}
+      propiedades={serialize(propiedades)}
+      historial={serialize(historial)}
       token={token}
+      permisos={permisos}
     />
   )
 }
