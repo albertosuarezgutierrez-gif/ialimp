@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo, useEffect } from 'react'
 
-// Tipos por defecto (fallback si aún no cargó la config)
+// Tipos por defecto — fallback si catálogos aún no cargaron
 const TIPOS_DEFAULT = [
   { id: 'apartamentos_turisticos', label: 'Pisos turísticos', emoji: '🏨', icon: '🏨', color: '#6366f1', activo: true },
   { id: 'particular',              label: 'Casa particular',  emoji: '🏡', icon: '🏡', color: '#ec4899', activo: true },
@@ -444,3 +444,4 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
     </div>
   )
 }
+
