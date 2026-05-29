@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { requireEmpresaId } from '@/lib/tenant'
 
 export async function POST(req: Request) {
   try {
-    const { limpiadora_id, titulo, cuerpo, empresa_id } = await req.json()
-    if (!empresa_id) return NextResponse.json({ error: 'empresa_id requerido' }, { status: 400 })
+    const empresa_id = await requireEmpresaId()
+    const { limpiadora_id, titulo, cuerpo } = await req.json()
 
     const VAPID_PUBLIC  = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY  || ''
     const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY || ''
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
       SELECT endpoint, p256dh, auth_key
       FROM push_subscriptions
       WHERE empresa_id = ${empresa_id}::uuid
-        AND limpiadora_id = ${limpiadora_id}::uuid
+        ${limpiadora_id ? Prisma.sql`AND limpiadora_id = ${limpiadora_id}::uuid` : Prisma.sql``}
     `)
 
     if (!subs.length) return NextResponse.json({ ok: true, sent: 0, msg: 'Sin suscripciones' })
