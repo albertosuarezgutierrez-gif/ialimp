@@ -43,10 +43,16 @@ export default function DashboardClient({
   const [briefing, setBriefing]   = useState<string|null>(null)
   const [briefingKpis, setBriefingKpis] = useState<any>(null)
   const [loadingBriefing, setLoadingBriefing] = useState(false)
+  const [filtroEstado, setFiltroEstado] = useState<'all'|'pendiente'|'en_curso'|'hecha'>('all')
 
   const pendientes  = sesiones.filter(s => !s.started_at)
   const enCurso     = sesiones.filter(s => s.started_at && !s.completed_at)
   const completadas = sesiones.filter(s => s.completed_at)
+
+  const sesionesFiltradas = filtroEstado === 'all'      ? sesiones
+    : filtroEstado === 'pendiente' ? pendientes
+    : filtroEstado === 'en_curso'  ? enCurso
+    : completadas
 
   async function cargarBriefing() {
     setLoadingBriefing(true)
@@ -585,18 +591,37 @@ export default function DashboardClient({
 
             {/* KPIs */}
             <div className="kpi-grid">
-              <div className="kpi-card">
-                <div className="kpi-num" style={{ color:'#f59e0b' }}>{pendientes.length}</div>
-                <div className="kpi-lbl">Pendientes</div>
-              </div>
-              <div className="kpi-card">
-                <div className="kpi-num" style={{ color:'#4f46e5' }}>{enCurso.length}</div>
-                <div className="kpi-lbl">En curso</div>
-              </div>
-              <div className="kpi-card">
-                <div className="kpi-num" style={{ color:'#10b981' }}>{completadas.length}</div>
-                <div className="kpi-lbl">Hechas</div>
-              </div>
+              {[
+                { key:'pendiente' as const, count:pendientes.length,  color:'#f59e0b', label:'Pendientes' },
+                { key:'en_curso'  as const, count:enCurso.length,     color:'#4f46e5', label:'En curso'   },
+                { key:'hecha'     as const, count:completadas.length, color:'#10b981', label:'Hechas'     },
+              ].map(({ key, count, color, label }) => {
+                const active = filtroEstado === key
+                return (
+                  <div
+                    key={key}
+                    className="kpi-card"
+                    onClick={() => {
+                      setFiltroEstado(active ? 'all' : key)
+                      setTab('hoy')
+                    }}
+                    style={{
+                      cursor:'pointer',
+                      outline: active ? `2px solid ${color}` : '2px solid transparent',
+                      transform: active ? 'scale(1.04)' : 'scale(1)',
+                      transition:'all .15s',
+                    }}
+                  >
+                    <div className="kpi-num" style={{ color }}>{count}</div>
+                    <div className="kpi-lbl">{label}</div>
+                    {active && (
+                      <div style={{ fontSize:9, color, fontWeight:700, marginTop:2, letterSpacing:'.05em' }}>
+                        FILTRANDO ✕
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
 
             {/* Fecha + botón */}
@@ -615,7 +640,7 @@ export default function DashboardClient({
                 <button key={t} className={`tab-btn ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
                   {t === 'hoy' ? 'Limpiezas' : 'PMS'}
                   {t === 'hoy' && sesiones.length > 0 && (
-                    <span className="tab-count">{sesiones.length}</span>
+                    <span className="tab-count">{sesionesFiltradas.length}</span>
                   )}
                 </button>
               ))}
@@ -624,7 +649,20 @@ export default function DashboardClient({
             {/* ── TAB LIMPIEZAS ── */}
             {tab === 'hoy' && (
               <>
-                {sesiones.length === 0 && (
+                {filtroEstado !== 'all' && (
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                    background:'#eef2ff', borderRadius:10, padding:'8px 12px', marginBottom:8 }}>
+                    <span style={{ fontSize:12, color:'#4f46e5', fontWeight:600 }}>
+                      Mostrando: {filtroEstado === 'pendiente' ? '⏳ Pendientes' : filtroEstado === 'en_curso' ? '⟳ En curso' : '✓ Hechas'}
+                      {' '}({sesionesFiltradas.length})
+                    </span>
+                    <button onClick={() => setFiltroEstado('all')}
+                      style={{ fontSize:11, color:'#6366f1', background:'none', border:'none', cursor:'pointer', fontWeight:700 }}>
+                      Ver todas ✕
+                    </button>
+                  </div>
+                )}
+                {sesionesFiltradas.length === 0 && sesiones.length === 0 && (
                   <div style={{ textAlign:'center', padding:'48px 16px', color:'#94a3b8' }}>
                     <div style={{ fontSize:40, marginBottom:12 }}>🧹</div>
                     <div style={{ fontWeight:700, color:'#334155', marginBottom:4 }}>Sin limpiezas para este día</div>
@@ -634,7 +672,13 @@ export default function DashboardClient({
                     </button>
                   </div>
                 )}
-                {sesiones.map(s => {
+                {sesionesFiltradas.length === 0 && sesiones.length > 0 && (
+                  <div style={{ textAlign:'center', padding:'32px 16px', color:'#94a3b8' }}>
+                    <div style={{ fontSize:32, marginBottom:8 }}>🔍</div>
+                    <div style={{ fontSize:13, color:'#64748b' }}>No hay limpiezas con este estado</div>
+                  </div>
+                )}
+                {sesionesFiltradas.map(s => {
                   const color  = TIPO_COLOR[s.tipo_servicio] || '#4f46e5'
                   const icon   = TIPO_ICON[s.tipo_servicio]  || '🧹'
                   const manual = s.origen === 'manual'
