@@ -4,12 +4,14 @@ import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
 import { serialize } from '@/lib/serialize'
 
-// Catálogos configurables por empresa
-// Todos viven en cotizador_config como columnas JSONB
-// GET  → devuelve todos los catálogos
-// PATCH → actualiza uno o varios catálogos
+const ALLOWED_KEYS = [
+  'tipos_servicio_op', 'categorias_stock', 'unidades_stock', 'tipos_lenceria',
+  'tipos_cliente', 'categorias_incidencia', 'niveles_urgencia', 'estados_lead', 'tipos_expediente_rrhh'
+] as const
 
-const DEFAULTS = {
+type AllowedKey = typeof ALLOWED_KEYS[number]
+
+const DEFAULTS: Record<AllowedKey, any[]> = {
   tipos_servicio_op: [
     { id: 'rotacion',      label: 'Rotación',     emoji: '🔄', desc: 'Entre huéspedes',    activo: true },
     { id: 'profunda',      label: 'Profunda',      emoji: '🧽', desc: 'Limpieza a fondo',   activo: true },
@@ -27,12 +29,12 @@ const DEFAULTS = {
   ],
   unidades_stock: [
     { id: 'unidad', label: 'Unidad' },
-    { id: 'kg',     label: 'Kg'     },
-    { id: 'litro',  label: 'Litro'  },
-    { id: 'rollo',  label: 'Rollo'  },
-    { id: 'pack',   label: 'Pack'   },
-    { id: 'caja',   label: 'Caja'   },
-    { id: 'par',    label: 'Par'    },
+    { id: 'kg',     label: 'Kg'    },
+    { id: 'litro',  label: 'Litro' },
+    { id: 'rollo',  label: 'Rollo' },
+    { id: 'pack',   label: 'Pack'  },
+    { id: 'caja',   label: 'Caja'  },
+    { id: 'par',    label: 'Par'   },
   ],
   tipos_lenceria: [
     { id: 'sabanas_dobles',       label: 'Sábanas dobles',       emoji: '🛏️', activo: true },
@@ -92,75 +94,79 @@ export async function GET() {
       LIMIT 1
     `)
 
+    // Si no hay config o está vacía, crear con defaults
     if (!rows.length || !rows[0].tipos_servicio_op?.length) {
-      // Primera vez: crear/rellenar con defaults
-      await prisma.$executeRaw(Prisma.sql`
-        INSERT INTO cotizador_config (empresa_id,
-          tipos_servicio_op, categorias_stock, unidades_stock, tipos_lenceria,
-          tipos_cliente, categorias_incidencia, niveles_urgencia, estados_lead, tipos_expediente_rrhh)
-        VALUES (${empresa_id}::uuid,
-          ${JSON.stringify(DEFAULTS.tipos_servicio_op)}::jsonb,
-          ${JSON.stringify(DEFAULTS.categorias_stock)}::jsonb,
-          ${JSON.stringify(DEFAULTS.unidades_stock)}::jsonb,
-          ${JSON.stringify(DEFAULTS.tipos_lenceria)}::jsonb,
-          ${JSON.stringify(DEFAULTS.tipos_cliente)}::jsonb,
-          ${JSON.stringify(DEFAULTS.categorias_incidencia)}::jsonb,
-          ${JSON.stringify(DEFAULTS.niveles_urgencia)}::jsonb,
-          ${JSON.stringify(DEFAULTS.estados_lead)}::jsonb,
-          ${JSON.stringify(DEFAULTS.tipos_expediente_rrhh)}::jsonb
+      for (const key of ALLOWED_KEYS) {
+        const val = JSON.stringify(DEFAULTS[key])
+        await prisma.$executeRaw(Prisma.sql`
+          INSERT INTO cotizador_config (empresa_id)
+          VALUES (${empresa_id}::uuid)
+          ON CONFLICT (empresa_id) DO NOTHING
+        `)
+        // Actualizar solo si está vacío
+        await prisma.$executeRaw(
+          Prisma.sql`UPDATE cotizador_config
+            SET updated_at = now()
+            WHERE empresa_id = ${empresa_id}::uuid
+              AND (${Prisma.raw(key)} IS NULL OR ${Prisma.raw(key)} = '[]'::jsonb)`
         )
-        ON CONFLICT (empresa_id) DO UPDATE SET
-          tipos_servicio_op     = COALESCE(NULLIF(cotizador_config.tipos_servicio_op, '[]'::jsonb), EXCLUDED.tipos_servicio_op),
-          categorias_stock      = COALESCE(NULLIF(cotizador_config.categorias_stock, '[]'::jsonb),  EXCLUDED.categorias_stock),
-          unidades_stock        = COALESCE(NULLIF(cotizador_config.unidades_stock, '[]'::jsonb),    EXCLUDED.unidades_stock),
-          tipos_lenceria        = COALESCE(NULLIF(cotizador_config.tipos_lenceria, '[]'::jsonb),    EXCLUDED.tipos_lenceria),
-          tipos_cliente         = COALESCE(NULLIF(cotizador_config.tipos_cliente, '[]'::jsonb),     EXCLUDED.tipos_cliente),
-          categorias_incidencia = COALESCE(NULLIF(cotizador_config.categorias_incidencia, '[]'::jsonb), EXCLUDED.categorias_incidencia),
-          niveles_urgencia      = COALESCE(NULLIF(cotizador_config.niveles_urgencia, '[]'::jsonb),  EXCLUDED.niveles_urgencia),
-          estados_lead          = COALESCE(NULLIF(cotizador_config.estados_lead, '[]'::jsonb),      EXCLUDED.estados_lead),
-          tipos_expediente_rrhh = COALESCE(NULLIF(cotizador_config.tipos_expediente_rrhh, '[]'::jsonb), EXCLUDED.tipos_expediente_rrhh)
-      `)
+      }
       return NextResponse.json(serialize({ catalogos: DEFAULTS }))
     }
 
-    return NextResponse.json(serialize({ catalogos: rows[0] }))
+    // Rellenar los que estén vacíos con defaults
+    const catalogos: any = {}
+    for (const key of ALLOWED_KEYS) {
+      catalogos[key] = rows[0][key]?.length ? rows[0][key] : DEFAULTS[key]
+    }
+
+    return NextResponse.json(serialize({ catalogos }))
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
 
+// PATCH — actualizar un catálogo específico
+// Recibe { key: AllowedKey, data: any[] }
+// O puede recibir múltiples keys directamente en el body
 export async function PATCH(req: NextRequest) {
   try {
     const empresa_id = await requireEmpresaId()
     const body = await req.json()
 
-    const allowed = [
-      'tipos_servicio_op', 'categorias_stock', 'unidades_stock', 'tipos_lenceria',
-      'tipos_cliente', 'categorias_incidencia', 'niveles_urgencia', 'estados_lead', 'tipos_expediente_rrhh'
-    ]
+    // Asegurar que existe la fila
+    await prisma.$executeRaw(Prisma.sql`
+      INSERT INTO cotizador_config (empresa_id)
+      VALUES (${empresa_id}::uuid)
+      ON CONFLICT (empresa_id) DO NOTHING
+    `)
 
-    // Construir SET dinámico solo con los campos enviados
-    const updates: string[] = []
-    const values: any = {}
-    for (const key of allowed) {
+    // Actualizar cada campo permitido que venga en el body
+    for (const key of ALLOWED_KEYS) {
       if (body[key] !== undefined) {
-        updates.push(key)
-        values[key] = body[key]
+        const val = JSON.stringify(body[key])
+        // Usamos queries individuales por campo para evitar SQL dinámico
+        if (key === 'tipos_servicio_op') {
+          await prisma.$executeRaw(Prisma.sql`UPDATE cotizador_config SET tipos_servicio_op = ${val}::jsonb, updated_at = now() WHERE empresa_id = ${empresa_id}::uuid`)
+        } else if (key === 'categorias_stock') {
+          await prisma.$executeRaw(Prisma.sql`UPDATE cotizador_config SET categorias_stock = ${val}::jsonb, updated_at = now() WHERE empresa_id = ${empresa_id}::uuid`)
+        } else if (key === 'unidades_stock') {
+          await prisma.$executeRaw(Prisma.sql`UPDATE cotizador_config SET unidades_stock = ${val}::jsonb, updated_at = now() WHERE empresa_id = ${empresa_id}::uuid`)
+        } else if (key === 'tipos_lenceria') {
+          await prisma.$executeRaw(Prisma.sql`UPDATE cotizador_config SET tipos_lenceria = ${val}::jsonb, updated_at = now() WHERE empresa_id = ${empresa_id}::uuid`)
+        } else if (key === 'tipos_cliente') {
+          await prisma.$executeRaw(Prisma.sql`UPDATE cotizador_config SET tipos_cliente = ${val}::jsonb, updated_at = now() WHERE empresa_id = ${empresa_id}::uuid`)
+        } else if (key === 'categorias_incidencia') {
+          await prisma.$executeRaw(Prisma.sql`UPDATE cotizador_config SET categorias_incidencia = ${val}::jsonb, updated_at = now() WHERE empresa_id = ${empresa_id}::uuid`)
+        } else if (key === 'niveles_urgencia') {
+          await prisma.$executeRaw(Prisma.sql`UPDATE cotizador_config SET niveles_urgencia = ${val}::jsonb, updated_at = now() WHERE empresa_id = ${empresa_id}::uuid`)
+        } else if (key === 'estados_lead') {
+          await prisma.$executeRaw(Prisma.sql`UPDATE cotizador_config SET estados_lead = ${val}::jsonb, updated_at = now() WHERE empresa_id = ${empresa_id}::uuid`)
+        } else if (key === 'tipos_expediente_rrhh') {
+          await prisma.$executeRaw(Prisma.sql`UPDATE cotizador_config SET tipos_expediente_rrhh = ${val}::jsonb, updated_at = now() WHERE empresa_id = ${empresa_id}::uuid`)
+        }
       }
     }
-
-    if (!updates.length) {
-      return NextResponse.json({ error: 'No hay campos válidos para actualizar' }, { status: 400 })
-    }
-
-    // Upsert con los campos enviados
-    await prisma.$executeRaw(Prisma.sql`
-      INSERT INTO cotizador_config (empresa_id, ${Prisma.raw(updates.join(', '))})
-      VALUES (${empresa_id}::uuid, ${Prisma.raw(updates.map(k => `'${JSON.stringify(values[k])}'::jsonb`).join(', '))})
-      ON CONFLICT (empresa_id) DO UPDATE SET
-        ${Prisma.raw(updates.map(k => `${k} = '${JSON.stringify(values[k])}'::jsonb`).join(', '))},
-        updated_at = now()
-    `)
 
     return NextResponse.json({ ok: true })
   } catch (e: any) {
