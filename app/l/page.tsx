@@ -519,6 +519,24 @@ export default function LimpiadoarasApp() {
         </div>
       </div>
 
+      {/* Botón manual de usuario */}
+      <div style={{ padding: '10px 16px 4px', display: 'flex', justifyContent: 'flex-end' }}>
+        <a
+          href="https://wswbehlcuxqxyinousql.supabase.co/storage/v1/object/public/property-access-files/publico/manual_limpiadora_v1.pdf"
+          target="_blank"
+          rel="noreferrer"
+          download="Manual_IALIMP_Limpiadora.pdf"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: 'white', color: '#4f46e5', border: '1px solid #c7d2fe',
+            borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 700,
+            textDecoration: 'none', boxShadow: '0 1px 4px rgba(79,70,229,0.12)',
+            fontFamily: 'inherit',
+          }}>
+          📖 Manual de uso
+        </a>
+      </div>
+
       {/* Selector de fecha */}
       <div style={{ display: 'flex', gap: 6, padding: '14px 16px 10px', overflowX: 'auto' }}>
         {[-1, 0, 1, 2, 3].map(offset => {
