@@ -9,6 +9,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
+  // Nombre de empresa según el host (white-label)
+  const [appName, setAppName] = useState('ialimp')
+  if (typeof window !== 'undefined' && appName === 'ialimp') {
+    const h = window.location.hostname
+    if (h.includes('siquebrilla')) setAppName('Sique Brilla')
+    else if (h.includes('sique-brilla')) setAppName('Sique Brilla')
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
@@ -33,7 +41,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-indigo-600">ialimp</h1>
+          <h1 className="text-3xl font-bold text-indigo-600">{appName}</h1>
           <p className="text-gray-500 mt-1">Gestión de limpiezas</p>
         </div>
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg p-8 space-y-4">
