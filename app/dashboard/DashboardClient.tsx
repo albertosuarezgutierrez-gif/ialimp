@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import NuevaLimpiezaModal from '@/components/NuevaLimpiezaModal'
 import AlertasBadge from '@/components/AlertasBadge'
 
@@ -32,6 +33,7 @@ const NAV = [
 export default function DashboardClient({
   empresa, sesionesIniciales, conexiones, clientes, limpiadoras, today
 }: Props) {
+  const router = useRouter()
   const [sesiones,    setSesiones]   = useState<any[]>(sesionesIniciales)
   const [tab,         setTab]        = useState<'hoy'|'pms'>('hoy')
   const [showNueva,   setShowNueva]  = useState(false)
@@ -81,7 +83,7 @@ export default function DashboardClient({
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' })
-    window.location.href = '/login'
+    router.replace('/login')
   }
 
   // Cerrar drawer al hacer resize a desktop
@@ -721,17 +723,17 @@ export default function DashboardClient({
         <nav className="bottom-nav">
           <div className="bottom-nav-inner">
             <button className="bottom-nav-item active"><span>🏠</span><span>Inicio</span></button>
-            <button className="bottom-nav-item" onClick={() => window.location.href='/admin/negocio'}>
+            <button className="bottom-nav-item" onClick={() => router.push('/admin/negocio')}>
               <span>👥</span><span>Clientes</span>
             </button>
             <button className="bottom-nav-item" onClick={() => setShowNueva(true)}>
               <span style={{ background:'#4f46e5', borderRadius:12, width:42, height:42, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, color:'white', boxShadow:'0 3px 10px rgba(79,70,229,.4)' }}>＋</span>
               <span>Nueva</span>
             </button>
-            <button className="bottom-nav-item" onClick={() => window.location.href='/admin/equipo'}>
+            <button className="bottom-nav-item" onClick={() => router.push('/admin/equipo')}>
               <span>👤</span><span>RRHH</span>
             </button>
-            <button className="bottom-nav-item" onClick={() => window.location.href='/admin'}>
+            <button className="bottom-nav-item" onClick={() => router.push('/admin')}>
               <span>⚙️</span><span>Config</span>
             </button>
           </div>
@@ -750,3 +752,4 @@ export default function DashboardClient({
     </>
   )
 }
+
