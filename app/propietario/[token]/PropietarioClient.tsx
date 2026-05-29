@@ -1,9 +1,7 @@
 'use client'
 import { useState } from 'react'
 import FirmaPad from '@/components/FirmaPad'
-import ChatSesion from '@/components/ChatSesion'
 import ChatSesionPropietario from '@/components/ChatSesionPropietario'
-import GastosTab from '@/components/GastosTab'
 import ContabilidadTab from '@/components/ContabilidadTab'
 import AccesoPropiedad from '@/components/AccesoPropiedad'
 import EscanerDocumento from '@/components/EscanerDocumento'
@@ -18,36 +16,38 @@ const C = {
 }
 
 const ESTADO_CFG = {
-  completada: { label: '✅ Listo',      bg: C.okBg,   color: C.ok,   border: C.okBorder,   dot: '#22c55e' },
-  en_curso:   { label: '🧹 Limpiando', bg: C.infoBg, color: C.info, border: C.infoBorder,  dot: '#3b82f6' },
-  pendiente:  { label: '⏳ Pendiente', bg: C.bg,     color: C.muted,border: C.border,       dot: '#94a3b8' },
+  completada: { label: '✅ Listo',      bg: C.okBg,   color: C.ok,   border: C.okBorder,  dot: '#22c55e' },
+  en_curso:   { label: '🧹 Limpiando', bg: C.infoBg, color: C.info, border: C.infoBorder, dot: '#3b82f6' },
+  pendiente:  { label: '⏳ Pendiente', bg: C.bg,     color: C.muted,border: C.border,      dot: '#94a3b8' },
 }
+
+const MENU_ITEMS = [
+  { id: 'hoy',       icon: '🏠', label: 'Hoy' },
+  { id: 'historial', icon: '📋', label: 'Historial' },
+  { id: 'finanzas',  icon: '📊', label: 'Finanzas' },
+  { id: 'docs',      icon: '📄', label: 'Documentos' },
+  { id: 'acceso',    icon: '🔑', label: 'Acceso' },
+  { id: 'chat',      icon: '💬', label: 'Chat' },
+]
 
 function Stars({ value, onChange }: { value: number; onChange?: (n: number) => void }) {
   return (
     <div style={{ display: 'flex', gap: 4 }}>
       {[1,2,3,4,5].map(i => (
-        <button key={i} type="button"
-          onClick={() => onChange?.(i)}
-          style={{ background: 'none', border: 'none', cursor: onChange ? 'pointer' : 'default', fontSize: 24, color: i <= value ? '#f59e0b' : '#e2e8f0' }}>
-          ★
-        </button>
+        <button key={i} type="button" onClick={() => onChange?.(i)}
+          style={{ background: 'none', border: 'none', cursor: onChange ? 'pointer' : 'default',
+            fontSize: 24, color: i <= value ? '#f59e0b' : '#e2e8f0' }}>★</button>
       ))}
     </div>
   )
 }
 
-interface QuejaModalProps {
-  sesion: any; token: string
-  onClose: () => void; onSent: () => void
-}
-
-function QuejaModal({ sesion, token, onClose, onSent }: QuejaModalProps) {
-  const [desc, setDesc]       = useState('')
-  const [phone, setPhone]     = useState('')
-  const [rating, setRating]   = useState(0)
+function QuejaModal({ sesion, token, onClose, onSent }: any) {
+  const [desc, setDesc]     = useState('')
+  const [phone, setPhone]   = useState('')
+  const [rating, setRating] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
+  const [error, setError]   = useState('')
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault()
@@ -57,17 +57,16 @@ function QuejaModal({ sesion, token, onClose, onSent }: QuejaModalProps) {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sesion_id: sesion.id, descripcion: desc, guest_phone: phone || null, rating: rating || null })
     })
-    if (r.ok) { onSent() }
-    else { setError('Error al enviar'); setLoading(false) }
+    if (r.ok) { onSent() } else { setError('Error al enviar'); setLoading(false) }
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100, padding: 16 }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 200, padding: 16 }}>
       <div style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 480, maxHeight: '88vh', overflowY: 'auto' }}>
         <div style={{ padding: '18px 20px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h3 style={{ fontWeight: 800, fontSize: 17, color: C.text }}>Queja del huésped</h3>
-            <p style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{sesion.property_name}</p>
+            <p style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{sesion.property_name || sesion.nombre}</p>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, color: C.muted, cursor: 'pointer' }}>✕</button>
         </div>
@@ -79,30 +78,25 @@ function QuejaModal({ sesion, token, onClose, onSent }: QuejaModalProps) {
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 6 }}>¿Qué ha dicho el huésped? *</label>
             <textarea value={desc} onChange={e => setDesc(e.target.value)}
-              placeholder="Ej: El baño no estaba limpio, había pelo en la ducha..."
-              rows={4}
+              placeholder="Ej: El baño no estaba limpio..." rows={4}
               style={{ width: '100%', border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 12px', fontSize: 14, resize: 'none', fontFamily: 'inherit', outline: 'none' }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 6 }}>
-              Teléfono del huésped
-              <span style={{ fontWeight: 400, marginLeft: 4 }}>(para que la empresa de limpieza le llame)</span>
-            </label>
-            <input value={phone} onChange={e => setPhone(e.target.value)}
-              placeholder="+34 6xx xxx xxx"
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 6 }}>Teléfono del huésped</label>
+            <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+34 6xx xxx xxx"
               style={{ width: '100%', border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }} />
           </div>
           <div style={{ background: C.light, borderRadius: 10, padding: '10px 14px', fontSize: 12, color: C.brand }}>
-            💡 Sique Brilla recibirá un aviso inmediato y se pondrá en contacto para solucionar el problema.
+            💡 Sique Brilla recibirá un aviso inmediato.
           </div>
           {error && <p style={{ color: C.red, fontSize: 13 }}>{error}</p>}
           <div style={{ display: 'flex', gap: 10 }}>
             <button type="button" onClick={onClose}
-              style={{ flex: 1, padding: '12px', borderRadius: 10, border: `1px solid ${C.border}`, background: 'white', color: C.muted, fontSize: 13, cursor: 'pointer' }}>
+              style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${C.border}`, background: 'white', color: C.muted, fontSize: 13, cursor: 'pointer' }}>
               Cancelar
             </button>
             <button type="submit" disabled={loading}
-              style={{ flex: 2, padding: '12px', borderRadius: 10, border: 'none', background: C.red, color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.5 : 1 }}>
+              style={{ flex: 2, padding: 12, borderRadius: 10, border: 'none', background: C.red, color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.5 : 1 }}>
               {loading ? 'Enviando...' : '⚠️ Enviar queja'}
             </button>
           </div>
@@ -112,300 +106,151 @@ function QuejaModal({ sesion, token, onClose, onSent }: QuejaModalProps) {
   )
 }
 
-/* ── DocsTab — documentos general o por propiedad ── */
-function DocsTab({ token, propiedades }: { token: string; propiedades: any[] }) {
-  // null = general, string = propiedad_id
-  const [propSel, setPropSel]   = useState<string|null>(null)
-  const [docs, setDocs]         = useState<any[]>([])
-  const [loading, setLoading]   = useState(true)
-  const [showEsc, setShowEsc]   = useState(false)
-  const [docDetalle, setDetalle] = useState<any>(null)
-
-  const TIPO_ICON: Record<string,string> = { factura:'🧾', albaran:'📦', ticket:'🏷️', otro:'📄' }
-
-  useEffect(() => { cargar() }, [propSel])
-
-  async function cargar() {
-    setLoading(true)
-    const qs = new URLSearchParams()
-    if (propSel) qs.set('propiedad_id', propSel)
-    // sin propiedad_id → API devuelve docs generales (propiedad_id IS NULL)
-    const r = await fetch(`/api/propietario/${token}/documentos?${qs}`)
-    const d = await r.json()
-    setDocs(d.docs || [])
-    setLoading(false)
-  }
-
-  const propActual = propiedades.find((p: any) => p.id === propSel)
-
-  return (
-    <div style={{ paddingBottom: 40 }}>
-
-      {/* Selector de contexto */}
-      <div style={{ display:'flex', gap:6, overflowX:'auto', scrollbarWidth:'none', marginBottom:16, paddingBottom:2 }}>
-        {/* General */}
-        <button onClick={() => setPropSel(null)}
-          style={{ flexShrink:0, display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:20,
-            border:`2px solid ${propSel === null ? C.primary : C.border}`,
-            background: propSel === null ? C.light : 'white', cursor:'pointer', fontFamily:'inherit' }}>
-          <span style={{ fontSize:16 }}>📋</span>
-          <span style={{ fontSize:12, fontWeight: propSel === null ? 700 : 500, color: propSel === null ? C.primary : C.muted }}>General</span>
-        </button>
-        {/* Una por propiedad */}
-        {propiedades.map((p: any) => (
-          <button key={p.id} onClick={() => setPropSel(p.id)}
-            style={{ flexShrink:0, display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:20,
-              border:`2px solid ${propSel === p.id ? C.primary : C.border}`,
-              background: propSel === p.id ? C.light : 'white', cursor:'pointer', fontFamily:'inherit' }}>
-            <span style={{ fontSize:16 }}>🏢</span>
-            <span style={{ fontSize:12, fontWeight: propSel === p.id ? 700 : 500, color: propSel === p.id ? C.primary : C.muted,
-              maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-              {p.nombre}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Contexto activo + botón escanear */}
-      <div style={{ background: C.primary, borderRadius:14, padding:'14px 16px', marginBottom:16,
-        display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
-        <div>
-          <div style={{ fontSize:11, color:'rgba(255,255,255,.6)', fontWeight:700, textTransform:'uppercase', letterSpacing:'.06em' }}>
-            {propSel ? 'Apartamento' : 'General'}
-          </div>
-          <div style={{ fontSize:14, fontWeight:800, color:'white', marginTop:2 }}>
-            {propActual ? propActual.nombre : 'Documentos generales'}
-          </div>
-          <div style={{ fontSize:11, color:'rgba(255,255,255,.55)', marginTop:1 }}>
-            {docs.length} documento{docs.length !== 1 ? 's' : ''}
-          </div>
-        </div>
-        <button onClick={() => setShowEsc(true)}
-          style={{ flexShrink:0, background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.25)',
-            color:'white', borderRadius:10, padding:'10px 14px', fontSize:13, fontWeight:700,
-            cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:6 }}>
-          <span style={{ fontSize:18 }}>📷</span> Escanear
-        </button>
-      </div>
-
-      {/* Modal escáner */}
-      {showEsc && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:200,
-          display:'flex', alignItems:'flex-end', justifyContent:'center', padding:16 }}>
-          <div style={{ background:'white', borderRadius:20, width:'100%', maxWidth:480, maxHeight:'90vh', overflowY:'auto' }}>
-            <div style={{ padding:'16px 20px', borderBottom:`1px solid ${C.border}`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <div>
-                <div style={{ fontWeight:800, fontSize:16, color:C.text }}>📷 Escanear documento</div>
-                <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>
-                  {propActual ? `📍 ${propActual.nombre}` : '📋 General'}
-                </div>
-              </div>
-              <button onClick={() => setShowEsc(false)}
-                style={{ background:'none', border:'none', fontSize:22, color:C.muted, cursor:'pointer' }}>✕</button>
-            </div>
-            <div style={{ padding:'16px 20px' }}>
-              <EscanerDocumento
-                token={token}
-                propiedadId={propSel || undefined}
-                onGuardado={() => { setShowEsc(false); cargar() }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Lista documentos */}
-      {loading ? (
-        <div style={{ textAlign:'center', padding:'32px 0', color:C.muted }}>
-          <div style={{ fontSize:28, marginBottom:8 }}>🔍</div>
-          <div style={{ fontSize:13 }}>Cargando...</div>
-        </div>
-      ) : docs.length === 0 ? (
-        <div style={{ textAlign:'center', padding:'40px 16px', color:C.muted }}>
-          <div style={{ fontSize:40, marginBottom:10 }}>📂</div>
-          <div style={{ fontWeight:700, color:C.text, marginBottom:4 }}>Sin documentos</div>
-          <div style={{ fontSize:13, marginBottom:16 }}>
-            {propActual ? `No hay documentos para ${propActual.nombre}` : 'No hay documentos generales'}
-          </div>
-          <button onClick={() => setShowEsc(true)}
-            style={{ background:C.primary, color:'white', border:'none', borderRadius:10, padding:'10px 20px',
-              fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-            📷 Escanear primer documento
-          </button>
-        </div>
-      ) : (
-        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-          {docs.map((d: any) => (
-            <div key={d.id}
-              onClick={() => setDetalle(docDetalle?.id === d.id ? null : d)}
-              style={{ background:'white', borderRadius:12, border:`1px solid ${C.border}`,
-                overflow:'hidden', cursor:'pointer',
-                borderLeft:`4px solid ${d.tipo_doc==='factura'?C.primary:d.tipo_doc==='ticket'?C.ok:C.warn}` }}>
-              <div style={{ padding:'12px 14px', display:'flex', gap:10, alignItems:'flex-start' }}>
-                <div style={{ fontSize:24, flexShrink:0 }}>{TIPO_ICON[d.tipo_doc] || '📄'}</div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontWeight:700, fontSize:13, color:C.text }}>
-                    {d.descripcion || d.proveedor || 'Sin descripción'}
-                  </div>
-                  <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginTop:4 }}>
-                    {d.proveedor && <span style={{ fontSize:10, padding:'1px 7px', borderRadius:20, background:'#f1f5f9', color:C.muted, fontWeight:600 }}>🏢 {d.proveedor}</span>}
-                    {d.fecha_doc && <span style={{ fontSize:10, padding:'1px 7px', borderRadius:20, background:'#f1f5f9', color:C.muted, fontWeight:600 }}>📅 {d.fecha_doc}</span>}
-                    {d.propiedad_nombre && <span style={{ fontSize:10, padding:'1px 7px', borderRadius:20, background:C.light, color:C.brand, fontWeight:600 }}>🏢 {d.propiedad_nombre}</span>}
-                    {d.procesado_stock && <span style={{ fontSize:10, padding:'1px 7px', borderRadius:20, background:C.okBg, color:C.ok, fontWeight:700 }}>📦 Stock</span>}
-                  </div>
-                </div>
-                <div style={{ textAlign:'right', flexShrink:0 }}>
-                  <div style={{ fontWeight:800, fontSize:15, color:C.text }}>{d.total?.toFixed(2)}€</div>
-                  {d.porcentaje_iva && <div style={{ fontSize:10, color:C.muted, marginTop:1 }}>IVA {d.porcentaje_iva}%</div>}
-                </div>
-              </div>
-
-              {/* Detalle expandible — apunte contable */}
-              {docDetalle?.id === d.id && (
-                <div style={{ borderTop:`1px solid ${C.border}`, padding:'10px 14px', background:'#fafafa' }}>
-                  <div style={{ fontSize:11, fontWeight:700, color:C.muted, marginBottom:8, textTransform:'uppercase', letterSpacing:'.05em' }}>Apunte contable</div>
-                  {(d.apunte_json || []).map((a: any, i: number) => (
-                    <div key={i} style={{ display:'grid', gridTemplateColumns:'80px 1fr 60px 60px', gap:6, fontSize:11, color:C.text, marginBottom:4 }}>
-                      <span style={{ fontFamily:'monospace', color:C.brand, fontWeight:700 }}>{a.cuenta}</span>
-                      <span style={{ color:C.muted }}>{a.nombre}</span>
-                      <span style={{ textAlign:'right', color: a.debe ? C.text : C.muted }}>{a.debe ? `${a.debe}€` : ''}</span>
-                      <span style={{ textAlign:'right', color: a.haber ? C.text : C.muted }}>{a.haber ? `${a.haber}€` : ''}</span>
-                    </div>
-                  ))}
-                  {d.notas && <div style={{ fontSize:11, color:C.muted, marginTop:6, fontStyle:'italic' }}>{d.notas}</div>}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function PropietarioClient({ cliente, propiedades, historial, token }: any) {
-  const [tab, setTab]           = useState<'hoy'|'historial'|'gastos'|'acceso'|'chat'|'docs'|'finanzas'>('hoy')
-  const [fotoModal, setFoto]    = useState<string|null>(null)
-  const [quejaModal, setQueja]  = useState<any>(null)
-  const [firmaModal, setFirma]  = useState<any>(null)
+  const [tab, setTab]         = useState<'hoy'|'historial'|'finanzas'|'docs'|'acceso'|'chat'>('hoy')
+  const [menuOpen, setMenu]   = useState(false)
+  const [fotoModal, setFoto]  = useState<string|null>(null)
+  const [quejaModal, setQueja]= useState<any>(null)
+  const [firmaModal, setFirma]= useState<any>(null)
   const [quejaEnviada, setQuejaEnviada] = useState<Set<string>>(new Set())
-  // Chat por sesión — null = ninguno abierto
-  const [chatSesion, setChatSesion]  = useState<{ id: string; titulo: string } | null>(null)
+  const [chatSesion, setChatSesion]     = useState<{ id: string; titulo: string } | null>(null)
 
   const completadas = propiedades.filter((p: any) => p.estado_hoy === 'completada').length
   const total       = propiedades.length
+  const currentItem = MENU_ITEMS.find(m => m.id === tab)
 
-  // Si hay un chat de sesión abierto, mostrar pantalla completa de chat
+  // Chat sesión abierto → pantalla completa
   if (chatSesion) {
     return (
-      <div style={{ fontFamily: "'DM Sans', -apple-system, sans-serif", background: C.bg, minHeight: '100vh', maxWidth: 480, margin: '0 auto' }}>
-        <style>{`* { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
+      <div style={{ fontFamily: "'DM Sans',-apple-system,sans-serif", minHeight: '100vh', maxWidth: 480, margin: '0 auto' }}>
+        <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
         <ChatSesionPropietario
-          token={token}
-          sesionId={chatSesion.id}
-          miNombre={cliente.nombre}
-          titulo={chatSesion.titulo}
-          height="100vh"
-          onClose={() => setChatSesion(null)}
-        />
+          token={token} sesionId={chatSesion.id} miNombre={cliente.nombre}
+          titulo={chatSesion.titulo} height="100vh" onClose={() => setChatSesion(null)} />
       </div>
     )
   }
 
   return (
-    <div style={{ fontFamily: "'DM Sans', -apple-system, sans-serif", background: C.bg, minHeight: '100vh', maxWidth: 480, margin: '0 auto' }}>
-      <style>{`* { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
+    <div style={{ fontFamily: "'DM Sans',-apple-system,sans-serif", background: C.bg, minHeight: '100vh', maxWidth: 480, margin: '0 auto' }}>
+      <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
 
-      <div style={{ background: C.primary }}>
-        <div style={{ padding: '20px 20px 0', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            fontFamily:"'Syne','Plus Jakarta Sans',sans-serif",
-            fontSize:20, fontWeight:800, color:'white', letterSpacing:'-.02em',
-          }}>
-            ia<span style={{ color:'#a5b4fc' }}>limp</span>
+      {/* ── HEADER compacto ── */}
+      <div style={{ background: C.primary, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Logo */}
+          <div style={{ fontFamily:"'Syne',sans-serif", fontSize: 18, fontWeight: 800, color: 'white', letterSpacing: '-.02em' }}>
+            ia<span style={{ color: '#a5b4fc' }}>limp</span>
           </div>
-          <div style={{ width:1, height:16, background:'rgba(255,255,255,.25)' }} />
-          <div>
-            <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>{cliente.empresa_nombre}</div>
-            <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11 }}>Hola, {cliente.nombre.split(' ')[0]} 👋</div>
+          <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,.25)' }} />
+          {/* Sección actual */}
+          <div style={{ color: 'white', fontSize: 13, fontWeight: 600 }}>
+            {currentItem?.icon} {currentItem?.label}
           </div>
         </div>
 
-        <div style={{ margin: '12px 20px 0', display:'grid', gridTemplateColumns:'2fr 1fr', gap:8 }}>
-          {/* Estado limpiezas hoy — tappable */}
-          <div onClick={() => setTab('hoy')}
-            style={{ background: 'rgba(255,255,255,0.13)', borderRadius: 12, padding: '12px 16px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor:'pointer' }}>
-            <div>
-              <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Hoy</div>
-              <div style={{ color: 'white', fontSize: 22, fontWeight: 800, marginTop: 2, letterSpacing: '-0.02em' }}>
-                {completadas}/{total} <span style={{ fontSize: 12, fontWeight: 400, opacity: 0.65 }}>listos</span>
-              </div>
-            </div>
-            <div style={{ fontSize: 32 }}>{completadas === total ? '✅' : completadas > 0 ? '🧹' : '⏳'}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* KPI compacto */}
+          <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: '4px 10px', fontSize: 12, color: 'white', fontWeight: 700 }}>
+            {completadas}/{total} ✓
           </div>
-          {/* Acceso rápido finanzas */}
-          <div onClick={() => setTab('finanzas')}
-            style={{ background: 'rgba(255,255,255,0.13)', borderRadius: 12, padding: '12px 14px',
-              display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', cursor:'pointer', gap:4 }}>
-            <div style={{ fontSize:24 }}>📊</div>
-            <div style={{ color:'rgba(255,255,255,.8)', fontSize:11, fontWeight:700 }}>Finanzas</div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', marginTop: 16, overflowX: 'auto', scrollbarWidth: 'none' }}>
-          {[
-            ['hoy',       '🏠 Hoy'],
-            ['finanzas',  '📊 Finanzas'],
-            ['acceso',    '🔑 Acceso'],
-            ['chat',      '💬 Chat'],
-            ['historial', 'Historial'],
-            ['docs',      '📄 Docs'],
-          ].map(([id, label]) => (
-            <button key={id} onClick={() => setTab(id as any)}
-              style={{ flexShrink:0, padding: '11px 14px', border: 'none', cursor: 'pointer', background: 'transparent',
-                color: tab === id ? 'white' : 'rgba(255,255,255,0.5)',
-                fontWeight: tab === id ? 700 : 500, fontSize: 13,
-                borderBottom: `2.5px solid ${tab === id ? 'white' : 'transparent'}`,
-                fontFamily: 'inherit', whiteSpace:'nowrap' }}>
-              {label}
-            </button>
-          ))}
+          {/* Hamburguesa */}
+          <button onClick={() => setMenu(true)}
+            style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, width: 36, height: 36, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            <span style={{ display: 'block', width: 16, height: 2, background: 'white', borderRadius: 2 }} />
+            <span style={{ display: 'block', width: 16, height: 2, background: 'white', borderRadius: 2 }} />
+            <span style={{ display: 'block', width: 16, height: 2, background: 'white', borderRadius: 2 }} />
+          </button>
         </div>
       </div>
 
-      <div style={{ padding: 16 }}>
+      {/* ── DRAWER lateral ── */}
+      {menuOpen && (
+        <>
+          {/* Overlay */}
+          <div onClick={() => setMenu(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, backdropFilter: 'blur(2px)' }} />
+
+          {/* Panel */}
+          <div style={{
+            position: 'fixed', top: 0, right: 0, bottom: 0, width: 240,
+            background: 'white', zIndex: 101, display: 'flex', flexDirection: 'column',
+            boxShadow: '-4px 0 24px rgba(0,0,0,0.15)', animation: 'slideIn .2s ease'
+          }}>
+            <style>{`@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
+
+            {/* Cabecera drawer */}
+            <div style={{ background: C.primary, padding: '20px 20px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div style={{ fontFamily:"'Syne',sans-serif", fontSize: 18, fontWeight: 800, color: 'white', letterSpacing: '-.02em' }}>
+                  ia<span style={{ color: '#a5b4fc' }}>limp</span>
+                </div>
+                <button onClick={() => setMenu(false)}
+                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, width: 28, height: 28, color: 'white', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  ✕
+                </button>
+              </div>
+              <div style={{ color: 'white', fontWeight: 700, fontSize: 13 }}>{cliente.nombre.split(' ')[0]} {cliente.nombre.split(' ')[1] || ''}</div>
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, marginTop: 2 }}>{cliente.empresa_nombre}</div>
+            </div>
+
+            {/* Items menú */}
+            <nav style={{ flex: 1, padding: '10px 0', overflowY: 'auto' }}>
+              {MENU_ITEMS.map(item => (
+                <button key={item.id}
+                  onClick={() => { setTab(item.id as any); setMenu(false) }}
+                  style={{
+                    width: '100%', padding: '13px 20px', border: 'none', background: tab === item.id ? C.light : 'transparent',
+                    display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
+                    borderLeft: `3px solid ${tab === item.id ? C.primary : 'transparent'}`,
+                    fontFamily: 'inherit'
+                  }}>
+                  <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{item.icon}</span>
+                  <span style={{ fontSize: 14, fontWeight: tab === item.id ? 700 : 500, color: tab === item.id ? C.primary : C.text }}>
+                    {item.label}
+                  </span>
+                  {tab === item.id && <span style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: C.primary }} />}
+                </button>
+              ))}
+            </nav>
+
+            {/* Footer drawer */}
+            <div style={{ padding: '14px 20px', borderTop: `1px solid ${C.border}`, fontSize: 11, color: C.muted, textAlign: 'center' }}>
+              {cliente.empresa_nombre} · <span style={{ color: C.brand, fontWeight: 600 }}>ialimp</span>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── CONTENIDO — ocupa toda la pantalla ── */}
+      <div style={{ padding: 14 }}>
+
+        {/* HOY */}
         {tab === 'hoy' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {propiedades.map((p: any) => {
-              const e   = ESTADO_CFG[p.estado_hoy as keyof typeof ESTADO_CFG] || ESTADO_CFG.pendiente
+              const e    = ESTADO_CFG[p.estado_hoy as keyof typeof ESTADO_CFG] || ESTADO_CFG.pendiente
               const qEnv = quejaEnviada.has(p.id)
               return (
                 <div key={p.id} style={{ background: 'white', borderRadius: 14, border: `1px solid ${C.border}`, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-                  <div style={{ background: e.bg, borderBottom: `1px solid ${e.border}`, padding: '9px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <div style={{ background: e.bg, borderBottom: `1px solid ${e.border}`, padding: '9px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <div style={{ width: 7, height: 7, borderRadius: '50%', background: e.dot }} />
                       <span style={{ fontSize: 12, fontWeight: 700, color: e.color }}>{e.label}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {p.hora_completada && <span style={{ fontSize: 12, color: e.color, fontWeight: 600 }}>Listo a las {p.hora_completada}</span>}
-                      {/* Botón chat de esta sesión */}
+                      {p.hora_completada && <span style={{ fontSize: 11, color: e.color, fontWeight: 600 }}>{p.hora_completada}</span>}
                       {p.sesion_id && (
-                        <button
-                          onClick={() => setChatSesion({ id: p.sesion_id, titulo: p.nombre })}
-                          style={{
-                            padding: '4px 10px', borderRadius: 8, border: `1px solid ${C.brand}`,
-                            background: C.light, color: C.brand, fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: 4
-                          }}>
-                          💬 Chat
+                        <button onClick={() => setChatSesion({ id: p.sesion_id, titulo: p.nombre })}
+                          style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${C.brand}`, background: C.light, color: C.brand, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                          💬
                         </button>
                       )}
                     </div>
                   </div>
 
-                  <div style={{ padding: '14px 16px' }}>
-                    <div style={{ fontWeight: 700, fontSize: 15, color: C.text, marginBottom: 3 }}>{p.nombre}</div>
+                  <div style={{ padding: '13px 14px' }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: C.text, marginBottom: 2 }}>{p.nombre}</div>
                     {p.direccion && <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>📍 {p.direccion}</div>}
 
                     {p.hora_checkout && p.hora_checkin_siguiente && (
@@ -427,7 +272,7 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
 
                     {p.estado_hoy === 'completada' && !p.firma_at && (p.tipo === 'comunidad' || p.tipo === 'particular') && (
                       <button onClick={() => setFirma(p)}
-                        style={{ width: '100%', padding: '9px', borderRadius: 10, border: `1px solid ${C.brand}`, background: C.light, color: C.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer', marginBottom: 6 }}>
+                        style={{ width: '100%', padding: 9, borderRadius: 10, border: `1px solid ${C.brand}`, background: C.light, color: C.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer', marginBottom: 6 }}>
                         ✍️ Firmar conformidad
                       </button>
                     )}
@@ -438,11 +283,11 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
                     {p.estado_hoy === 'completada' && (
                       qEnv ? (
                         <div style={{ background: C.warnBg, border: `1px solid ${C.warnBorder}`, borderRadius: 10, padding: '9px 14px', fontSize: 12, color: C.warn, fontWeight: 600, textAlign: 'center' }}>
-                          ⚠️ Queja enviada — Sique Brilla ha sido avisado
+                          ⚠️ Queja enviada — Sique Brilla avisado
                         </div>
                       ) : (
                         <button onClick={() => setQueja(p)}
-                          style={{ width: '100%', padding: '9px', borderRadius: 10, border: `1px solid ${C.redBg}`, background: 'white', color: C.red, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                          style={{ width: '100%', padding: 9, borderRadius: 10, border: `1px solid ${C.redBg}`, background: 'white', color: C.red, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                           ⚠️ El huésped tiene una queja
                         </button>
                       )
@@ -451,126 +296,113 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
                 </div>
               )
             })}
+            {propiedades.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '48px 0', color: C.muted }}>
+                <div style={{ fontSize: 40, marginBottom: 10 }}>🏠</div>
+                <div style={{ fontWeight: 600 }}>Sin limpiezas hoy</div>
+              </div>
+            )}
           </div>
         )}
 
+        {/* HISTORIAL */}
         {tab === 'historial' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {historial.length === 0 && (
               <div style={{ textAlign: 'center', padding: '40px 0', color: C.muted }}>Sin historial todavía</div>
             )}
             {historial.map((h: any, i: number) => (
-              <div key={i} style={{ background: 'white', borderRadius: 12, border: `1px solid ${C.border}`, padding: '12px 16px', display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div key={i} style={{ background: 'white', borderRadius: 12, border: `1px solid ${C.border}`, padding: '12px 14px', display: 'flex', gap: 12, alignItems: 'center' }}>
                 {h.foto_despues_url ? (
                   <button onClick={() => setFoto(h.foto_despues_url)}
-                    style={{ width: 52, height: 52, borderRadius: 8, backgroundImage: `url(${h.foto_despues_url})`, backgroundSize: 'cover', border: `1px solid ${C.border}`, cursor: 'pointer', flexShrink: 0 }} />
+                    style={{ width: 50, height: 50, borderRadius: 8, backgroundImage: `url(${h.foto_despues_url})`, backgroundSize: 'cover', border: `1px solid ${C.border}`, cursor: 'pointer', flexShrink: 0 }} />
                 ) : (
-                  <div style={{ width: 52, height: 52, borderRadius: 8, background: C.light, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>✅</div>
+                  <div style={{ width: 50, height: 50, borderRadius: 8, background: C.light, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>✅</div>
                 )}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: C.text }}>{h.property_name}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.property_name}</div>
                   <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
                     {new Date(h.session_date).toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' })}
                     {h.hora_fin ? ` · ${h.hora_fin}` : ''}
                   </div>
                   {h.limpiadora && <div style={{ fontSize: 11, color: C.brand, marginTop: 1 }}>🧹 {h.limpiadora}</div>}
                 </div>
-                {/* Botón chat en historial */}
                 {h.id && (
                   <button onClick={() => setChatSesion({ id: h.id, titulo: h.property_name })}
-                    style={{ padding: '5px 10px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'white', color: C.muted, fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                    style={{ padding: '5px 8px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'white', color: C.muted, fontSize: 13, cursor: 'pointer', flexShrink: 0 }}>
                     💬
                   </button>
                 )}
-                <span style={{ color: '#22c55e', fontSize: 20 }}>✅</span>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* FINANZAS */}
+        {tab === 'finanzas' && <ContabilidadTab token={token} />}
+
+        {/* DOCUMENTOS */}
+        {tab === 'docs' && (
+          <div>
+            <p style={{ fontSize: 13, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
+              Fotografía o sube facturas, albaranes y tickets. La IA los analiza y genera el apunte contable.
+            </p>
+            <EscanerDocumento token={token} onGuardado={() => {}} />
+          </div>
+        )}
+
+        {/* ACCESO */}
+        {tab === 'acceso' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <p style={{ fontSize: 13, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
+              Instrucciones de acceso para cada piso. La limpiadora las verá antes de cada sesión.
+            </p>
+            {propiedades.map((p: any) => (
+              <AccesoPropiedad key={p.id} propiedadId={p.id} propiedadNombre={p.nombre} token={token}
+                instruccionesIniciales={p.instrucciones_acceso || ''} tipoAccesoInicial={p.tipo_acceso || 'llave'}
+                codigoAccesoInicial={p.codigo_acceso || ''} archivosIniciales={p.archivos_acceso || []} />
+            ))}
+          </div>
+        )}
+
+        {/* CHAT GENERAL */}
+        {tab === 'chat' && (
+          <div style={{ margin: '-14px', height: 'calc(100vh - 64px)' }}>
+            <ChatSesionPropietario token={token} sesionId={null} miNombre={cliente.nombre}
+              titulo="Chat con la empresa" height="calc(100vh - 64px)" />
           </div>
         )}
       </div>
 
       {/* Modal foto */}
       {fotoModal && (
-        <div onClick={() => setFoto(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 20 }}>
-          <img src={fotoModal} style={{ maxWidth: '100%', maxHeight: '88vh', borderRadius: 14 }} />
-        </div>
-      )}
-
-      {tab === 'finanzas' && (
-        <ContabilidadTab token={token} />
-      )}
-
-      {tab === 'docs' && (
-        <DocsTab token={token} propiedades={propiedades} />
-      )}
-
-      {tab === 'acceso' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-          <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16, lineHeight: 1.5 }}>
-            Añade las instrucciones de acceso para cada piso: tipo de llave, código, ubicación de la caja... La empresa de limpieza las verá antes de cada sesión.
-          </p>
-          {propiedades.map((p: any) => (
-            <AccesoPropiedad
-              key={p.id}
-              propiedadId={p.id}
-              propiedadNombre={p.nombre}
-              token={token}
-              instruccionesIniciales={p.instrucciones_acceso || ''}
-              tipoAccesoInicial={p.tipo_acceso || 'llave'}
-              codigoAccesoInicial={p.codigo_acceso || ''}
-              archivosIniciales={p.archivos_acceso || []}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Tab chat GENERAL */}
-      {tab === 'chat' && (
-        <div style={{ height: 'calc(100vh - 200px)', marginTop: -16, marginLeft: -16, marginRight: -16 }}>
-          <ChatSesionPropietario
-            token={token}
-            sesionId={null}
-            miNombre={cliente.nombre}
-            titulo="Chat con la empresa"
-            height="calc(100vh - 184px)"
-          />
+        <div onClick={() => setFoto(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150, padding: 20 }}>
+          <img src={fotoModal} style={{ maxWidth: '100%', maxHeight: '88vh', borderRadius: 14 }} alt="" />
         </div>
       )}
 
       {/* Modal firma */}
       {firmaModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100, padding: 16 }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 150, padding: 16 }}>
           <div style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 480 }}>
             <FirmaPad
-              onFirmar={async (svg, nombre) => {
+              onFirmar={async (svg: string, nombre: string) => {
                 await fetch('/api/propietario/' + token + '/firmar', {
                   method: 'POST', headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ sesion_id: firmaModal.sesion_id, firma_svg: svg, firmante_nombre: nombre })
                 })
                 setFirma(null)
               }}
-              onCancelar={() => setFirma(null)}
-            />
+              onCancelar={() => setFirma(null)} />
           </div>
         </div>
       )}
 
       {/* Modal queja */}
       {quejaModal && (
-        <QuejaModal
-          sesion={quejaModal}
-          token={token}
-          onClose={() => setQueja(null)}
-          onSent={() => {
-            setQuejaEnviada(s => new Set([...s, quejaModal.id]))
-            setQueja(null)
-          }}
-        />
+        <QuejaModal sesion={quejaModal} token={token} onClose={() => setQueja(null)}
+          onSent={() => { setQuejaEnviada(s => new Set([...s, quejaModal.id])); setQueja(null) }} />
       )}
-
-      <div style={{ textAlign: 'center', padding: '20px 16px 36px', fontSize: 11, color: C.muted }}>
-        {cliente.empresa_nombre} · <span style={{ color: C.brand, fontWeight: 600 }}>ialimp</span>
-      </div>
     </div>
   )
 }
