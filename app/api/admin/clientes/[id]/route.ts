@@ -8,8 +8,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const empresa_id = await requireEmpresaId()
     const { id } = await params
     const result = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT c.*, encode(gen_random_bytes(0),'hex') as _,
-        '${`https://ialimp.vercel.app/propietario/`}' || c.access_token AS propietario_url
+      SELECT c.*,
+        'https://ialimp.vercel.app/propietario/' || c.access_token AS propietario_url
       FROM clientes c
       WHERE c.id = ${id}::uuid AND c.empresa_id = ${empresa_id}::uuid
     `)
