@@ -188,12 +188,12 @@ export async function GET() {
 
       // Crear alerta de asignación
       await prisma.$executeRaw(Prisma.sql`
-        INSERT INTO alertas (empresa_id, tipo, mensaje, referencia_id, leida)
+        INSERT INTO alertas (empresa_id, tipo, titulo, descripcion, leida)
         VALUES (
           ${sesion.empresa_id}::uuid,
           'asignacion_auto',
-          ${`Auto-asignación: ${mejorCandidataScore.nombre} → ${sesion.property_name} (${fecha})`},
-          ${sesion.id}::uuid,
+          ${`Auto-asign: ${mejorCandidataScore.nombre} → ${sesion.property_name}`},
+          ${`${fecha} · ${justificacion}`},
           false
         )
       `)
