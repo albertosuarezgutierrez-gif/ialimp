@@ -91,7 +91,6 @@ export async function GET() {
       FROM cleaning_sessions cs
       WHERE cs.session_date IN (${hoy}::date, ${manana}::date)
         AND cs.limpiadora_id IS NULL
-        AND cs.cancelada = false
       ORDER BY cs.session_date ASC, cs.hora_inicio ASC NULLS LAST
     `)
 
@@ -135,7 +134,6 @@ export async function GET() {
           FROM cleaning_sessions
           WHERE session_date = ${fecha}::date
             AND limpiadora_id IS NOT NULL
-            AND cancelada = false
           GROUP BY limpiadora_id
         ) carga ON carga.limpiadora_id = l.id
         WHERE l.activa = true
