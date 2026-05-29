@@ -251,16 +251,16 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de cliente</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {tiposCliente.map(val => { const key = val.id; return (
-                    <button key={key} type="button"
-                      onClick={() => setForm(f => ({ ...f, tipo: key }))}
+                  {tiposCliente.map(val => (
+                    <button key={val.id} type="button"
+                      onClick={() => setForm(f => ({ ...f, tipo: val.id }))}
                       className="p-2.5 rounded-xl border-2 text-left transition text-sm"
                       style={{
-                        borderColor: form.tipo === key ? val.color : '#e5e7eb',
-                        background:  form.tipo === key ? val.color + '15' : 'white'
+                        borderColor: form.tipo === val.id ? val.color : '#e5e7eb',
+                        background:  form.tipo === val.id ? val.color + '15' : 'white'
                       }}>
                       <span className="mr-1.5">{val.icon}</span>
-                      <span style={{ color: form.tipo === key ? val.color : '#374151', fontWeight: form.tipo === key ? 600 : 400 }}>
+                      <span style={{ color: form.tipo === val.id ? val.color : '#374151', fontWeight: form.tipo === val.id ? 600 : 400 }}>
                         {val.label}
                       </span>
                     </button>
