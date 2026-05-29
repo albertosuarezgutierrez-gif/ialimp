@@ -161,7 +161,9 @@ export default function CotizadorPage() {
 
       {/* Header */}
       <div style={{ background: C.primary, padding: '24px 20px', textAlign: 'center' }}>
-        <div style={{ fontSize: 36, marginBottom: 8 }}>🧹</div>
+        <div style={{ fontFamily:"'Syne','DM Sans',sans-serif", fontSize:26, fontWeight:800, color:'white', letterSpacing:'-.02em', marginBottom:8 }}>
+          ia<span style={{ color:'#a5b4fc' }}>limp</span>
+        </div>
         <h1 style={{ color: 'white', fontWeight: 800, fontSize: 22, margin: 0, letterSpacing: '-0.02em' }}>
           {config?.titulo || 'Calcula tu presupuesto'}
         </h1>

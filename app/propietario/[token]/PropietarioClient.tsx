@@ -138,9 +138,15 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
 
       <div style={{ background: C.primary }}>
         <div style={{ padding: '20px 20px 0', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 9, background: C.light, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🧹</div>
+          <div style={{
+            fontFamily:"'Syne','Plus Jakarta Sans',sans-serif",
+            fontSize:20, fontWeight:800, color:'white', letterSpacing:'-.02em',
+          }}>
+            ia<span style={{ color:'#a5b4fc' }}>limp</span>
+          </div>
+          <div style={{ width:1, height:16, background:'rgba(255,255,255,.25)' }} />
           <div>
-            <div style={{ color: 'white', fontWeight: 800, fontSize: 16 }}>{cliente.empresa_nombre}</div>
+            <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>{cliente.empresa_nombre}</div>
             <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11 }}>Hola, {cliente.nombre.split(' ')[0]} 👋</div>
           </div>
         </div>

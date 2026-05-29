@@ -44,8 +44,12 @@ export default function AdminChatPage() {
       {/* Header */}
       <header style={{ background: C.primary, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
         <a href="/dashboard" style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, textDecoration: 'none' }}>← Dashboard</a>
-        <div style={{ flex: 1 }}>
-          <h1 style={{ color: 'white', fontWeight: 800, fontSize: 18 }}>💬 Mensajes</h1>
+        <div style={{ flex: 1, display:'flex', alignItems:'center', gap:10 }}>
+          <div style={{ fontFamily:"'Syne','Plus Jakarta Sans',sans-serif", fontSize:18, fontWeight:800, color:'white', letterSpacing:'-.02em' }}>
+            ia<span style={{ color:'#a5b4fc' }}>limp</span>
+          </div>
+          <div style={{ width:1, height:14, background:'rgba(255,255,255,.25)' }} />
+          <h1 style={{ color: 'rgba(255,255,255,.85)', fontWeight: 600, fontSize: 15 }}>💬 Mensajes</h1>
         </div>
         {totalUnread > 0 && (
           <div style={{ background: '#dc2626', color: 'white', borderRadius: 20, padding: '2px 10px', fontSize: 12, fontWeight: 800 }}>

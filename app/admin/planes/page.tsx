@@ -51,7 +51,13 @@ export default function PlanesPage() {
     <div style={{ minHeight:'100vh', background: C.bg, fontFamily:"'DM Sans',sans-serif" }}>
       <header style={{ background: C.primary, padding:'18px 24px', display:'flex', alignItems:'center', gap:16 }}>
         <a href="/dashboard" style={{ color:'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none' }}>← Dashboard</a>
-        <h1 style={{ color:'white', fontWeight:800, fontSize:20 }}>Planes y precios</h1>
+        <div style={{ flex:1, display:'flex', alignItems:'center', gap:10 }}>
+          <div style={{ fontFamily:"'Syne','Plus Jakarta Sans',sans-serif", fontSize:20, fontWeight:800, color:'white', letterSpacing:'-.02em' }}>
+            ia<span style={{ color:'#a5b4fc' }}>limp</span>
+          </div>
+          <div style={{ width:1, height:14, background:'rgba(255,255,255,.25)' }} />
+          <h1 style={{ color:'rgba(255,255,255,.85)', fontWeight:600, fontSize:15 }}>Planes y precios</h1>
+        </div>
       </header>
 
       <div style={{ padding:'32px 24px', maxWidth:900, margin:'0 auto' }}>

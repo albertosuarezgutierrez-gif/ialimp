@@ -602,6 +602,9 @@ export default function LimpiadoarasApp() {
         <div className="l-header">
           <div className="l-header-top">
             <div>
+              <div style={{ fontFamily:"'Syne','Plus Jakarta Sans',sans-serif", fontSize:17, fontWeight:800, color:'white', letterSpacing:'-.02em', marginBottom:2 }}>
+                ia<span style={{ color:'#a5b4fc' }}>limp</span>
+              </div>
               <div className="l-header-title">Mis limpiezas</div>
               <div className="l-header-sub">{hoyLabel}</div>
             </div>
