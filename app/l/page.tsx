@@ -670,8 +670,6 @@ function LimpiadoarasApp() {
   )
 }
 
-import { Suspense } from 'react'
-
 export default function LimpiadoarasAppWrapper() {
   return (
     <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',background:'#f1f5f9',color:'#4f46e5',fontSize:32}}>⏳</div>}>
