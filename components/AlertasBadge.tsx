@@ -46,8 +46,10 @@ export default function AlertasBadge() {
 
   return (
     <div className="relative">
-      <button onClick={() => setOpen(o => !o)}
-        className="relative text-indigo-200 hover:text-white transition">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="relative text-indigo-200 hover:text-white transition"
+      >
         🔔
         {count > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold">
@@ -61,13 +63,18 @@ export default function AlertasBadge() {
           {/* Overlay */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
 
-          {/* Panel — responsive: full-width drawer en móvil, dropdown en desktop */}
-          <div className={`
-            z-50 bg-white shadow-2xl border border-gray-100 overflow-hidden
-            fixed left-0 right-0 bottom-0 rounded-t-2xl max-h-[80vh]
-            sm:absolute sm:left-auto sm:right-0 sm:bottom-auto sm:top-8
-            sm:w-80 sm:rounded-2xl sm:max-h-[32rem] sm:fixed-auto
-          `}>
+          {/* Panel — fixed, full-width on mobile */}
+          <div
+            className="fixed z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
+            style={{
+              top: '56px',
+              left: '8px',
+              right: '8px',
+              maxWidth: '400px',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+            }}
+          >
             <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-gray-800 text-sm">Alertas</h3>
@@ -75,20 +82,24 @@ export default function AlertasBadge() {
               </div>
               <div className="flex items-center gap-3">
                 {count > 0 && (
-                  <button onClick={marcarTodas} disabled={loading}
-                    className="text-xs text-indigo-600 hover:underline">
+                  <button
+                    onClick={marcarTodas}
+                    disabled={loading}
+                    className="text-xs text-indigo-600 hover:underline"
+                  >
                     Leer todas
                   </button>
                 )}
-                {/* Botón cerrar visible en móvil */}
-                <button onClick={() => setOpen(false)}
-                  className="sm:hidden text-gray-400 hover:text-gray-600 text-xl leading-none">
+                <button
+                  onClick={() => setOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 text-lg leading-none"
+                >
                   ×
                 </button>
               </div>
             </div>
 
-            <div className="overflow-y-auto max-h-[calc(80vh-56px)] sm:max-h-80">
+            <div className="max-h-80 overflow-y-auto">
               {alertas.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 text-sm">
                   <div className="text-2xl mb-1">✅</div>
@@ -96,9 +107,11 @@ export default function AlertasBadge() {
                 </div>
               ) : (
                 alertas.map(a => (
-                  <div key={a.id}
+                  <div
+                    key={a.id}
                     className="px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition"
-                    style={{ opacity: a.leida ? 0.5 : 1 }}>
+                    style={{ opacity: a.leida ? 0.5 : 1 }}
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 leading-tight">{a.titulo}</p>
@@ -106,12 +119,16 @@ export default function AlertasBadge() {
                           <p className="text-xs text-gray-500 mt-0.5 leading-snug">{a.descripcion}</p>
                         )}
                         <p className="text-xs text-gray-400 mt-1">
-                          {new Date(a.creada_at).toLocaleString('es-ES', { dateStyle:'short', timeStyle:'short' })}
+                          {new Date(a.creada_at).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
                         </p>
                       </div>
                       {!a.leida && (
-                        <button onClick={() => marcarUna(a.id)}
-                          className="text-gray-300 hover:text-gray-500 text-lg flex-shrink-0">×</button>
+                        <button
+                          onClick={() => marcarUna(a.id)}
+                          className="text-gray-300 hover:text-gray-500 text-lg flex-shrink-0"
+                        >
+                          ×
+                        </button>
                       )}
                     </div>
                   </div>
