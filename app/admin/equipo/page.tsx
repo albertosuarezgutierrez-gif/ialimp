@@ -389,6 +389,7 @@ function TabDisponibilidad() {
               {isOpen && (
                 <div style={{ borderTop: `1px solid ${C.border}`, padding: '12px 16px' }}>
                   <div style={{ overflowX: 'auto' }}>
+                    <div style={{ overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
                     <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '4px 4px', fontSize: 12 }}>
                       <thead>
                         <tr>
@@ -416,6 +417,7 @@ function TabDisponibilidad() {
                         ))}
                       </tbody>
                     </table>
+                    </div>
                   </div>
                 </div>
               )}

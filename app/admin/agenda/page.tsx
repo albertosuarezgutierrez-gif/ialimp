@@ -86,7 +86,8 @@ export default function AgendaPage() {
         {loading && <div style={{ textAlign:'center', padding:40, color: C.muted }}>Cargando...</div>}
 
         {!loading && (
-          <table style={{ width:'100%', borderCollapse:'collapse', minWidth:700 }}>
+          <div style={{ overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
+          <table style={{ width:'100%', borderCollapse:'collapse', minWidth:600 }}>
             <thead>
               <tr>
                 <th style={{ width:120, padding:'8px 12px', textAlign:'left', fontSize:12, color: C.muted }}>Limpiadora</th>
@@ -153,6 +154,7 @@ export default function AgendaPage() {
               )}
             </tbody>
           </table>
+          </div>
         )}
 
         {/* Leyenda */}

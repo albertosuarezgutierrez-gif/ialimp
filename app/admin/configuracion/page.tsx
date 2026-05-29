@@ -91,8 +91,10 @@ function TabCatalogos() {
   if (loading) return <div style={{ textAlign: 'center', padding: 40, color: C.muted }}>Cargando configuración…</div>
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 0, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', background: C.white }}>
-      <div style={{ borderRight: `1px solid ${C.border}` }}>
+    <div className="catalogos-grid" style={{ border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', background: C.white }}>
+      <style>{`.catalogos-grid{display:grid;grid-template-columns:1fr}@media(min-width:560px){.catalogos-grid{grid-template-columns:200px 1fr}}`}</style>
+      <div className="cat-left" style={{ borderRight: `1px solid ${C.border}` }}>
+      <style>{`.cat-left{border-bottom:1px solid #e2e8f0}@media(min-width:560px){.cat-left{border-bottom:none}}`}</style>
         {SECCIONES.map(s => (
           <button key={s.key} onClick={() => setSeccion(s.key)}
             style={{ width: '100%', textAlign: 'left', padding: '11px 14px', border: 'none', cursor: 'pointer', borderBottom: `1px solid ${C.border}`,
@@ -192,7 +194,7 @@ function TabCotizador() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <p style={{ fontSize: 12, color: C.muted, margin: '0 0 8px' }}>Servicios disponibles en el cotizador público</p>
               {(config.servicios || []).map((s: any, i: number) => (
-                <div key={i} style={{ background: C.bg, borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div key={i} style={{ background: C.bg, borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                   <input value={s.label || ''} onChange={e => { const arr = [...config.servicios]; arr[i] = {...s, label: e.target.value}; setConfig((c: any) => ({...c, servicios: arr})) }}
                     placeholder="Nombre servicio" style={{ flex: 2, padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12, fontFamily: 'inherit' }} />
                   <input type="number" value={s.base || ''} onChange={e => { const arr = [...config.servicios]; arr[i] = {...s, base: +e.target.value}; setConfig((c: any) => ({...c, servicios: arr})) }}
@@ -210,7 +212,7 @@ function TabCotizador() {
           {tab === 'frecuencias' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {(config.frecuencias || []).map((f: any, i: number) => (
-                <div key={i} style={{ background: C.bg, borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div key={i} style={{ background: C.bg, borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                   <input value={f.label || ''} onChange={e => { const arr = [...config.frecuencias]; arr[i] = {...f, label: e.target.value}; setConfig((c: any) => ({...c, frecuencias: arr})) }}
                     placeholder="Nombre" style={{ flex: 2, padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12, fontFamily: 'inherit' }} />
                   <input type="number" step="0.01" value={f.mult || ''} onChange={e => { const arr = [...config.frecuencias]; arr[i] = {...f, mult: +e.target.value}; setConfig((c: any) => ({...c, frecuencias: arr})) }}
@@ -228,7 +230,7 @@ function TabCotizador() {
           {tab === 'recargos' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {(config.recargos || []).map((r: any, i: number) => (
-                <div key={i} style={{ background: C.bg, borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div key={i} style={{ background: C.bg, borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                   <input value={r.label || ''} onChange={e => { const arr = [...config.recargos]; arr[i] = {...r, label: e.target.value}; setConfig((c: any) => ({...c, recargos: arr})) }}
                     placeholder="Nombre recargo" style={{ flex: 2, padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12, fontFamily: 'inherit' }} />
                   <input type="number" step="0.01" value={r.pct || ''} onChange={e => { const arr = [...config.recargos]; arr[i] = {...r, pct: +e.target.value}; setConfig((c: any) => ({...c, recargos: arr})) }}

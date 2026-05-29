@@ -401,7 +401,7 @@ function TabDisponibilidad() {
             Horario semanal — {limp.nombre}
           </div>
           {(disponibilidad[limp.id] || []).map((d, i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '60px 48px 1fr 1fr 70px', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '55px 36px 1fr 1fr 60px', gap: 6, alignItems: 'center', marginBottom: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 600, color: d.activo ? '#111' : '#9ca3af' }}>{DIAS[i + 1]}</span>
               <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
                 <input type="checkbox" checked={!!d.activo} onChange={e => updateDia(limp.id, i, 'activo', e.target.checked)} />
