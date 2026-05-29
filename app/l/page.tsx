@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import ChatSesion from '@/components/ChatSesion'
 import ConsumoProductos from '@/components/ConsumoProductos'
 import AccesoPropiedad from '@/components/AccesoPropiedad'
@@ -532,32 +533,50 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
 
 // ── PÁGINA PRINCIPAL ───────────────────────────────────────────────────────
 export default function LimpiadoarasApp() {
-  const [sesiones,    setSesiones]   = useState<any[]>([])
-  const [sesionActiva, setSesActiva] = useState<any>(null)
-  const [loading,     setLoading]    = useState(true)
-  const [fecha,       setFecha]      = useState(new Date().toISOString().split('T')[0])
-  const [limpiadora,  setLimpiadora] = useState<any>(null)
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const sesionId     = searchParams.get('sesion')
+
+  const [sesiones,   setSesiones]  = useState<any[]>([])
+  const [sesionMap,  setSesionMap] = useState<Record<string, any>>({})
+  const [loading,    setLoading]   = useState(true)
+  const [fecha,      setFecha]     = useState(new Date().toISOString().split('T')[0])
+  const [limpiadora, setLimpiadora] = useState<any>(null)
 
   useEffect(() => { cargarDia(fecha) }, [fecha])
+
+  // Sync back button: when sesionId disappears from URL, clear active detail
+  const sesionActiva = sesionId ? sesionMap[sesionId] ?? null : null
 
   async function cargarDia(d: string) {
     setLoading(true)
     try {
       const r = await fetch(`/api/l/sesiones?date=${d}`)
-      if (r.status === 401) { window.location.href = '/l/login'; return }
+      if (r.status === 401) { router.replace('/l/login'); return }
       const data = await r.json()
-      setSesiones(data.sesiones || [])
+      const lista = data.sesiones || []
+      setSesiones(lista)
+      setSesionMap(prev => {
+        const m = { ...prev }
+        lista.forEach((s: any) => { m[s.id] = s })
+        return m
+      })
     } catch {}
     setLoading(false)
   }
 
+  function abrirSesion(s: any) {
+    setSesionMap(prev => ({ ...prev, [s.id]: s }))
+    router.push(`/l?sesion=${s.id}`)
+  }
+
   function onUpdate(sesionActualizada: any) {
     setSesiones(prev => prev.map(s => s.id === sesionActualizada.id ? sesionActualizada : s))
-    setSesActiva(sesionActualizada)
+    setSesionMap(prev => ({ ...prev, [sesionActualizada.id]: sesionActualizada }))
   }
 
   if (sesionActiva) {
-    return <SesionDetalle s={sesionActiva} onBack={() => setSesActiva(null)} onUpdate={onUpdate} limpiadora={limpiadora} />
+    return <SesionDetalle s={sesionActiva} onBack={() => router.back()} onUpdate={onUpdate} limpiadora={limpiadora} />
   }
 
   const completadas = sesiones.filter(s => !!s.completed_at).length
@@ -639,7 +658,7 @@ export default function LimpiadoarasApp() {
             </div>
           )}
           {sesiones.map(s => (
-            <SesionCard key={s.id} s={s} onTap={() => setSesActiva(s)} />
+            <SesionCard key={s.id} s={s} onTap={() => abrirSesion(s)} />
           ))}
         </div>
 
@@ -647,3 +666,4 @@ export default function LimpiadoarasApp() {
     </>
   )
 }
+
