@@ -25,11 +25,12 @@ export async function GET(
     const puedeChecklist = cfg?.ver_checklist === true
     const puedeFotos     = cfg?.ver_fotos     === true
 
-    // Datos básicos de la sesión (siempre visibles)
+    // Datos básicos de la sesión
     const sesiones = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT cs.id::text, cs.session_date::text, cs.property_name,
              cs.started_at, cs.completed_at, cs.notes AS incidencias,
              cs.foto_antes_url, cs.foto_despues_url,
+             cs.propiedad_id,
              l.nombre AS limpiadora_nombre
       FROM cleaning_sessions cs
       LEFT JOIN limpiadoras l ON l.id = cs.limpiadora_id
@@ -40,13 +41,12 @@ export async function GET(
     if (!sesiones.length) return NextResponse.json({ error: 'Sesión no encontrada' }, { status: 404 })
     const sesion = sesiones[0]
 
-    // Fotos — solo si tiene permiso
+    // Fotos
     let fotos: any[] = []
     if (puedeFotos) {
       if (sesion.foto_antes_url)   fotos.push({ tipo: 'antes',   url: sesion.foto_antes_url })
       if (sesion.foto_despues_url) fotos.push({ tipo: 'despues', url: sesion.foto_despues_url })
 
-      // Fotos de items del checklist
       const fotosItems = await prisma.$queryRaw<any[]>(Prisma.sql`
         SELECT sc.item_description, sc.photo_url, sc.photo_url_2, sc.photo_url_3, sc.notes
         FROM session_completions sc
@@ -61,9 +61,9 @@ export async function GET(
       }
     }
 
-    // Checklist — solo si tiene permiso
+    // Checklist — JOIN por propiedad_id (UUID) no por property_id (text legacy)
     let checklist: any[] = []
-    if (puedeChecklist) {
+    if (puedeChecklist && sesion.propiedad_id) {
       checklist = await prisma.$queryRaw<any[]>(Prisma.sql`
         SELECT
           ci.id::text,
@@ -78,11 +78,10 @@ export async function GET(
           sc.completed_at
         FROM checklist_items ci
         JOIN checklist_templates ct ON ct.id = ci.template_id
-        JOIN cleaning_sessions cs   ON cs.property_id = ct.property_id
-          AND cs.id = ${sesionId}::uuid
         LEFT JOIN session_completions sc
           ON sc.item_id = ci.id AND sc.session_id = ${sesionId}::uuid
         WHERE ci.active = true
+          AND ct.property_id = ${sesion.propiedad_id.toString()}
         ORDER BY ci.sort_order ASC NULLS LAST
       `)
     }
