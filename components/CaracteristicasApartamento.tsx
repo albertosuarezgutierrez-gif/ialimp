@@ -22,23 +22,27 @@ export default function CaracteristicasApartamento({ form, onChange }: Props) {
   const f = (k: string, v: any) => onChange(k, v)
 
   // Cálculo de material estimado en tiempo real
-  const huesps = Number(form.num_huespedes_max || 2)
-  const dobles = Number(form.num_camas_dobles || 0)
-  const indiv  = Number(form.num_camas_individuales || 0) + Number(form.num_camas_literas || 0) * 2
-  const sofas  = Number(form.num_camas_sofas || 0)
-  const banos  = Number(form.num_banos || 1)
+  const huesps   = Number(form.num_huespedes_max || 2)
+  const camas135 = Number(form.num_camas_135 || 0)
+  const camas90  = Number(form.num_camas_90 || 0)
+  const literas  = Number(form.num_literas || 0)       // cada litera = 2 camas de 90
+  const sofas    = Number(form.num_camas_sofas || 0)
+  const banos    = Number(form.num_banos || 1)
+
+  // Total sábanas de 90: camas individuales + literas × 2
+  const total90 = camas90 + literas * 2
 
   const material = {
-    '🛏️ Sábanas dobles':        dobles,
-    '🛏️ Sábanas individuales':  indiv,
-    '🛋️ Fundas sofá':           sofas,
-    '🛁 Toallas baño':          huesps,
-    '🤝 Toallas mano':          huesps,
-    '🦶 Toallas pie ducha':     huesps,
+    '🛏️ Sábanas 135cm':         camas135,
+    '🛏️ Sábanas 90cm':          total90,
+    '🛋️ Fundas sofá-cama':      sofas,
+    '🛁 Toallas baño':           huesps,
+    '🤝 Toallas mano':           huesps,
+    '🦶 Toallas pie ducha':      huesps,
     ...(form.tiene_piscina ? { '🏊 Toallas piscina': huesps } : {}),
-    '🧴 Gel/champú (x baño)':  banos,
-    '🧻 Papel higiénico':       banos * 2,
-    '🧼 Jabón manos':           banos + Number(form.num_aseos || 0),
+    '🧴 Gel/champú (x baño)':   banos,
+    '🧻 Papel higiénico':        banos * 2,
+    '🧼 Jabón manos':            banos + Number(form.num_aseos || 0),
     ...(form.tiene_cocina_completa ? {
       '🧽 Esponja + bayeta': 1,
       '🗑️ Bolsas basura':    3,
@@ -51,33 +55,59 @@ export default function CaracteristicasApartamento({ form, onChange }: Props) {
     <div className="bg-amber-50 rounded-2xl p-4 space-y-4">
       <div className="text-sm font-semibold text-amber-700">🏠 Características del apartamento</div>
 
-      {/* Camas */}
+      {/* Camas por medida */}
       <div>
-        <label className="block text-xs font-semibold text-gray-600 mb-2">Camas</label>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">
+          Camas
+          <span className="font-normal text-gray-400 ml-1">— determina el stock de sábanas necesario</span>
+        </label>
         <div className="grid grid-cols-2 gap-3">
           {[
-            { key: 'num_camas_dobles',       label: '🛏️ Dobles'      },
-            { key: 'num_camas_individuales', label: '🛏️ Individuales' },
-            { key: 'num_camas_sofas',        label: '🛋️ Sofá-cama'   },
-            { key: 'num_camas_literas',      label: '🪜 Literas'      },
+            { key: 'num_camas_135', label: '🛏️ Camas 135cm',  desc: 'Matrimonio / doble' },
+            { key: 'num_camas_90',  label: '🛏️ Camas 90cm',   desc: 'Individual' },
+            { key: 'num_camas_sofas', label: '🛋️ Sofá-cama',  desc: 'Con funda propia' },
+            { key: 'num_literas',   label: '🪜 Literas',       desc: 'Cada litera = 2 × 90cm' },
           ].map(c => (
-            <div key={c.key}>
-              <label className="block text-xs text-gray-500 mb-1">{c.label}</label>
+            <div key={c.key} className="bg-white rounded-xl p-2.5 border border-amber-100">
+              <label className="block text-xs font-semibold text-gray-700 mb-0.5">{c.label}</label>
+              <div className="text-xs text-gray-400 mb-1.5">{c.desc}</div>
               <input type="number" min="0" max="20"
                 value={(form as any)[c.key] || 0}
                 onChange={e => f(c.key, Number(e.target.value))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-amber-400" />
             </div>
           ))}
         </div>
+
+        {/* Resumen sábanas en tiempo real */}
+        {(camas135 + total90 + sofas) > 0 && (
+          <div className="mt-2 bg-amber-100 rounded-lg px-3 py-2 flex gap-4 text-xs">
+            {camas135 > 0 && (
+              <span className="text-amber-800 font-semibold">
+                🛏️ {camas135} juego{camas135 > 1 ? 's' : ''} 135cm
+              </span>
+            )}
+            {total90 > 0 && (
+              <span className="text-amber-800 font-semibold">
+                🛏️ {total90} juego{total90 > 1 ? 's' : ''} 90cm
+                {literas > 0 && <span className="font-normal text-amber-600"> ({literas} litera{literas > 1 ? 's' : ''} × 2)</span>}
+              </span>
+            )}
+            {sofas > 0 && (
+              <span className="text-amber-800 font-semibold">
+                🛋️ {sofas} funda{sofas > 1 ? 's' : ''} sofá
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Baños + huéspedes */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { key: 'num_banos',          label: '🚿 Baños'     },
-          { key: 'num_aseos',          label: '🚽 Aseos'     },
-          { key: 'num_huespedes_max',  label: '👥 Huésp. max'},
+          { key: 'num_banos',         label: '🚿 Baños'      },
+          { key: 'num_aseos',         label: '🚽 Aseos'      },
+          { key: 'num_huespedes_max', label: '👥 Huésp. máx' },
         ].map(c => (
           <div key={c.key}>
             <label className="block text-xs text-gray-500 mb-1">{c.label}</label>
@@ -110,7 +140,7 @@ export default function CaracteristicasApartamento({ form, onChange }: Props) {
         <label className="block text-xs font-semibold text-gray-600 mb-2">Gestión de lencería</label>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { id: 'propietario', label: 'Propietario', icon: '👤', desc: 'Tiene su propia' },
+            { id: 'propietario', label: 'Propietario', icon: '👤', desc: 'Tiene la suya' },
             { id: 'empresa',     label: 'Empresa',     icon: '🏢', desc: 'Nosotros la llevamos' },
             { id: 'mixto',       label: 'Mixto',       icon: '🔀', desc: 'Compartida' },
           ].map(opt => (
@@ -133,17 +163,17 @@ export default function CaracteristicasApartamento({ form, onChange }: Props) {
       <div>
         <label className="block text-xs font-semibold text-gray-600 mb-1">
           Notas de material
-          <span className="font-normal text-gray-400 ml-1">— jabones especiales, marca papel, etc.</span>
+          <span className="font-normal text-gray-400 ml-1">— jabones especiales, marca papel…</span>
         </label>
         <textarea value={form.notas_material || ''}
           onChange={e => f('notas_material', e.target.value)}
-          placeholder="Ej: Jabón La Toja, papel higiénico triple capa, toallas blancas 600g…"
+          placeholder="Ej: Jabón La Toja, papel triple capa, toallas blancas 600g…"
           rows={2}
           className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none" />
       </div>
 
-      {/* Material estimado */}
-      {(dobles + indiv + sofas + banos) > 0 && (
+      {/* Material estimado por limpieza */}
+      {(camas135 + total90 + sofas + banos) > 0 && (
         <div className="bg-white rounded-xl p-3 border border-amber-200">
           <p className="text-xs font-semibold text-amber-700 mb-2">📦 Material estimado por limpieza</p>
           <div className="grid grid-cols-2 gap-1">
