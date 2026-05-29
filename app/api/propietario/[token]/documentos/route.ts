@@ -26,7 +26,8 @@ export async function GET(
     if (!cliente) return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
 
     const { searchParams } = new URL(req.url)
-    const mes = searchParams.get('mes') // formato YYYY-MM
+    const mes          = searchParams.get('mes')
+    const propiedad_id = searchParams.get('propiedad_id') // null = general (sin propiedad), 'all' = todos
 
     const docs = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT
@@ -37,12 +38,16 @@ export async function GET(
         d.descripcion, d.notas, d.procesado_stock,
         d.apunte_json, d.lineas_json,
         d.created_at::text,
+        d.propiedad_id::text AS propiedad_id,
         p.nombre AS propiedad_nombre
       FROM documentos_contables d
       LEFT JOIN propiedades p ON p.id = d.propiedad_id
       WHERE d.cliente_id = ${cliente.id}::uuid
         AND d.activo = true
         ${mes ? Prisma.sql`AND TO_CHAR(d.fecha_doc, 'YYYY-MM') = ${mes}` : Prisma.sql``}
+        ${propiedad_id === 'all' ? Prisma.sql`` :
+          propiedad_id ? Prisma.sql`AND d.propiedad_id = ${propiedad_id}::uuid` :
+          Prisma.sql`AND d.propiedad_id IS NULL`}
       ORDER BY d.fecha_doc DESC NULLS LAST, d.created_at DESC
       LIMIT 100
     `)

@@ -112,6 +112,177 @@ function QuejaModal({ sesion, token, onClose, onSent }: QuejaModalProps) {
   )
 }
 
+/* ── DocsTab — documentos general o por propiedad ── */
+function DocsTab({ token, propiedades }: { token: string; propiedades: any[] }) {
+  // null = general, string = propiedad_id
+  const [propSel, setPropSel]   = useState<string|null>(null)
+  const [docs, setDocs]         = useState<any[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [showEsc, setShowEsc]   = useState(false)
+  const [docDetalle, setDetalle] = useState<any>(null)
+
+  const TIPO_ICON: Record<string,string> = { factura:'🧾', albaran:'📦', ticket:'🏷️', otro:'📄' }
+
+  useEffect(() => { cargar() }, [propSel])
+
+  async function cargar() {
+    setLoading(true)
+    const qs = new URLSearchParams()
+    if (propSel) qs.set('propiedad_id', propSel)
+    // sin propiedad_id → API devuelve docs generales (propiedad_id IS NULL)
+    const r = await fetch(`/api/propietario/${token}/documentos?${qs}`)
+    const d = await r.json()
+    setDocs(d.docs || [])
+    setLoading(false)
+  }
+
+  const propActual = propiedades.find((p: any) => p.id === propSel)
+
+  return (
+    <div style={{ paddingBottom: 40 }}>
+
+      {/* Selector de contexto */}
+      <div style={{ display:'flex', gap:6, overflowX:'auto', scrollbarWidth:'none', marginBottom:16, paddingBottom:2 }}>
+        {/* General */}
+        <button onClick={() => setPropSel(null)}
+          style={{ flexShrink:0, display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:20,
+            border:`2px solid ${propSel === null ? C.primary : C.border}`,
+            background: propSel === null ? C.light : 'white', cursor:'pointer', fontFamily:'inherit' }}>
+          <span style={{ fontSize:16 }}>📋</span>
+          <span style={{ fontSize:12, fontWeight: propSel === null ? 700 : 500, color: propSel === null ? C.primary : C.muted }}>General</span>
+        </button>
+        {/* Una por propiedad */}
+        {propiedades.map((p: any) => (
+          <button key={p.id} onClick={() => setPropSel(p.id)}
+            style={{ flexShrink:0, display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:20,
+              border:`2px solid ${propSel === p.id ? C.primary : C.border}`,
+              background: propSel === p.id ? C.light : 'white', cursor:'pointer', fontFamily:'inherit' }}>
+            <span style={{ fontSize:16 }}>🏢</span>
+            <span style={{ fontSize:12, fontWeight: propSel === p.id ? 700 : 500, color: propSel === p.id ? C.primary : C.muted,
+              maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+              {p.nombre}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Contexto activo + botón escanear */}
+      <div style={{ background: C.primary, borderRadius:14, padding:'14px 16px', marginBottom:16,
+        display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+        <div>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,.6)', fontWeight:700, textTransform:'uppercase', letterSpacing:'.06em' }}>
+            {propSel ? 'Apartamento' : 'General'}
+          </div>
+          <div style={{ fontSize:14, fontWeight:800, color:'white', marginTop:2 }}>
+            {propActual ? propActual.nombre : 'Documentos generales'}
+          </div>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,.55)', marginTop:1 }}>
+            {docs.length} documento{docs.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+        <button onClick={() => setShowEsc(true)}
+          style={{ flexShrink:0, background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.25)',
+            color:'white', borderRadius:10, padding:'10px 14px', fontSize:13, fontWeight:700,
+            cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:6 }}>
+          <span style={{ fontSize:18 }}>📷</span> Escanear
+        </button>
+      </div>
+
+      {/* Modal escáner */}
+      {showEsc && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:200,
+          display:'flex', alignItems:'flex-end', justifyContent:'center', padding:16 }}>
+          <div style={{ background:'white', borderRadius:20, width:'100%', maxWidth:480, maxHeight:'90vh', overflowY:'auto' }}>
+            <div style={{ padding:'16px 20px', borderBottom:`1px solid ${C.border}`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <div>
+                <div style={{ fontWeight:800, fontSize:16, color:C.text }}>📷 Escanear documento</div>
+                <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>
+                  {propActual ? `📍 ${propActual.nombre}` : '📋 General'}
+                </div>
+              </div>
+              <button onClick={() => setShowEsc(false)}
+                style={{ background:'none', border:'none', fontSize:22, color:C.muted, cursor:'pointer' }}>✕</button>
+            </div>
+            <div style={{ padding:'16px 20px' }}>
+              <EscanerDocumento
+                token={token}
+                propiedadId={propSel || undefined}
+                onGuardado={() => { setShowEsc(false); cargar() }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lista documentos */}
+      {loading ? (
+        <div style={{ textAlign:'center', padding:'32px 0', color:C.muted }}>
+          <div style={{ fontSize:28, marginBottom:8 }}>🔍</div>
+          <div style={{ fontSize:13 }}>Cargando...</div>
+        </div>
+      ) : docs.length === 0 ? (
+        <div style={{ textAlign:'center', padding:'40px 16px', color:C.muted }}>
+          <div style={{ fontSize:40, marginBottom:10 }}>📂</div>
+          <div style={{ fontWeight:700, color:C.text, marginBottom:4 }}>Sin documentos</div>
+          <div style={{ fontSize:13, marginBottom:16 }}>
+            {propActual ? `No hay documentos para ${propActual.nombre}` : 'No hay documentos generales'}
+          </div>
+          <button onClick={() => setShowEsc(true)}
+            style={{ background:C.primary, color:'white', border:'none', borderRadius:10, padding:'10px 20px',
+              fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+            📷 Escanear primer documento
+          </button>
+        </div>
+      ) : (
+        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+          {docs.map((d: any) => (
+            <div key={d.id}
+              onClick={() => setDetalle(docDetalle?.id === d.id ? null : d)}
+              style={{ background:'white', borderRadius:12, border:`1px solid ${C.border}`,
+                overflow:'hidden', cursor:'pointer',
+                borderLeft:`4px solid ${d.tipo_doc==='factura'?C.primary:d.tipo_doc==='ticket'?C.ok:C.warn}` }}>
+              <div style={{ padding:'12px 14px', display:'flex', gap:10, alignItems:'flex-start' }}>
+                <div style={{ fontSize:24, flexShrink:0 }}>{TIPO_ICON[d.tipo_doc] || '📄'}</div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontWeight:700, fontSize:13, color:C.text }}>
+                    {d.descripcion || d.proveedor || 'Sin descripción'}
+                  </div>
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginTop:4 }}>
+                    {d.proveedor && <span style={{ fontSize:10, padding:'1px 7px', borderRadius:20, background:'#f1f5f9', color:C.muted, fontWeight:600 }}>🏢 {d.proveedor}</span>}
+                    {d.fecha_doc && <span style={{ fontSize:10, padding:'1px 7px', borderRadius:20, background:'#f1f5f9', color:C.muted, fontWeight:600 }}>📅 {d.fecha_doc}</span>}
+                    {d.propiedad_nombre && <span style={{ fontSize:10, padding:'1px 7px', borderRadius:20, background:C.light, color:C.brand, fontWeight:600 }}>🏢 {d.propiedad_nombre}</span>}
+                    {d.procesado_stock && <span style={{ fontSize:10, padding:'1px 7px', borderRadius:20, background:C.okBg, color:C.ok, fontWeight:700 }}>📦 Stock</span>}
+                  </div>
+                </div>
+                <div style={{ textAlign:'right', flexShrink:0 }}>
+                  <div style={{ fontWeight:800, fontSize:15, color:C.text }}>{d.total?.toFixed(2)}€</div>
+                  {d.porcentaje_iva && <div style={{ fontSize:10, color:C.muted, marginTop:1 }}>IVA {d.porcentaje_iva}%</div>}
+                </div>
+              </div>
+
+              {/* Detalle expandible — apunte contable */}
+              {docDetalle?.id === d.id && (
+                <div style={{ borderTop:`1px solid ${C.border}`, padding:'10px 14px', background:'#fafafa' }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:C.muted, marginBottom:8, textTransform:'uppercase', letterSpacing:'.05em' }}>Apunte contable</div>
+                  {(d.apunte_json || []).map((a: any, i: number) => (
+                    <div key={i} style={{ display:'grid', gridTemplateColumns:'80px 1fr 60px 60px', gap:6, fontSize:11, color:C.text, marginBottom:4 }}>
+                      <span style={{ fontFamily:'monospace', color:C.brand, fontWeight:700 }}>{a.cuenta}</span>
+                      <span style={{ color:C.muted }}>{a.nombre}</span>
+                      <span style={{ textAlign:'right', color: a.debe ? C.text : C.muted }}>{a.debe ? `${a.debe}€` : ''}</span>
+                      <span style={{ textAlign:'right', color: a.haber ? C.text : C.muted }}>{a.haber ? `${a.haber}€` : ''}</span>
+                    </div>
+                  ))}
+                  {d.notas && <div style={{ fontSize:11, color:C.muted, marginTop:6, fontStyle:'italic' }}>{d.notas}</div>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function PropietarioClient({ cliente, propiedades, historial, token }: any) {
   const [tab, setTab]           = useState<'hoy'|'historial'|'gastos'|'acceso'|'chat'|'docs'|'finanzas'>('hoy')
   const [fotoModal, setFoto]    = useState<string|null>(null)
@@ -330,12 +501,7 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
       )}
 
       {tab === 'docs' && (
-        <div>
-          <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16, lineHeight: 1.5 }}>
-            Fotografía o sube facturas, albaranes y tickets. La IA los analiza, genera el apunte contable y actualiza el stock automáticamente.
-          </p>
-          <EscanerDocumento token={token} onGuardado={() => {}} />
-        </div>
+        <DocsTab token={token} propiedades={propiedades} />
       )}
 
       {tab === 'acceso' && (
