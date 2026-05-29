@@ -178,7 +178,11 @@ function TabEquipoRRHH() {
   async function analizarLimpiadora(id: string) {
     setAnalizando(id)
     try {
-      const r = await fetch(`/api/admin/rrhh/analisis?limpiadora_id=${id}`)
+      const r = await fetch('/api/admin/rrhh/analisis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limpiadora_id: id })
+      })
       const d = await r.json()
       if (d.ok) setAnalisis(prev => ({ ...prev, [id]: d.analisis }))
     } catch {}
