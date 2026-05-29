@@ -162,9 +162,9 @@ export default function AccesoPropiedad({
       {/* Header */}
       <div style={{ background: tieneInfo ? C.light : C.bg, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>🔑 Acceso al piso</div>
+          <div style={{ fontWeight: 800, fontSize: 15, color: C.text }}>{propiedadNombre}</div>
           <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
-            {tieneInfo ? `${tipoConfig.label} · ${archivos.length > 0 ? archivos.length + ' archivo(s)' : 'sin archivos'}` : 'Sin instrucciones todavía'}
+            🔑 {tieneInfo ? `${tipoConfig.label} · ${archivos.length > 0 ? archivos.length + ' archivo(s)' : 'sin archivos'}` : 'Sin instrucciones de acceso todavía'}
           </div>
         </div>
         {!editando && (
@@ -212,6 +212,9 @@ export default function AccesoPropiedad({
       {/* Formulario edición */}
       {editando && (
         <div style={{ padding: '16px' }}>
+          <div style={{ fontWeight: 800, fontSize: 14, color: C.primary, marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
+            ✏️ Editando acceso: {propiedadNombre}
+          </div>
           {error && (
             <div style={{ background: C.redBg, border: `1px solid #fca5a5`, borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: C.red }}>{error}</div>
           )}
