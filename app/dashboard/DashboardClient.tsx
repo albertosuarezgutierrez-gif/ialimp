@@ -31,7 +31,8 @@ const NAV = [
   { href:'/admin/informes',  icon:'📊', label:'Informes'  },
   { href:'/admin/ia',        icon:'🤖', label:'IA'        },
   { href:'/admin/usuarios',  icon:'🔐', label:'Usuarios'  },
-  { href:'/admin/cotizador', icon:'💰', label:'Cotizador' },
+  { href:'/admin/cotizador',      icon:'💰', label:'Cotizador'    },
+  { href:'/admin/configuracion', icon:'⚙️', label:'Catálogos'   },
 ]
 
 export default function DashboardClient({
