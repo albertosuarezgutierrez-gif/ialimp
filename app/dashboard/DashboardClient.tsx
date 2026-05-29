@@ -43,10 +43,27 @@ export default function DashboardClient({
   const [fecha,       setFecha]      = useState(today)
   const [sideOpen,    setSideOpen]   = useState(false)   // móvil: drawer lateral
   const [sideCollapsed, setSideCollapsed] = useState(false) // desktop: sidebar mini
+  const [briefing, setBriefing]   = useState<string|null>(null)
+  const [briefingKpis, setBriefingKpis] = useState<any>(null)
+  const [loadingBriefing, setLoadingBriefing] = useState(false)
 
   const pendientes  = sesiones.filter(s => !s.started_at)
   const enCurso     = sesiones.filter(s => s.started_at && !s.completed_at)
   const completadas = sesiones.filter(s => s.completed_at)
+
+  async function cargarBriefing() {
+    setLoadingBriefing(true)
+    try {
+      const r = await fetch('/api/admin/ia/briefing')
+      const d = await r.json()
+      if (d.ok) {
+        setBriefing(d.resumen)
+        setBriefingKpis(d.kpis)
+      }
+    } finally {
+      setLoadingBriefing(false)
+    }
+  }
 
   async function cambiarFecha(f: string) {
     setFecha(f)
@@ -499,6 +516,75 @@ export default function DashboardClient({
 
           {/* Content */}
           <div className="dash-content">
+
+            {/* Widget Briefing IA */}
+            <div style={{
+              background: briefing ? '#eef2ff' : 'white',
+              border: '1px solid #c7d2fe',
+              borderRadius: 14,
+              padding: '14px 18px',
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 12,
+              boxShadow: '0 1px 3px rgba(79,70,229,0.08)'
+            }}>
+              <div style={{ fontSize: 22, flexShrink: 0, marginTop: 2 }}>🤖</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {briefing ? (
+                  <>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#4f46e5', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Briefing del día ✨
+                    </div>
+                    <p style={{ fontSize: 13, color: '#1e1b4b', lineHeight: 1.6, margin: 0 }}>{briefing}</p>
+                    {briefingKpis && (
+                      <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+                        {briefingKpis.alertas_pendientes > 0 && (
+                          <span style={{ fontSize: 11, color: '#d97706', fontWeight: 600 }}>⚠️ {briefingKpis.alertas_pendientes} alertas</span>
+                        )}
+                        {briefingKpis.quejas_pendientes > 0 && (
+                          <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }}>🔴 {briefingKpis.quejas_pendientes} quejas</span>
+                        )}
+                        {briefingKpis.productos_bajo_stock > 0 && (
+                          <span style={{ fontSize: 11, color: '#ea580c', fontWeight: 600 }}>📦 {briefingKpis.productos_bajo_stock} stock bajo</span>
+                        )}
+                        {briefingKpis.sesiones_hoy_sin > 0 && (
+                          <span style={{ fontSize: 11, color: '#7c3aed', fontWeight: 600 }}>⚡ {briefingKpis.sesiones_hoy_sin} sin asignar</span>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1e1b4b' }}>Briefing diario con IA</div>
+                      <div style={{ fontSize: 11, color: '#64748b' }}>Resumen del estado del equipo y operaciones</div>
+                    </div>
+                    <button
+                      onClick={cargarBriefing}
+                      disabled={loadingBriefing}
+                      style={{
+                        marginLeft: 'auto', flexShrink: 0,
+                        padding: '7px 14px', borderRadius: 8, border: 'none',
+                        background: loadingBriefing ? '#e2e8f0' : '#4f46e5',
+                        color: loadingBriefing ? '#94a3b8' : 'white',
+                        fontSize: 12, fontWeight: 700,
+                        cursor: loadingBriefing ? 'not-allowed' : 'pointer'
+                      }}>
+                      {loadingBriefing ? '⏳ Generando...' : '✨ Generar'}
+                    </button>
+                  </div>
+                )}
+                {briefing && (
+                  <button
+                    onClick={cargarBriefing}
+                    disabled={loadingBriefing}
+                    style={{ marginTop: 8, background: 'none', border: 'none', color: '#6366f1', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+                    {loadingBriefing ? '⏳ Actualizando...' : '🔄 Actualizar'}
+                  </button>
+                )}
+              </div>
+            </div>
 
             {/* KPIs */}
             <div className="kpi-grid">
