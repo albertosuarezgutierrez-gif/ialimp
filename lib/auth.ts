@@ -13,11 +13,33 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash)
 }
 
+// ── Empresa dueña (cuenta master) ────────────────────────────────────
 export async function createSessionToken(empresa_id: string, email: string): Promise<string> {
-  return new SignJWT({ empresa_id, email })
+  return new SignJWT({ empresa_id, email, rol: 'owner' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('30d')
+    .sign(JWT_SECRET)
+}
+
+// ── Usuario empresa (creado por la dueña) ────────────────────────────
+export async function createUsuarioToken(
+  usuario_id: string, empresa_id: string, email: string,
+  rol: string, modulos: string[]
+): Promise<string> {
+  return new SignJWT({ usuario_id, empresa_id, email, rol, modulos, type: 'usuario' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('30d')
+    .sign(JWT_SECRET)
+}
+
+// ── Superadmin ───────────────────────────────────────────────────────
+export async function createSuperadminToken(id: string, email: string): Promise<string> {
+  return new SignJWT({ superadmin_id: id, email, rol: 'superadmin', type: 'superadmin' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('8h')
     .sign(JWT_SECRET)
 }
 
