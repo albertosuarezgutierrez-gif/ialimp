@@ -35,7 +35,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         pms_propiedad_id      = COALESCE(${body.pms_propiedad_id      ?? null}, pms_propiedad_id),
         ical_urls             = COALESCE(${body.ical_urls             ?? null}::text[], ical_urls),
         limpiadora_principal_id = COALESCE(${body.limpiadora_principal_id ?? null}::uuid, limpiadora_principal_id),
-        notas                 = COALESCE(${body.notas                 ?? null}, notas)
+        notas                 = COALESCE(${body.notas                 ?? null}, notas),
+        lavanderia_proveedor  = COALESCE(${body.lavanderia_proveedor  ?? null}, lavanderia_proveedor),
+        material_override     = COALESCE(${body.material_override     != null ? JSON.stringify(body.material_override) : null}::jsonb, material_override)
       WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
       RETURNING *
     `)
