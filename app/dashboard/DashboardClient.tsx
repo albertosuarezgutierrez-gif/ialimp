@@ -504,9 +504,17 @@ export default function DashboardClient({
           <div className="dash-topbar">
             <div className="dash-topbar-left">
               <button className="dash-hamburger" onClick={() => setSideOpen(v => !v)}>☰</button>
-              <div>
-                <div className="topbar-title">Dashboard</div>
-                <div className="topbar-date">{empresa.nombre}</div>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                {/* Logo ialimp */}
+                <div style={{
+                  fontFamily:"'Syne', 'Plus Jakarta Sans', sans-serif",
+                  fontSize:22, fontWeight:800, letterSpacing:'-.02em',
+                  color:'#1e1b4b', lineHeight:1,
+                }}>
+                  ia<span style={{ color:'#4f46e5' }}>limp</span>
+                </div>
+                <div style={{ width:1, height:16, background:'#e2e8f0' }} />
+                <div style={{ fontSize:11, color:'#94a3b8', fontWeight:500 }}>{empresa.nombre}</div>
               </div>
             </div>
             <div className="topbar-actions">
