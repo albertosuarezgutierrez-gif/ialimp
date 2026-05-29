@@ -1,0 +1,101 @@
+
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
+
+async function getCliente(token: string) {
+  const r = await prisma.$queryRaw<any[]>(Prisma.sql`
+    SELECT id, nombre, empresa_id,
+           COALESCE(chat_config, '{"ver_checklist":false,"ver_fotos":false}'::jsonb) AS chat_config
+    FROM clientes WHERE access_token = ${token} LIMIT 1
+  `)
+  return r[0] || null
+}
+
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ token: string; sesionId: string }> }
+) {
+  try {
+    const { token, sesionId } = await params
+    const cliente = await getCliente(token)
+    if (!cliente) return NextResponse.json({ error: 'Token inválido' }, { status: 403 })
+
+    const cfg = cliente.chat_config as any
+    const puedeChecklist = cfg?.ver_checklist === true
+    const puedeFotos     = cfg?.ver_fotos === true
+
+    // Datos básicos de la sesión (siempre)
+    const sesiones = await prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT cs.id::text, cs.session_date::text, cs.property_name,
+             cs.started_at, cs.completed_at, cs.incidencias,
+             cs.foto_antes_url, cs.foto_despues_url,
+             l.nombre AS limpiadora_nombre
+      FROM cleaning_sessions cs
+      LEFT JOIN limpiadoras l ON l.id = cs.limpiadora_id
+      WHERE cs.id = ${sesionId}::uuid
+        AND cs.cliente_id = ${cliente.id}::uuid
+      LIMIT 1
+    `)
+    if (!sesiones.length) return NextResponse.json({ error: 'Sesión no encontrada' }, { status: 404 })
+    const sesion = sesiones[0]
+
+    // Fotos — solo si tiene permiso
+    let fotos: any[] = []
+    if (puedeFotos) {
+      fotos = [
+        sesion.foto_antes_url   ? { tipo: 'antes',   url: sesion.foto_antes_url }   : null,
+        sesion.foto_despues_url ? { tipo: 'despues',  url: sesion.foto_despues_url } : null,
+      ].filter(Boolean)
+
+      // Fotos de session_completions (items con foto)
+      const fotosItems = await prisma.$queryRaw<any[]>(Prisma.sql`
+        SELECT sc.item_description, sc.photo_url, sc.photo_url_2, sc.photo_url_3, sc.notes
+        FROM session_completions sc
+        WHERE sc.session_id = ${sesionId}::uuid
+          AND (sc.photo_url IS NOT NULL OR sc.photo_url_2 IS NOT NULL OR sc.photo_url_3 IS NOT NULL)
+        ORDER BY sc.completed_at ASC
+      `)
+      for (const fi of fotosItems) {
+        if (fi.photo_url)   fotos.push({ tipo: 'item', descripcion: fi.item_description, url: fi.photo_url,   notas: fi.notes })
+        if (fi.photo_url_2) fotos.push({ tipo: 'item', descripcion: fi.item_description, url: fi.photo_url_2, notas: fi.notes })
+        if (fi.photo_url_3) fotos.push({ tipo: 'item', descripcion: fi.item_description, url: fi.photo_url_3, notas: fi.notes })
+      }
+    }
+
+    // Checklist — solo si tiene permiso
+    let checklist: any[] = []
+    if (puedeChecklist) {
+      checklist = await prisma.$queryRaw<any[]>(Prisma.sql`
+        SELECT
+          ci.id::text,
+          ci.description,
+          ci.es_critico,
+          ci.requires_photo,
+          ci.orden,
+          ci.categoria,
+          COALESCE(sc.checked, false) AS checked,
+          sc.notes,
+          sc.photo_url,
+          sc.completed_at
+        FROM checklist_items ci
+        JOIN checklist_templates ct ON ct.id = ci.template_id
+        JOIN cleaning_sessions cs   ON cs.property_id = ct.property_id
+          AND cs.id = ${sesionId}::uuid
+        LEFT JOIN session_completions sc
+          ON sc.item_id = ci.id AND sc.session_id = ${sesionId}::uuid
+        WHERE ci.active = true
+        ORDER BY ci.orden ASC
+      `)
+    }
+
+    return NextResponse.json({
+      sesion,
+      fotos,
+      checklist,
+      permisos: { ver_checklist: puedeChecklist, ver_fotos: puedeFotos }
+    })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 })
+  }
+}
