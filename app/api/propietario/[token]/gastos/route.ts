@@ -66,33 +66,37 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
 
     const body = await req.json()
     const {
-      tipo, nombre, importe, periodicidad,
-      fecha_inicio, fecha_vencimiento, fecha_proximo_cargo,
+      tipo, nombre, importe, periodicidad, categoria, recurrente,
+      mes, anio, fecha_inicio, fecha_vencimiento, fecha_proximo_cargo,
       proveedor, numero_poliza, es_ingreso, notas, alerta_dias,
       propiedad_id
     } = body
 
-    if (!tipo || !nombre) return NextResponse.json({ error: 'tipo y nombre requeridos' }, { status: 400 })
+    if (!nombre) return NextResponse.json({ error: 'nombre requerido' }, { status: 400 })
 
-    // Calcular fecha_proximo_cargo automáticamente si no se da
     let proximo = fecha_proximo_cargo || null
     if (!proximo && fecha_vencimiento) proximo = fecha_vencimiento
 
     await prisma.$executeRaw(Prisma.sql`
       INSERT INTO propietario_gastos (
         empresa_id, cliente_id, propiedad_id, tipo, nombre, importe,
-        periodicidad, fecha_inicio, fecha_vencimiento, fecha_proximo_cargo,
+        periodicidad, categoria, recurrente, mes, anio,
+        fecha_inicio, fecha_vencimiento, fecha_proximo_cargo,
         proveedor, numero_poliza, es_ingreso, notas, alerta_dias
       ) VALUES (
         ${cliente.empresa_id}::uuid,
         ${cliente.id}::uuid,
-        ${propiedad_id ? propiedad_id : null},
-        ${tipo}, ${nombre},
+        ${propiedad_id || null},
+        ${tipo || categoria || 'otros'}, ${nombre},
         ${importe ? Number(importe) : null},
-        ${periodicidad || 'anual'},
+        ${periodicidad || 'mensual'},
+        ${categoria || 'otros'},
+        ${recurrente === true},
+        ${mes ? Number(mes) : null},
+        ${anio ? Number(anio) : null},
         ${fecha_inicio || null}::date,
         ${fecha_vencimiento || null}::date,
-        ${proximo}::date,
+        ${proximo || null}::date,
         ${proveedor || null},
         ${numero_poliza || null},
         ${es_ingreso === true},

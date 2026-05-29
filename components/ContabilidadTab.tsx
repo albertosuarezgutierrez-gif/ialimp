@@ -11,22 +11,60 @@ const C = {
 }
 
 const CATEGORIAS: Record<string,{icon:string,label:string,color:string}> = {
-  hipoteca:    { icon:'🏦', label:'Hipoteca/Alquiler', color:'#6366f1' },
-  comunidad:   { icon:'🏢', label:'Comunidad',          color:'#0ea5e9' },
-  seguro:      { icon:'🛡️', label:'Seguro',             color:'#8b5cf6' },
-  suministros: { icon:'⚡', label:'Suministros',        color:'#f59e0b' },
-  limpieza:    { icon:'🧹', label:'Limpieza',           color:'#10b981' },
-  reparacion:  { icon:'🔧', label:'Reparación',         color:'#ef4444' },
-  menaje:      { icon:'🛋️', label:'Menaje/Lencería',    color:'#ec4899' },
-  gestion:     { icon:'📋', label:'Gestión/Gestoría',   color:'#64748b' },
-  impuesto:    { icon:'📑', label:'Impuestos',          color:'#dc2626' },
-  marketing:   { icon:'📣', label:'Marketing',          color:'#f97316' },
-  otros:       { icon:'📦', label:'Otros',              color:'#94a3b8' },
+  hipoteca:           { icon:'🏦', label:'Hipoteca',           color:'#6366f1' },
+  alquiler_prop:      { icon:'🤝', label:'Alquiler propietario',color:'#7c3aed' },
+  comunidad:          { icon:'🏢', label:'Comunidad',           color:'#0ea5e9' },
+  seguro:             { icon:'🛡️', label:'Seguro',              color:'#8b5cf6' },
+  suministros:        { icon:'⚡', label:'Suministros',         color:'#f59e0b' },
+  internet:           { icon:'📡', label:'Internet/TV',         color:'#06b6d4' },
+  limpieza:           { icon:'🧹', label:'Limpieza',            color:'#10b981' },
+  lavanderia:         { icon:'👕', label:'Lavandería',          color:'#14b8a6' },
+  reparacion:         { icon:'🔧', label:'Reparación',          color:'#ef4444' },
+  menaje:             { icon:'🛋️', label:'Menaje/Lencería',     color:'#ec4899' },
+  gestion:            { icon:'📋', label:'Gestión/Gestoría',    color:'#64748b' },
+  plataforma:         { icon:'💻', label:'Plataformas',         color:'#0284c7' },
+  impuesto:           { icon:'📑', label:'Impuestos',           color:'#dc2626' },
+  marketing:          { icon:'📣', label:'Marketing',           color:'#f97316' },
+  otros:              { icon:'📦', label:'Otros',               color:'#94a3b8' },
 }
 
 const PORTALES = ['booking','airbnb','expedia','vrbo','directo','otro']
 
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+
+const PERIODICIDAD: Record<string,{label:string,icon:string,vecesAnio:number}> = {
+  semanal:      { label:'Semanal',      icon:'📅', vecesAnio:52  },
+  mensual:      { label:'Mensual',      icon:'🔁', vecesAnio:12  },
+  bimestral:    { label:'Bimestral',    icon:'🔁', vecesAnio:6   },
+  trimestral:   { label:'Trimestral',   icon:'🗓️', vecesAnio:4   },
+  semestral:    { label:'Semestral',    icon:'🗓️', vecesAnio:2   },
+  anual:        { label:'Anual',        icon:'📆', vecesAnio:1   },
+  puntual:      { label:'Puntual',      icon:'1️⃣', vecesAnio:1   },
+}
+
+// Calcula coste anual proyectado de un gasto recurrente
+function proyectarAnual(importe: number, periodicidad: string): number {
+  const cfg = PERIODICIDAD[periodicidad]
+  if (!cfg) return importe
+  return importe * cfg.vecesAnio
+}
+
+// Próximo cargo estimado desde hoy
+function proximoCargo(periodicidad: string, fechaInicio?: string): string {
+  const hoy = new Date()
+  if (!fechaInicio) return '—'
+  const inicio = new Date(fechaInicio)
+  if (periodicidad === 'puntual') return inicio.toLocaleDateString('es-ES',{day:'numeric',month:'short'})
+  // Calcular siguiente ocurrencia
+  const dias: Record<string,number> = { semanal:7, mensual:30, bimestral:60, trimestral:90, semestral:180, anual:365 }
+  const intervalo = dias[periodicidad] || 30
+  let siguiente = new Date(inicio)
+  while (siguiente <= hoy) siguiente = new Date(siguiente.getTime() + intervalo * 86400000)
+  const diff = Math.round((siguiente.getTime() - hoy.getTime()) / 86400000)
+  if (diff <= 7)  return `En ${diff}d ⚠️`
+  if (diff <= 30) return `En ${diff}d`
+  return siguiente.toLocaleDateString('es-ES',{day:'numeric',month:'short'})
+}
 
 function fmt(n: number) {
   return new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n)
@@ -49,8 +87,9 @@ function BarraH({ value, max, color }: { value:number; max:number; color:string 
 function NuevoGastoModal({ token, propiedades, onClose, onGuardado }: any) {
   const [form, setForm] = useState({
     nombre:'', categoria:'otros', importe:'', periodicidad:'mensual',
-    mes:'', anio: new Date().getFullYear().toString(),
-    recurrente:false, proveedor:'', notas:'', propiedad_id:'',
+    mes: String(new Date().getMonth()+1), anio: new Date().getFullYear().toString(),
+    recurrente:false, fecha_inicio: new Date().toISOString().split('T')[0],
+    proveedor:'', notas:'', propiedad_id:'',
     fecha_vencimiento:'', es_ingreso:false,
   })
   const [saving, setSaving]     = useState(false)
@@ -119,10 +158,12 @@ function NuevoGastoModal({ token, propiedades, onClose, onGuardado }: any) {
       body: JSON.stringify({
         ...form,
         importe: Number(form.importe),
-        mes: form.mes ? Number(form.mes) : null,
+        mes: form.recurrente ? null : (form.mes ? Number(form.mes) : null),
         anio: form.anio ? Number(form.anio) : null,
         propiedad_id: form.propiedad_id || null,
         fecha_vencimiento: form.fecha_vencimiento || null,
+        fecha_inicio: form.recurrente ? (form.fecha_inicio || null) : null,
+        periodicidad: form.periodicidad,
       })
     })
     const d = await r.json()
@@ -205,42 +246,94 @@ function NuevoGastoModal({ token, propiedades, onClose, onGuardado }: any) {
             </div>
           </div>
 
-          {/* Importe + periodicidad */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-            <div>
-              <label style={{ fontSize:11, fontWeight:700, color:C.muted, display:'block', marginBottom:5, textTransform:'uppercase', letterSpacing:'.05em' }}>Importe € *</label>
-              <input type="number" step="0.01" value={form.importe} onChange={e => set('importe', e.target.value)}
-                placeholder="0,00"
-                style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1px solid ${C.border}`, fontSize:16, fontWeight:700, fontFamily:'inherit', color:C.primary }} />
-            </div>
-            <div>
-              <label style={{ fontSize:11, fontWeight:700, color:C.muted, display:'block', marginBottom:5, textTransform:'uppercase', letterSpacing:'.05em' }}>Periodicidad</label>
-              <select value={form.periodicidad} onChange={e => set('periodicidad', e.target.value)}
-                style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1px solid ${C.border}`, fontSize:13, fontFamily:'inherit', color:C.text }}>
-                <option value="puntual">Puntual</option>
-                <option value="mensual">Mensual</option>
-                <option value="trimestral">Trimestral</option>
-                <option value="semestral">Semestral</option>
-                <option value="anual">Anual</option>
-              </select>
-            </div>
+          {/* Importe */}
+          <div>
+            <label style={{ fontSize:11, fontWeight:700, color:C.muted, display:'block', marginBottom:5, textTransform:'uppercase', letterSpacing:'.05em' }}>Importe € *</label>
+            <input type="number" step="0.01" value={form.importe} onChange={e => set('importe', e.target.value)}
+              placeholder="0,00"
+              style={{ width:'100%', padding:'12px', borderRadius:8, border:`1px solid ${C.border}`, fontSize:20, fontWeight:800, fontFamily:'inherit', color:C.primary }} />
           </div>
 
-          {/* Mes + Año */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-            <div>
-              <label style={{ fontSize:11, fontWeight:700, color:C.muted, display:'block', marginBottom:5, textTransform:'uppercase', letterSpacing:'.05em' }}>Mes</label>
-              <select value={form.mes} onChange={e => set('mes', e.target.value)}
-                style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1px solid ${C.border}`, fontSize:13, fontFamily:'inherit', color:C.text }}>
-                <option value="">— Todos —</option>
-                {MESES.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
-              </select>
+          {/* ── Recurrente toggle ── */}
+          <div style={{ background: form.recurrente ? C.light : C.bg, borderRadius:12, padding:'12px 14px', border:`2px solid ${form.recurrente ? C.primary : C.border}` }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: form.recurrente ? 14 : 0 }}>
+              <div>
+                <div style={{ fontWeight:700, fontSize:13, color: form.recurrente ? C.primary : C.text }}>🔁 Gasto recurrente</div>
+                <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>
+                  {form.recurrente && form.importe
+                    ? `${fmt(proyectarAnual(Number(form.importe), form.periodicidad))}/año proyectado`
+                    : 'Alquiler, hipoteca, suministros, suscripciones...'}
+                </div>
+              </div>
+              <button onClick={() => set('recurrente', !form.recurrente)}
+                style={{ width:44, height:24, borderRadius:12, border:'none', cursor:'pointer', position:'relative', flexShrink:0,
+                  background: form.recurrente ? C.primary : '#cbd5e1', transition:'background .2s' }}>
+                <div style={{ position:'absolute', top:2, width:20, height:20, borderRadius:'50%', background:'white',
+                  boxShadow:'0 1px 3px rgba(0,0,0,.2)', transition:'left .2s',
+                  left: form.recurrente ? 22 : 2 }} />
+              </button>
             </div>
-            <div>
-              <label style={{ fontSize:11, fontWeight:700, color:C.muted, display:'block', marginBottom:5, textTransform:'uppercase', letterSpacing:'.05em' }}>Año</label>
-              <input type="number" value={form.anio} onChange={e => set('anio', e.target.value)}
-                style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1px solid ${C.border}`, fontSize:14, fontFamily:'inherit', color:C.text }} />
-            </div>
+
+            {form.recurrente && (
+              <>
+                {/* Frecuencia */}
+                <div style={{ marginBottom:12 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:C.muted, marginBottom:8, textTransform:'uppercase', letterSpacing:'.05em' }}>Frecuencia</div>
+                  <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                    {Object.entries(PERIODICIDAD).filter(([k]) => k !== 'puntual').map(([k, v]) => (
+                      <button key={k} onClick={() => set('periodicidad', k)}
+                        style={{ padding:'6px 12px', borderRadius:20, border:`2px solid ${form.periodicidad===k ? C.primary : C.border}`,
+                          background: form.periodicidad===k ? C.primary : 'white', cursor:'pointer', fontFamily:'inherit',
+                          fontSize:12, fontWeight: form.periodicidad===k ? 700 : 500,
+                          color: form.periodicidad===k ? 'white' : C.muted }}>
+                        {v.icon} {v.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Fecha inicio + proyección */}
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  <div>
+                    <div style={{ fontSize:11, fontWeight:700, color:C.muted, marginBottom:5, textTransform:'uppercase', letterSpacing:'.05em' }}>Desde</div>
+                    <input type="date" value={form.fecha_inicio} onChange={e => set('fecha_inicio', e.target.value)}
+                      style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:`1px solid ${C.border}`, fontSize:13, fontFamily:'inherit', color:C.text }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize:11, fontWeight:700, color:C.muted, marginBottom:5, textTransform:'uppercase', letterSpacing:'.05em' }}>Próximo cargo</div>
+                    <div style={{ padding:'8px 10px', borderRadius:8, border:`1px solid ${C.border}`, fontSize:13, color:C.text, background:'white', fontWeight:700 }}>
+                      {proximoCargo(form.periodicidad, form.fecha_inicio)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hasta (opcional) */}
+                <div style={{ marginTop:10 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:C.muted, marginBottom:5, textTransform:'uppercase', letterSpacing:'.05em' }}>Hasta (opcional)</div>
+                  <input type="date" value={form.fecha_vencimiento} onChange={e => set('fecha_vencimiento', e.target.value)}
+                    style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:`1px solid ${C.border}`, fontSize:13, fontFamily:'inherit', color:C.text }} />
+                  <div style={{ fontSize:10, color:C.muted, marginTop:3 }}>Dejar vacío si el gasto no tiene fecha de fin</div>
+                </div>
+              </>
+            )}
+
+            {!form.recurrente && (
+              <div style={{ marginTop:12, display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                <div>
+                  <div style={{ fontSize:11, fontWeight:700, color:C.muted, marginBottom:5, textTransform:'uppercase', letterSpacing:'.05em' }}>Mes</div>
+                  <select value={form.mes} onChange={e => set('mes', e.target.value)}
+                    style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:`1px solid ${C.border}`, fontSize:13, fontFamily:'inherit', color:C.text }}>
+                    <option value="">— Todos —</option>
+                    {MESES.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <div style={{ fontSize:11, fontWeight:700, color:C.muted, marginBottom:5, textTransform:'uppercase', letterSpacing:'.05em' }}>Año</div>
+                  <input type="number" value={form.anio} onChange={e => set('anio', e.target.value)}
+                    style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:`1px solid ${C.border}`, fontSize:13, fontFamily:'inherit', color:C.text }} />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Apartamento */}
@@ -258,13 +351,6 @@ function NuevoGastoModal({ token, propiedades, onClose, onGuardado }: any) {
             <label style={{ fontSize:11, fontWeight:700, color:C.muted, display:'block', marginBottom:5, textTransform:'uppercase', letterSpacing:'.05em' }}>Proveedor / Empresa</label>
             <input value={form.proveedor} onChange={e => set('proveedor', e.target.value)}
               placeholder="Ej: Mapfre, Endesa, Comunidad propietarios..."
-              style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1px solid ${C.border}`, fontSize:14, fontFamily:'inherit', color:C.text }} />
-          </div>
-
-          {/* Fecha vencimiento */}
-          <div>
-            <label style={{ fontSize:11, fontWeight:700, color:C.muted, display:'block', marginBottom:5, textTransform:'uppercase', letterSpacing:'.05em' }}>Fecha vencimiento / renovación</label>
-            <input type="date" value={form.fecha_vencimiento} onChange={e => set('fecha_vencimiento', e.target.value)}
               style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1px solid ${C.border}`, fontSize:14, fontFamily:'inherit', color:C.text }} />
           </div>
 
@@ -506,6 +592,53 @@ export default function ContabilidadTab({ token }: { token: string }) {
       {seccion === 'resumen' && (
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
 
+          {/* ── Proyección anual de recurrentes ── */}
+          {(() => {
+            const recurrentes = (gastos||[]).filter((g: any) => g.recurrente)
+            if (recurrentes.length === 0) return null
+            const mesActual = new Date().getMonth() + 1
+            const mesesRestantes = 12 - mesActual
+            const proyAnual = recurrentes.reduce((a: number, g: any) =>
+              a + proyectarAnual(g.importe || 0, g.periodicidad || 'mensual'), 0)
+            const proyResto = recurrentes.reduce((a: number, g: any) =>
+              a + (g.importe || 0) * (PERIODICIDAD[g.periodicidad]?.vecesAnio || 12) / 12 * mesesRestantes, 0)
+            return (
+              <div style={{ background:`linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)`, borderRadius:14, padding:'16px' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
+                  <div>
+                    <div style={{ fontSize:11, color:'rgba(255,255,255,.5)', fontWeight:700, textTransform:'uppercase', letterSpacing:'.06em' }}>Proyección gastos fijos</div>
+                    <div style={{ fontSize:22, fontWeight:800, color:'white', marginTop:3 }}>{fmt(proyAnual)}<span style={{ fontSize:12, color:'rgba(255,255,255,.5)', fontWeight:400 }}>/año</span></div>
+                  </div>
+                  <div style={{ textAlign:'right' }}>
+                    <div style={{ fontSize:11, color:'rgba(255,255,255,.5)' }}>Resto {anio}</div>
+                    <div style={{ fontSize:16, fontWeight:700, color:'#f87171' }}>{fmt(proyResto)}</div>
+                  </div>
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {recurrentes.slice(0,4).map((g: any) => {
+                    const cfg = CATEGORIAS[g.categoria] || CATEGORIAS.otros
+                    const pAnual = proyectarAnual(g.importe||0, g.periodicidad||'mensual')
+                    const pct = proyAnual > 0 ? (pAnual/proyAnual)*100 : 0
+                    return (
+                      <div key={g.id}>
+                        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
+                          <span style={{ fontSize:11, color:'rgba(255,255,255,.7)' }}>{cfg.icon} {g.nombre}</span>
+                          <span style={{ fontSize:11, color:'rgba(255,255,255,.9)', fontWeight:700 }}>{fmt(pAnual)}/año</span>
+                        </div>
+                        <div style={{ height:4, background:'rgba(255,255,255,.1)', borderRadius:2 }}>
+                          <div style={{ width:`${pct}%`, height:'100%', background:cfg.color, borderRadius:2, transition:'width .4s' }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                  {recurrentes.length > 4 && (
+                    <div style={{ fontSize:11, color:'rgba(255,255,255,.4)', marginTop:2 }}>+{recurrentes.length-4} más → ver tab Gastos</div>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
+
           {/* Gráfico barras por mes */}
           <div style={{ background:'white', borderRadius:14, border:`1px solid ${C.border}`, padding:'16px' }}>
             <div style={{ fontWeight:800, fontSize:14, color:C.text, marginBottom:14 }}>📊 Ingresos vs Gastos por mes</div>
@@ -597,8 +730,51 @@ export default function ContabilidadTab({ token }: { token: string }) {
       {/* ══ SECCIÓN GASTOS ══ */}
       {seccion === 'gastos' && (
         <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-          <div style={{ fontSize:13, color:C.muted, marginBottom:4 }}>
-            {gastos?.length || 0} gastos · Total: <strong style={{ color:C.red }}>{fmt(totales?.totalGastos||0)}</strong>
+
+          {/* Recurrentes primero */}
+          {(gastos||[]).filter((g: any) => g.recurrente).length > 0 && (
+            <div style={{ background:'white', borderRadius:14, border:`1px solid ${C.border}`, overflow:'hidden', marginBottom:4 }}>
+              <div style={{ padding:'12px 14px', background:'#f8f7ff', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ fontSize:16 }}>🔁</span>
+                <span style={{ fontWeight:800, fontSize:13, color:C.primary }}>Gastos recurrentes</span>
+                <span style={{ fontSize:11, color:C.muted, marginLeft:'auto' }}>
+                  {fmt((gastos||[]).filter((g: any) => g.recurrente).reduce((a: number, g: any) =>
+                    a + proyectarAnual(g.importe||0, g.periodicidad||'mensual'), 0))}/año
+                </span>
+              </div>
+              {(gastos||[]).filter((g: any) => g.recurrente).map((g: any) => {
+                const cfg = CATEGORIAS[g.categoria] || CATEGORIAS.otros
+                const prox = proximoCargo(g.periodicidad, g.fecha_inicio || g.creado_at)
+                const urgente = prox.includes('⚠️')
+                return (
+                  <div key={g.id} style={{ padding:'11px 14px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', gap:10 }}>
+                    <span style={{ fontSize:18, flexShrink:0 }}>{cfg.icon}</span>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontWeight:700, fontSize:13, color:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{g.nombre}</div>
+                      <div style={{ display:'flex', gap:4, marginTop:3, flexWrap:'wrap' }}>
+                        <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:C.light, color:C.brand, fontWeight:700 }}>
+                          {PERIODICIDAD[g.periodicidad]?.icon} {PERIODICIDAD[g.periodicidad]?.label || g.periodicidad}
+                        </span>
+                        {g.propiedad_nombre && <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#f1f5f9', color:C.muted, fontWeight:600 }}>🏢 {g.propiedad_nombre}</span>}
+                        <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20,
+                          background: urgente ? C.redBg : C.bg, color: urgente ? C.red : C.muted, fontWeight: urgente ? 700 : 600 }}>
+                          📅 {prox}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ textAlign:'right', flexShrink:0 }}>
+                      <div style={{ fontWeight:800, fontSize:14, color:C.red }}>{fmtD(g.importe)}</div>
+                      <div style={{ fontSize:10, color:C.muted }}>{fmt(proyectarAnual(g.importe||0, g.periodicidad||'mensual'))}/año</div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Gastos puntuales */}
+          <div style={{ fontSize:12, color:C.muted, fontWeight:700, marginBottom:2, marginTop:4 }}>
+            PUNTUALES · {(gastos||[]).filter((g: any) => !g.recurrente).length} gastos · {fmt((gastos||[]).filter((g: any) => !g.recurrente).reduce((a: number, g: any) => a + (g.importe||0), 0))}
           </div>
           {gastos?.length === 0 && (
             <div style={{ textAlign:'center', padding:'40px 0', color:C.muted }}>
@@ -610,7 +786,7 @@ export default function ContabilidadTab({ token }: { token: string }) {
               </button>
             </div>
           )}
-          {(gastos||[]).map((g: any) => {
+          {(gastos||[]).filter((g: any) => !g.recurrente).map((g: any) => {
             const cfg = CATEGORIAS[g.categoria] || CATEGORIAS.otros
             const venc = g.estado_vencimiento
             return (

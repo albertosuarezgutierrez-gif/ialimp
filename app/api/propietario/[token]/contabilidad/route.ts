@@ -39,6 +39,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
         g.id::text, g.nombre, g.categoria, g.importe::float,
         g.mes, g.anio, g.recurrente, g.periodicidad,
         g.proveedor, g.notas, g.justificante_url,
+        g.fecha_inicio::text,
         g.fecha_vencimiento::text, g.fecha_proximo_cargo::text,
         g.propiedad_id::text, p.nombre AS propiedad_nombre,
         g.creado_at::text,
