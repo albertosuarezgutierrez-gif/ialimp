@@ -1,4 +1,5 @@
 'use client'
+import LogoIalimp from '@/components/LogoIalimp'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -59,13 +60,8 @@ export default function LLoginPage() {
           width: 100%; max-width: 360px;
           display: flex; flex-direction: column; align-items: center;
         }
-        .ll-logo {
-          font-family: 'Syne', sans-serif;
-          font-size: clamp(32px, 8vw, 44px);
-          font-weight: 800; color: white;
-          letter-spacing: -.03em; margin-bottom: 4px;
-        }
-        .ll-logo span { color: #818cf8; }
+        
+        
         .ll-sub {
           font-size: 11px; color: rgba(255,255,255,.35);
           letter-spacing: .12em; text-transform: uppercase;
@@ -160,7 +156,7 @@ export default function LLoginPage() {
       <div className="ll-root">
         <div className="ll-blob" />
         <div className="ll-wrap">
-          <div className="ll-logo">i<span>alimp</span></div>
+          <LogoIalimp size={28} />
           <div className="ll-sub">Acceso equipo de limpieza</div>
 
           <div className="ll-card">

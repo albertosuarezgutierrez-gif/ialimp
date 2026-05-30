@@ -1,4 +1,5 @@
 'use client'
+import LogoIalimp from '@/components/LogoIalimp'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import NuevaLimpiezaModal from '@/components/NuevaLimpiezaModal'

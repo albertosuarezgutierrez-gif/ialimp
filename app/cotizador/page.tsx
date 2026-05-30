@@ -1,4 +1,5 @@
 'use client'
+import LogoIalimp from '@/components/LogoIalimp'
 import { useState, useEffect } from 'react'
 
 const EMPRESA_ID = '05edacff-ea49-42fe-8997-f9369613a845'
@@ -161,9 +162,7 @@ export default function CotizadorPage() {
 
       {/* Header */}
       <div style={{ background: C.primary, padding: '24px 20px', textAlign: 'center' }}>
-        <div style={{ fontFamily:"'Syne','DM Sans',sans-serif", fontSize:26, fontWeight:800, color:'white', letterSpacing:'-.02em', marginBottom:8 }}>
-          ia<span style={{ color:'#a5b4fc' }}>limp</span>
-        </div>
+        <LogoIalimp size={26} style={{ marginBottom:8, display:"block" }} />
         <h1 style={{ color: 'white', fontWeight: 800, fontSize: 22, margin: 0, letterSpacing: '-0.02em' }}>
           {config?.titulo || 'Calcula tu presupuesto'}
         </h1>

@@ -1,4 +1,5 @@
 'use client'
+import LogoIalimp from '@/components/LogoIalimp'
 // Módulos movidos a: /admin/materiales, /admin/negocio, /admin/equipo
 import { useState, useEffect, useCallback } from 'react'
 
@@ -971,7 +972,7 @@ export default function AdminLimpiadoras() {
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg,#1B4332,#2D6A4F)', padding: '20px 24px 0' }}>
         <div style={{ color: '#fff', marginBottom: 16 }}>
-          <div style={{ fontSize: 11, opacity: 0.7, textTransform: 'uppercase', letterSpacing: 2 }}>ialimp</div>
+          <LogoIalimp size={13} style={{ opacity:0.8 }} />
           <div style={{ fontSize: 22, fontWeight: 800 }}>Gestión limpiadoras</div>
         </div>
         {/* Tabs */}

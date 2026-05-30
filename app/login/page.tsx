@@ -1,4 +1,5 @@
 'use client'
+import LogoIalimp from '@/components/LogoIalimp'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -59,15 +60,7 @@ export default function LoginPage() {
           position: relative; z-index: 1;
           width: 100%; max-width: 420px;
         }
-        .login-logo {
-          font-family: 'Syne', sans-serif;
-          font-size: clamp(36px, 8vw, 48px);
-          font-weight: 800;
-          color: white;
-          letter-spacing: -.03em;
-          text-align: center;
-          margin-bottom: 4px;
-        }
+        
         .login-logo span { color: #818cf8; }
         .login-tagline {
           text-align: center;
@@ -162,7 +155,7 @@ export default function LoginPage() {
         <div className="login-blob2" />
 
         <div className="login-wrap">
-          <div className="login-logo">i<span>alimp</span></div>
+          <LogoIalimp size={28} />
           <div className="login-tagline">Gestión inteligente de limpiezas</div>
 
           <div className="login-card">

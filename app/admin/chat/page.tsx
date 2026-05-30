@@ -1,4 +1,5 @@
 'use client'
+import LogoIalimp from '@/components/LogoIalimp'
 import { useState, useEffect, useRef } from 'react'
 
 const C = {
@@ -369,9 +370,7 @@ export default function AdminChatPage() {
       <header style={{ background:C.primary, padding:'14px 20px', display:'flex', alignItems:'center', gap:16, flexShrink:0 }}>
         <a href="/dashboard" style={{ color:'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none' }}>← Dashboard</a>
         <div style={{ flex:1, display:'flex', alignItems:'center', gap:10 }}>
-          <div style={{ fontFamily:"'Syne','Plus Jakarta Sans',sans-serif", fontSize:18, fontWeight:800, color:'white', letterSpacing:'-.02em' }}>
-            ia<span style={{ color:'#a5b4fc' }}>limp</span>
-          </div>
+          <LogoIalimp size={18} />
           <div style={{ width:1, height:14, background:'rgba(255,255,255,.25)' }} />
           <h1 style={{ color:'rgba(255,255,255,.85)', fontWeight:600, fontSize:15 }}>💬 Mensajes</h1>
         </div>

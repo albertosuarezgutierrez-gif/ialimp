@@ -1,5 +1,6 @@
 
 'use client'
+import LogoIalimp from '@/components/LogoIalimp'
 import { useState, useEffect, useMemo } from 'react'
 import FirmaPad from '@/components/FirmaPad'
 import ChatSesionPropietario from '@/components/ChatSesionPropietario'
@@ -551,8 +552,8 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
         {/* Fila 1: logo + título + menú */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: tab==='hoy' ? 12 : 0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ fontFamily:"'Syne',sans-serif", fontSize:18, fontWeight:800, color:'white', letterSpacing:'-.02em' }}>
-              ia<span style={{ color:'#a5b4fc' }}>limp</span>
+            <div style={{ display:"inline-block" }}>
+              <LogoIalimp size={17} />
             </div>
             <div style={{ width:1, height:14, background:'rgba(255,255,255,.25)' }} />
             <div style={{ color:'white', fontSize:13, fontWeight:600 }}>{currentItem?.icon} {currentItem?.label}</div>
@@ -609,7 +610,7 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
             <style>{`@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
             <div style={{ background:C.primary, padding:'20px 20px 16px' }}>
               <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
-                <div style={{ fontFamily:"'Syne',sans-serif", fontSize:18, fontWeight:800, color:'white' }}>ia<span style={{ color:'#a5b4fc' }}>limp</span></div>
+                <div style={{ fontFamily:"'Syne',sans-serif", fontSize:18, fontWeight:800, color:'white' }}><LogoIalimp size={17} /></div>
                 <button onClick={()=>setMenu(false)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:6, width:28, height:28, color:'white', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
               </div>
               <div style={{ color:'white', fontWeight:700, fontSize:13 }}>{cliente.nombre.split(' ').slice(0,2).join(' ')}</div>

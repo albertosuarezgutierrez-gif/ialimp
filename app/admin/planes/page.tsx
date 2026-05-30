@@ -1,4 +1,5 @@
 'use client'
+import LogoIalimp from '@/components/LogoIalimp'
 import { useState } from 'react'
 
 const C = { primary:'#4f46e5',brand:'#6366f1',light:'#eef2ff',bg:'#f1f5f9',text:'#1e293b',muted:'#64748b',border:'#e2e8f0',ok:'#16a34a',okBg:'#f0fdf4' }
@@ -52,9 +53,7 @@ export default function PlanesPage() {
       <header style={{ background: C.primary, padding:'18px 24px', display:'flex', alignItems:'center', gap:16 }}>
         <a href="/dashboard" style={{ color:'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none' }}>← Dashboard</a>
         <div style={{ flex:1, display:'flex', alignItems:'center', gap:10 }}>
-          <div style={{ fontFamily:"'Syne','Plus Jakarta Sans',sans-serif", fontSize:20, fontWeight:800, color:'white', letterSpacing:'-.02em' }}>
-            ia<span style={{ color:'#a5b4fc' }}>limp</span>
-          </div>
+          <LogoIalimp size={20} />
           <div style={{ width:1, height:14, background:'rgba(255,255,255,.25)' }} />
           <h1 style={{ color:'rgba(255,255,255,.85)', fontWeight:600, fontSize:15 }}>Planes y precios</h1>
         </div>

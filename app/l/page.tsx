@@ -1,4 +1,5 @@
 'use client'
+import LogoIalimp from '@/components/LogoIalimp'
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ChatSesion from '@/components/ChatSesion'
@@ -602,9 +603,7 @@ function LimpiadoarasApp() {
         <div className="l-header">
           <div className="l-header-top">
             <div>
-              <div style={{ fontFamily:"'Syne','Plus Jakarta Sans',sans-serif", fontSize:17, fontWeight:800, color:'white', letterSpacing:'-.02em', marginBottom:2 }}>
-                ia<span style={{ color:'#a5b4fc' }}>limp</span>
-              </div>
+              <LogoIalimp size={17} style={{ marginBottom:2, display:'inline-block' }} />
               <div className="l-header-title">Mis limpiezas</div>
               <div className="l-header-sub">{hoyLabel}</div>
             </div>
