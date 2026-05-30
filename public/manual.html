@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de ialimp — Guía completa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#4f46e5; --brand:#6366f1; --light:#eef2ff;
+    --bg:#f1f5f9; --text:#1e1b4b; --muted:#64748b; --border:#e2e8f0;
+    --ok:#16a34a; --okBg:#f0fdf4; --warn:#d97706; --warnBg:#fffbeb;
+    --white:#ffffff; --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
+    line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  .logo{font-family:'Syne',sans-serif;letter-spacing:-.5px}
+  .logo b{font-weight:800}.logo span{font-weight:400}
+
+  /* ── HEADER ── */
+  header.top{
+    background:var(--primary);color:#fff;padding:34px 24px 30px;
+    background-image:radial-gradient(circle at 100% 0,rgba(255,255,255,.12),transparent 45%);
+  }
+  header.top .wrap{max-width:1080px;margin:0 auto}
+  header.top .logo{font-size:30px;color:#fff;display:inline-block}
+  header.top h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(26px,5vw,40px);margin:14px 0 6px;line-height:1.1}
+  header.top p{color:rgba(255,255,255,.82);font-size:16px;max-width:560px}
+  header.top .meta{margin-top:18px;font-size:13px;color:rgba(255,255,255,.65)}
+
+  /* ── LAYOUT ── */
+  .shell{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:240px 1fr;gap:32px;padding:32px 24px 80px}
+  nav.toc{position:sticky;top:24px;align-self:start;font-size:14px}
+  nav.toc .group{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);margin:18px 0 8px}
+  nav.toc a{display:block;color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:9px;font-weight:500;transition:.15s}
+  nav.toc a:hover{background:var(--light);color:var(--primary)}
+  main{min-width:0}
+
+  /* ── SECTIONS ── */
+  section{scroll-margin-top:24px;margin-bottom:38px}
+  section h2{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+  section .lead{color:var(--muted);margin-bottom:18px}
+  h3{font-size:17px;font-weight:700;margin:22px 0 8px}
+  p{margin-bottom:10px}
+  ul,ol{margin:0 0 12px 22px}
+  li{margin-bottom:6px}
+  a.inline{color:var(--primary);font-weight:600;text-decoration:none;border-bottom:1.5px solid var(--light)}
+  code{background:var(--light);color:var(--primary);padding:2px 7px;border-radius:6px;font-size:.88em;font-weight:600;font-family:'DM Sans',monospace}
+
+  .card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;margin-bottom:14px}
+  .card.soft{background:var(--light);border-color:#dfe2ff}
+
+  /* highlighted answer box */
+  .spotlight{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border:none}
+  .spotlight h2{color:#fff}
+  .spotlight .lead{color:rgba(255,255,255,.85)}
+  .spotlight .pill{display:inline-block;background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:12px}
+
+  /* numbered steps */
+  ol.steps{list-style:none;margin:0;counter-reset:s}
+  ol.steps>li{counter-increment:s;position:relative;padding:14px 0 14px 52px;border-bottom:1px solid var(--border)}
+  ol.steps>li:last-child{border-bottom:none}
+  ol.steps>li::before{
+    content:counter(s);position:absolute;left:0;top:12px;width:34px;height:34px;
+    background:var(--primary);color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-family:'Syne',sans-serif;font-size:15px;
+  }
+  ol.steps.onwhite>li::before{background:var(--primary)}
+  .spotlight ol.steps>li{border-color:rgba(255,255,255,.25)}
+  .spotlight ol.steps>li::before{background:#fff;color:var(--primary)}
+  ol.steps b{font-weight:700}
+
+  /* module grid */
+  .mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:6px}
+  .mod{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px;border-left:4px solid var(--brand)}
+  .mod .ic{font-size:22px}
+  .mod .nm{font-weight:700;margin-top:4px}
+  .mod .ds{font-size:13px;color:var(--muted);margin-top:2px}
+
+  /* breadcrumb path */
+  .path{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--light);border-radius:10px;padding:8px 12px;font-size:13.5px;font-weight:600;color:var(--primary);margin:6px 0 12px}
+  .path .sep{color:var(--brand);font-weight:800}
+
+  .note{border-left:4px solid var(--warn);background:var(--warnBg);border-radius:0 12px 12px 0;padding:12px 16px;font-size:14px;margin:12px 0}
+  .note b{color:var(--warn)}
+  .tip{border-left:4px solid var(--ok);background:var(--okBg);border-radius:0 12px 12px 0;padding:12px 16px;font-size:14px;margin:12px 0}
+  .tip b{color:var(--ok)}
+
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border)}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+
+  /* FAQ */
+  details{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:4px 18px;margin-bottom:10px}
+  details summary{cursor:pointer;font-weight:700;padding:12px 0;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:'＋';color:var(--primary);font-weight:800;margin-right:10px}
+  details[open] summary::before{content:'－'}
+  details p{padding-bottom:12px;color:var(--muted)}
+
+  footer{background:var(--primary);color:rgba(255,255,255,.8);text-align:center;padding:28px 24px;font-size:14px}
+  footer .logo{color:#fff;font-size:18px}
+
+  @media(max-width:820px){
+    .shell{grid-template-columns:1fr;gap:0;padding:20px 16px 60px}
+    nav.toc{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="logo"><b>ia</b><span>limp</span></span>
+    <h1>Manual de uso</h1>
+    <p>Todo lo que necesitas para gestionar tu empresa de limpieza desde el ordenador o el móvil: clientes, pisos, limpiezas, equipo y materiales.</p>
+    <div class="meta">Sique Brilla SL · Guía para administradores · Actualizado mayo 2026</div>
+  </div>
+</header>
+
+<div class="shell">
+
+  <nav class="toc">
+    <div class="group">Empezar</div>
+    <a href="#intro">Qué es ialimp</a>
+    <a href="#entrar">Cómo entrar</a>
+    <a href="#menu">El menú</a>
+    <div class="group">Lo esencial</div>
+    <a href="#pisos">⭐ Añadir pisos</a>
+    <a href="#clientes">Clientes</a>
+    <a href="#limpieza">Crear una limpieza</a>
+    <div class="group">Gestión</div>
+    <a href="#equipo">Equipo y limpiadoras</a>
+    <a href="#materiales">Materiales y stock</a>
+    <a href="#chat">Chat</a>
+    <a href="#informes">Informes y facturas</a>
+    <div class="group">En la calle</div>
+    <a href="#app">App de la limpiadora</a>
+    <a href="#faq">Dudas frecuentes</a>
+  </nav>
+
+  <main>
+
+    <!-- INTRO -->
+    <section id="intro">
+      <h2>👋 ¿Qué es <span class="logo"><b>ia</b><span>limp</span></span>?</h2>
+      <p class="lead">ialimp es el programa donde controlas toda tu empresa de limpieza desde un solo sitio.</p>
+      <p>Con ialimp puedes gestionar tus <b>clientes</b> (los propietarios), sus <b>pisos</b>, programar y registrar cada <b>limpieza</b>, organizar a tu <b>equipo</b> de limpiadoras, controlar el <b>material y la lencería</b>, y generar <b>informes y facturas</b> automáticamente.</p>
+      <p>Hay dos formas de usarlo, según quién seas:</p>
+      <div class="card soft">
+        <p><b>🖥️ Tú (administradora):</b> entras a la versión completa desde el ordenador o el móvil para gestionar todo el negocio.</p>
+        <p style="margin:0"><b>🧹 Tus limpiadoras:</b> entran a una app sencilla con su PIN, donde solo ven sus limpiezas del día, el checklist y cómo llegar a cada piso.</p>
+      </div>
+    </section>
+
+    <!-- ENTRAR -->
+    <section id="entrar">
+      <h2>🔑 Cómo entrar</h2>
+      <p class="lead">Cada persona entra por una puerta distinta.</p>
+
+      <h3>Administradora (tú)</h3>
+      <ol class="steps onwhite">
+        <li>Abre <code>ialimp.vercel.app</code> en el navegador (Chrome, Safari…).</li>
+        <li>Introduce tu <b>correo</b> y tu <b>contraseña</b>.</li>
+        <li>Entrarás directamente en el <b>Inicio</b> (el panel principal).</li>
+      </ol>
+      <div class="tip"><b>Consejo:</b> guarda la página como acceso directo en la pantalla de inicio del móvil. ialimp funciona como una app: se instala y se abre con un toque.</div>
+
+      <h3>Limpiadora</h3>
+      <ol class="steps onwhite">
+        <li>Abre <code>ialimp.vercel.app/l</code></li>
+        <li>Introduce el <b>PIN</b> (4–6 dígitos) que le has asignado a esa limpiadora.</li>
+        <li>Verá solo sus limpiezas del día. No accede al resto del negocio.</li>
+      </ol>
+      <p>El PIN de cada limpiadora se crea desde el módulo <b>Equipo</b> (lo vemos más abajo).</p>
+    </section>
+
+    <!-- MENU -->
+    <section id="menu">
+      <h2>🧭 El menú: 5 módulos</h2>
+      <p class="lead">Todo en ialimp se organiza en estos módulos. Los tienes en el menú lateral (ordenador) y en la barra inferior (móvil).</p>
+      <div class="mods">
+        <div class="mod"><div class="ic">🏠</div><div class="nm">Inicio</div><div class="ds">Resumen del día: limpiezas, ingresos y avisos.</div></div>
+        <div class="mod"><div class="ic">🗓️</div><div class="nm">Operaciones</div><div class="ds">Las limpiezas en curso, programadas y su estado.</div></div>
+        <div class="mod"><div class="ic">💼</div><div class="nm">Negocio</div><div class="ds">Clientes, leads (CRM), facturas e informes.</div></div>
+        <div class="mod"><div class="ic">📦</div><div class="nm">Materiales</div><div class="ds">Stock, lencería, proveedores, checklists y documentos.</div></div>
+        <div class="mod"><div class="ic">👥</div><div class="nm">Equipo</div><div class="ds">Limpiadoras, PINs, disponibilidad, quejas y accesos.</div></div>
+        <div class="mod"><div class="ic">⚙️</div><div class="nm">Configuración</div><div class="ds">Catálogos y ajustes del cotizador.</div></div>
+      </div>
+      <p style="margin-top:14px">En el móvil, el botón central <b>＋</b> de la barra inferior es el atajo para <b>crear una limpieza nueva</b> al instante.</p>
+    </section>
+
+    <!-- PISOS — LA RESPUESTA DESTACADA -->
+    <section id="pisos">
+      <div class="card spotlight">
+        <span class="pill">La duda más habitual</span>
+        <h2>🏠 Cómo añadir pisos</h2>
+        <p class="lead">En ialimp, un <b>piso</b> (propiedad) siempre pertenece a un <b>cliente</b>. Por eso, antes de añadir un piso, tiene que existir el cliente al que pertenece. Una vez creado el cliente, le añades todos los pisos que quieras.</p>
+
+        <h3 style="color:#fff;margin-top:8px">Paso a paso</h3>
+        <ol class="steps">
+          <li><b>Asegúrate de tener el cliente creado.</b> Si aún no existe (por ejemplo, el propietario de los pisos), créalo primero — ver la sección «Clientes» justo debajo.</li>
+          <li>Ve a la pantalla de <b>Clientes</b>: entra en <code>ialimp.vercel.app/admin/clientes</code>. Ahí ves la lista de todos tus clientes.</li>
+          <li>En la tarjeta del cliente, pulsa el botón <b>🏠 Propiedades</b>.</li>
+          <li>Pulsa <b>＋ Añadir</b> (arriba a la derecha) para abrir el formulario de un piso nuevo.</li>
+          <li>Rellena los datos del piso y pulsa <b>Guardar</b>. ¡Listo! El piso ya está disponible para programar limpiezas.</li>
+        </ol>
+      </div>
+
+      <h3>Qué te pide el formulario del piso</h3>
+      <p>No te agobies: solo el <b>Nombre</b> es obligatorio. El resto lo puedes completar después.</p>
+      <table>
+        <tr><th>Campo</th><th>Para qué sirve</th></tr>
+        <tr><td><b>Tipo</b></td><td>Piso turístico, comunidad, local, oficina, obra u otro.</td></tr>
+        <tr><td><b>Nombre *</b></td><td>Cómo lo identificas. Ej: «Casa Socorro», «Luxury Busto».</td></tr>
+        <tr><td><b>Modelo de facturación</b></td><td>Cómo cobras esa limpieza: precio fijo, por horas, por m², cuota mensual o mixto.</td></tr>
+        <tr><td><b>Dirección</b></td><td>Vía, número, piso y puerta por separado.</td></tr>
+        <tr><td><b>Código postal</b></td><td>Al escribirlo, ialimp rellena solo el municipio y la provincia.</td></tr>
+        <tr><td><b>Ref. catastral</b></td><td>Opcional.</td></tr>
+        <tr><td><b>Características</b></td><td>Nº de camas, baños, huéspedes, piscina, terraza… (ayuda a estimar el trabajo).</td></tr>
+        <tr><td><b>Gestión de lencería</b></td><td>Quién pone las sábanas y toallas: propietario, tu empresa, lavandería o mixto.</td></tr>
+      </table>
+      <div class="tip"><b>Editar o desactivar un piso:</b> en la misma lista de propiedades, cada piso tiene su botón para editarlo. Si dejas de limpiar un piso, puedes desactivarlo sin borrar su historial.</div>
+    </section>
+
+    <!-- CLIENTES -->
+    <section id="clientes">
+      <h2>👥 Clientes</h2>
+      <p class="lead">Un cliente es quien te contrata: normalmente el propietario o la empresa dueña de los pisos.</p>
+      <h3>Crear un cliente nuevo</h3>
+      <div class="path">💼 Negocio <span class="sep">›</span> 👥 Clientes <span class="sep">›</span> ＋ Nuevo cliente</div>
+      <ol class="steps onwhite">
+        <li>Abre el módulo <b>Negocio</b> y quédate en la pestaña <b>Clientes</b>.</li>
+        <li>Pulsa <b>＋ Nuevo cliente</b>.</li>
+        <li>Rellena el nombre, el tipo de cliente y los datos de contacto (teléfono, email).</li>
+        <li>Pulsa <b>Guardar</b>. Ya puedes añadirle pisos (ver sección anterior).</li>
+      </ol>
+      <p>También puedes gestionar los clientes y sus pisos desde <code>ialimp.vercel.app/admin/clientes</code>, que reúne en una sola pantalla la lista, el botón <b>Ver detalle</b> y el botón <b>🏠 Propiedades</b> de cada uno.</p>
+    </section>
+
+    <!-- LIMPIEZA -->
+    <section id="limpieza">
+      <h2>🧼 Crear una limpieza</h2>
+      <p class="lead">Cuando hay que limpiar un piso, registras la limpieza en 3 pasos sencillos.</p>
+      <div class="path">＋ Nueva limpieza</div>
+      <p>Pulsa el botón <b>＋</b> (en el Inicio o en la barra inferior del móvil). Se abre un asistente de 3 pasos:</p>
+      <ol class="steps onwhite">
+        <li><b>Cliente</b> — eliges de quién es el trabajo.</li>
+        <li><b>Propiedad</b> — aparecen automáticamente los pisos de ese cliente; eliges cuál se limpia.</li>
+        <li><b>Trabajo</b> — pones la fecha, la limpiadora y los detalles, y guardas.</li>
+      </ol>
+      <div class="note"><b>Importante:</b> si un cliente no tiene pisos creados, en el paso 2 no aparecerá nada. Por eso conviene añadir los pisos primero (sección «Añadir pisos»).</div>
+      <p>Las limpiezas de tus pisos turísticos conectados a un PMS (como Smoobu) también se crean solas a partir de las reservas, así que muchas veces no tendrás ni que hacerlo a mano.</p>
+    </section>
+
+    <!-- EQUIPO -->
+    <section id="equipo">
+      <h2>👤 Equipo y limpiadoras</h2>
+      <p class="lead">Aquí gestionas a las personas que limpian y sus accesos.</p>
+      <div class="path">👥 Equipo</div>
+      <p>El módulo Equipo tiene varias pestañas:</p>
+      <ul>
+        <li><b>🧹 Limpiadoras</b> — da de alta a cada limpiadora. Al crearla se genera <b>automáticamente su PIN</b> para que entre en la app <code>/l</code>.</li>
+        <li><b>📅 Disponibilidad</b> — marca los días y horas en que cada una puede trabajar (y sus ausencias o vacaciones).</li>
+        <li><b>⚠️ Quejas</b> — registra y sigue incidencias de calidad.</li>
+        <li><b>🔐 Accesos</b> — gestiona quién puede entrar y con qué permisos.</li>
+        <li><b>🤖 Análisis IA</b> — resúmenes automáticos del rendimiento del equipo.</li>
+      </ul>
+      <div class="tip"><b>El PIN es la llave de la limpiadora.</b> Es el código que usa para entrar en su app del día a día. Si lo olvida, lo ves o lo regeneras desde esta misma pantalla.</div>
+    </section>
+
+    <!-- MATERIALES -->
+    <section id="materiales">
+      <h2>📦 Materiales y stock</h2>
+      <p class="lead">Controla los productos de limpieza, la lencería y los proveedores.</p>
+      <div class="path">📦 Materiales</div>
+      <p>Pestañas del módulo:</p>
+      <ul>
+        <li><b>📦 Stock</b> — tus productos y cuánto te queda de cada uno.</li>
+        <li><b>🛏️ Lencería</b> — sábanas, toallas y ropa de cama, por piso.</li>
+        <li><b>🏪 Proveedores</b> — a quién compras cada cosa.</li>
+        <li><b>✅ Checklists</b> — la lista de tareas que ve la limpiadora en cada piso (puedes marcar tareas como «foto obligatoria» o «crítica»).</li>
+        <li><b>📄 Documentos</b> — sube albaranes o facturas y el escáner inteligente los lee solo.</li>
+      </ul>
+      <h3>Sobre los kits y reponer material</h3>
+      <p>Cada limpiadora lleva su propio kit. La idea es que, cuando se le acabe algo, lo <b>reporte</b> para que tú lo veas en el stock y puedas reponerlo a tiempo. Así el inventario refleja siempre lo que hay de verdad y no te quedas sin producto en mitad de una limpieza.</p>
+    </section>
+
+    <!-- CHAT -->
+    <section id="chat">
+      <h2>💬 Chat</h2>
+      <p class="lead">Comunicación con tu equipo y por cada limpieza.</p>
+      <div class="path">💬 Chat</div>
+      <p>Desde el Chat puedes hablar con el equipo en general o abrir una conversación ligada a una limpieza o a un piso concreto. Es el sitio donde se centralizan las dudas, fotos y avisos, en vez de andar perdiéndolos por WhatsApp.</p>
+    </section>
+
+    <!-- INFORMES -->
+    <section id="informes">
+      <h2>📄 Informes y facturas</h2>
+      <p class="lead">Lo que cobras y lo que reportas a tus clientes, automatizado.</p>
+      <div class="path">💼 Negocio <span class="sep">›</span> 🧾 Facturas / 📄 Informes</div>
+      <ul>
+        <li><b>🧾 Facturas</b> — genera la factura de cada cliente por periodo. Puedes verla en PDF y enviarla por email desde el propio programa.</li>
+        <li><b>📄 Informes</b> — informes mensuales de la actividad de limpieza por cliente.</li>
+      </ul>
+      <p>Una vez al mes, ialimp prepara estos documentos por ti; tú solo revisas y envías.</p>
+    </section>
+
+    <!-- APP LIMPIADORA -->
+    <section id="app">
+      <h2>🧹 La app de la limpiadora</h2>
+      <p class="lead">Lo que ve tu equipo cuando entra con su PIN en <code>ialimp.vercel.app/l</code>.</p>
+      <div class="card">
+        <ul style="margin-bottom:0">
+          <li><b>Sus limpiezas del día</b>, ordenadas y con los datos del piso.</li>
+          <li><b>Checklist de tareas</b>: va marcando lo que hace.</li>
+          <li><b>Fotos</b>: en las tareas marcadas como obligatorias, debe subir una foto (algunas se comparan con una foto de referencia).</li>
+          <li><b>📍 Cómo llegar</b>: abre la ruta directa al piso.</li>
+        </ul>
+      </div>
+      <p>Es una app pensada para el móvil y muy simple, para que la limpiadora se centre en limpiar y no se pierda entre menús.</p>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+      <h2>❓ Dudas frecuentes</h2>
+
+      <details open>
+        <summary>He entrado pero no sé cómo añadir pisos</summary>
+        <p>Los pisos cuelgan de un cliente. Ve a <code>/admin/clientes</code>, pulsa <b>🏠 Propiedades</b> en el cliente y luego <b>＋ Añadir</b>. Si el cliente todavía no existe, créalo primero en <b>Negocio › Clientes › ＋ Nuevo cliente</b>. Lo tienes detallado en la sección «Añadir pisos».</p>
+      </details>
+
+      <details>
+        <summary>Al crear una limpieza no me aparece ningún piso</summary>
+        <p>Es porque el cliente que has elegido en el paso 1 aún no tiene pisos. Añádele al menos uno y volverán a aparecer en el paso 2.</p>
+      </details>
+
+      <details>
+        <summary>¿Cómo le doy acceso a una limpiadora?</summary>
+        <p>En el módulo <b>Equipo › Limpiadoras</b>, dala de alta. El sistema le crea un PIN automáticamente. Ese PIN es lo que ella usa para entrar en <code>/l</code>.</p>
+      </details>
+
+      <details>
+        <summary>¿Tengo que pagar a Booking o calcular comisiones aquí?</summary>
+        <p>No. ialimp es el programa de la <b>empresa de limpieza</b>. Las comisiones de los portales (Booking, Airbnb…) son cosa del propietario en su propio sistema; aquí tú gestionas las limpiezas y lo que facturas por ellas.</p>
+      </details>
+
+      <details>
+        <summary>¿Funciona en el móvil?</summary>
+        <p>Sí, está pensado para móvil. Puedes incluso instalarlo como app desde el navegador y abrirlo con un icono en la pantalla de inicio.</p>
+      </details>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <div class="logo"><b>ia</b><span>limp</span></div>
+  <p style="margin-top:8px">Manual de uso · Si te atascas con algo, anótalo y lo repasamos.</p>
+</footer>
+
+</body>
+</html>
