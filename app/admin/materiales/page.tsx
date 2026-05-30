@@ -607,9 +607,9 @@ function TabChecklistsMateriales() {
                 {/* Sort buttons */}
                 <div style={{display:'flex',flexDirection:'column',gap:2}}>
                   <button onClick={()=>move(item,'up')} disabled={idx===0}
-                    style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14,padding:'0 4px',opacity:idx===0?.3:1}}>▲</button>
+                    style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14,padding:'0 4px',opacity:idx===0 ? 0.3 : 1}}>▲</button>
                   <button onClick={()=>move(item,'down')} disabled={idx===items.length-1}
-                    style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14,padding:'0 4px',opacity:idx===items.length-1?.3:1}}>▼</button>
+                    style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',fontSize:14,padding:'0 4px',opacity:idx===items.length-1 ? 0.3 : 1}}>▼</button>
                 </div>
                 {/* Content */}
                 <div style={{flex:1}}>
@@ -665,7 +665,7 @@ function TabChecklistsMateriales() {
           </div>
         </div>
         <button onClick={addItem} disabled={saving||!newItem.description.trim()}
-          style={{background:prop?.color||'#1B4332',color:'#fff',border:'none',borderRadius:9,padding:'9px 20px',fontWeight:700,fontSize:13,cursor:'pointer',opacity:saving||!newItem.description.trim()?.5:1}}>
+          style={{background:prop?.color||'#1B4332',color:'#fff',border:'none',borderRadius:9,padding:'9px 20px',fontWeight:700,fontSize:13,cursor:'pointer',opacity:(saving||!newItem.description.trim()) ? 0.5 : 1}}>
           {saving?'Guardando...':'+ Añadir ítem'}
         </button>
       </div>
