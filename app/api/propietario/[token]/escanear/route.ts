@@ -51,11 +51,8 @@ ${catalogoStr}
 
 Mapea producto_id si coincide nombre/descripción con el catálogo. IVA 21% si no se especifica.`
 
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 90000)
   const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
     method: 'POST',
-    signal: controller.signal,
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + NVIDIA_API_KEY },
     body: JSON.stringify({
       model: 'meta/llama-3.2-90b-vision-instruct',
@@ -66,7 +63,6 @@ Mapea producto_id si coincide nombre/descripción con el catálogo. IVA 21% si n
       temperature: 0.1, max_tokens: 1200,
     }),
   })
-  clearTimeout(timeoutId)
   if (!res.ok) throw new Error('Error NVIDIA NIM: ' + res.status)
   const data = await res.json()
   const content = (data.choices?.[0]?.message?.content || '{}').replace(/```json|```/g, '').trim()
