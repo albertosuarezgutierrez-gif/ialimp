@@ -719,15 +719,30 @@ function TabDocumentosMateriales() {
     setError(null)
     try {
       const base64 = imgSrc.split(',')[1]
+      // Step 1: Submit image — returns immediately with doc_id
       const res = await fetch('/api/admin/escanear', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imagen_base64: base64, media_type: imgFile.type || 'image/jpeg', actualizar_stock: true }),
+        body: JSON.stringify({ imagen_base64: base64, media_type: imgFile.type || 'image/jpeg' }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error servidor')
-      setResultado(data)
-      setFase('resultado')
+      const doc_id = data.doc_id
+      // Step 2: Poll until doc leaves 'pendiente' state (max 120s)
+      let attempts = 0
+      while (attempts < 24) {
+        await new Promise(r => setTimeout(r, 5000))
+        attempts++
+        const poll = await fetch('/api/admin/escanear?limit=5')
+        const pollData = await poll.json()
+        const doc = (pollData.docs || []).find((d: any) => d.id === doc_id)
+        if (doc && doc.tipo_doc !== 'pendiente') {
+          setResultado({ ...doc, datos_ia: { lineas: doc.lineas_json || [], ...doc }, apunte: doc.apunte_json || [] })
+          setFase('resultado')
+          return
+        }
+      }
+      throw new Error('Tiempo de espera agotado — el documento se procesará en breve')
     } catch (e: any) {
       setError(e.message)
       setFase('escaner')
@@ -933,7 +948,7 @@ function TabDocumentosMateriales() {
   // ── RESULTADO ──
   if (fase === 'resultado' && resultado) {
     const lineas: any[] = resultado.datos_ia?.lineas || []
-    const apunte: any[] = resultado.apunte || []
+    const apunte: any[] = resultado.apunte_json || resultado.apunte || []
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {/* Tipo + total */}
@@ -941,14 +956,14 @@ function TabDocumentosMateriales() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
             <span style={{ fontSize: 34 }}>{TIPO_EMOJI[resultado.tipo_doc] || '📄'}</span>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 14, color: C.primary }}>{(resultado.tipo_doc || 'doc').toUpperCase()} detectado</div>
-              <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{resultado.datos_ia?.descripcion_corta}</div>
+              <div style={{ fontWeight: 800, fontSize: 14, color: C.primary }}>{((resultado.tipo_doc && resultado.tipo_doc !== 'pendiente' ? resultado.tipo_doc : 'documento') || 'doc').toUpperCase()} detectado</div>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{resultado.descripcion || resultado.datos_ia?.descripcion_corta}</div>
               <div style={{ fontSize: 11, marginTop: 2 }}>
                 Confianza: <span style={{ fontWeight: 700, color: CONFIANZA_COLOR[resultado.confianza] || C.muted }}>{resultado.confianza}</span>
               </div>
             </div>
           </div>
-          {resultado.total != null && (
+          {(resultado.total != null) && (
             <div style={{ fontWeight: 800, fontSize: 22, color: C.text }}>{Number(resultado.total).toFixed(2)} €</div>
           )}
         </div>
@@ -958,10 +973,10 @@ function TabDocumentosMateriales() {
           <div style={{ fontWeight: 700, fontSize: 11, color: C.primary, textTransform: 'uppercase', letterSpacing: '.05em', borderBottom: `1px solid ${C.light}`, paddingBottom: 7, marginBottom: 8 }}>Datos extraídos</div>
           {[
             ['Proveedor',        resultado.proveedor],
-            ['Fecha',            resultado.datos_ia?.fecha],
-            ['Nº documento',     resultado.datos_ia?.numero_doc],
-            ['Base imponible',   resultado.datos_ia?.base_imponible != null ? `${Number(resultado.datos_ia.base_imponible).toFixed(2)} €` : null],
-            [`IVA (${resultado.datos_ia?.porcentaje_iva ?? '?'}%)`, resultado.datos_ia?.cuota_iva != null ? `${Number(resultado.datos_ia.cuota_iva).toFixed(2)} €` : null],
+            ['Fecha',            resultado.fecha_doc || resultado.datos_ia?.fecha],
+            ['Nº documento',     resultado.numero_doc || resultado.datos_ia?.numero_doc],
+            ['Base imponible',   resultado.base_imponible != null ? `${Number(resultado.base_imponible).toFixed(2)} €` : null],
+            [`IVA (${resultado.porcentaje_iva ?? resultado.datos_ia?.porcentaje_iva ?? '?'}%)`, resultado.cuota_iva != null ? `${Number(resultado.cuota_iva).toFixed(2)} €` : null],
           ].map(([lbl, val]: any) => val ? (
             <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${C.bg}`, fontSize: 13 }}>
               <span style={{ color: C.muted, fontWeight: 600, fontSize: 12 }}>{lbl}</span>
