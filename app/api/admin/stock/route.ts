@@ -33,3 +33,40 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
+
+export async function PUT(req: Request) {
+  try {
+    const empresa_id = await requireEmpresaId()
+    const b = await req.json()
+    if (!b.id) return NextResponse.json({ error: 'id requerido' }, { status: 400 })
+    await prisma.$executeRaw(Prisma.sql`
+      UPDATE productos_stock SET
+        nombre          = ${b.nombre},
+        categoria       = ${b.categoria || 'limpieza'},
+        unidad          = ${b.unidad || 'unidad'},
+        stock_actual    = ${Number(b.stock_actual ?? 0)},
+        stock_minimo    = ${Number(b.stock_minimo ?? 0)},
+        precio_unitario = ${b.precio_unitario ? Number(b.precio_unitario) : null}
+      WHERE id = ${b.id}::uuid
+        AND empresa_id = ${empresa_id}::uuid
+    `)
+    return NextResponse.json({ ok: true })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 })
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const empresa_id = await requireEmpresaId()
+    const { id } = await req.json()
+    if (!id) return NextResponse.json({ error: 'id requerido' }, { status: 400 })
+    await prisma.$executeRaw(Prisma.sql`
+      UPDATE productos_stock SET activo = false
+      WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
+    `)
+    return NextResponse.json({ ok: true })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 })
+  }
+}
