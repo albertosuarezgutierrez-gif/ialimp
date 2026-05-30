@@ -71,6 +71,9 @@ function NuevoHiloModal({ onClose, onCreado }: { onClose: () => void; onCreado: 
       fetch('/api/admin/propiedades').then(r => r.json()).then(d => setProps(d.propiedades || []))
   }, [tipo])
 
+  // Si es mensaje directo, la visibilidad es siempre equipo_empresa
+  const visibFinal = destTipo === 'persona' ? 'equipo_empresa' : visib
+
   async function crear() {
     if (!titulo.trim()) { setError('El título es obligatorio'); return }
     if ((tipo === 'sesion' || tipo === 'propiedad') && !ctxId) { setError('Selecciona el contexto'); return }
@@ -80,7 +83,7 @@ function NuevoHiloModal({ onClose, onCreado }: { onClose: () => void; onCreado: 
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        tipo, titulo, visibilidad: visib,
+        tipo, titulo, visibilidad: visibFinal,
         contexto_id: ctxId || null,
         destinatario_tipo: destTipo,
         destinatario_id: destTipo === 'persona' ? destId : null,
@@ -100,7 +103,7 @@ function NuevoHiloModal({ onClose, onCreado }: { onClose: () => void; onCreado: 
         </div>
         <div style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:16 }}>
 
-          {/* Tipo */}
+          {/* 1. Tipo */}
           <div>
             <div style={{ fontSize:12, fontWeight:700, color:C.muted, marginBottom:8, textTransform:'uppercase', letterSpacing:'.05em' }}>Tipo de hilo</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6 }}>
@@ -116,7 +119,38 @@ function NuevoHiloModal({ onClose, onCreado }: { onClose: () => void; onCreado: 
             </div>
           </div>
 
-          {/* Contexto según tipo */}
+          {/* 2. Para (destinatario) */}
+          <div>
+            <div style={{ fontSize:12, fontWeight:700, color:C.muted, marginBottom:8, textTransform:'uppercase', letterSpacing:'.05em' }}>Para</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginBottom: destTipo==='persona' ? 10 : 0 }}>
+              {([
+                { k:'todos',   icon:'🌐', label:'Todo el equipo' },
+                { k:'persona', icon:'👤', label:'Persona concreta' },
+              ] as const).map(opt => (
+                <button key={opt.k} onClick={() => { setDestTipo(opt.k); setDestId('') }}
+                  style={{ padding:'10px 8px', borderRadius:10,
+                    border:`2px solid ${destTipo===opt.k ? C.primary : C.border}`,
+                    background: destTipo===opt.k ? C.light : 'white',
+                    cursor:'pointer', fontFamily:'inherit',
+                    display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+                  <span style={{ fontSize:22 }}>{opt.icon}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color: destTipo===opt.k ? C.primary : C.muted, textAlign:'center', lineHeight:1.2 }}>{opt.label}</span>
+                </button>
+              ))}
+            </div>
+            {destTipo === 'persona' && (
+              <select value={destId} onChange={e => setDestId(e.target.value)}
+                style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1px solid ${destId ? C.primary : C.border}`,
+                  fontSize:13, fontFamily:'inherit', color:C.text }}>
+                <option value="">— Selecciona persona —</option>
+                {limpiadoras.filter((l:any) => l.activa).map((l: any) => (
+                  <option key={l.id} value={l.id}>{l.nombre}</option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* 3. Contexto según tipo */}
           {tipo === 'sesion' && (
             <div>
               <div style={{ fontSize:12, fontWeight:700, color:C.muted, marginBottom:6, textTransform:'uppercase', letterSpacing:'.05em' }}>Reserva / Sesión</div>
@@ -142,7 +176,7 @@ function NuevoHiloModal({ onClose, onCreado }: { onClose: () => void; onCreado: 
             </div>
           )}
 
-          {/* Título */}
+          {/* 4. Título */}
           <div>
             <div style={{ fontSize:12, fontWeight:700, color:C.muted, marginBottom:6, textTransform:'uppercase', letterSpacing:'.05em' }}>Título del hilo</div>
             <input value={titulo} onChange={e => setTitulo(e.target.value)}
@@ -150,52 +184,33 @@ function NuevoHiloModal({ onClose, onCreado }: { onClose: () => void; onCreado: 
               style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1px solid ${C.border}`, fontSize:14, fontFamily:'inherit', color:C.text }} />
           </div>
 
-          {/* ── DESTINATARIO (NUEVO) ── */}
-          <div>
-            <div style={{ fontSize:12, fontWeight:700, color:C.muted, marginBottom:8, textTransform:'uppercase', letterSpacing:'.05em' }}>Para</div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginBottom: destTipo==='persona' ? 10 : 0 }}>
-              {([
-                { k:'todos',   icon:'🌐', label:'Todo el equipo' },
-                { k:'persona', icon:'👤', label:'Persona concreta' },
-              ] as const).map(opt => (
-                <button key={opt.k} onClick={() => { setDestTipo(opt.k); setDestId('') }}
-                  style={{ padding:'10px 8px', borderRadius:10,
-                    border:`2px solid ${destTipo===opt.k ? C.primary : C.border}`,
-                    background: destTipo===opt.k ? C.light : 'white',
-                    cursor:'pointer', fontFamily:'inherit',
-                    display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                  <span style={{ fontSize:22 }}>{opt.icon}</span>
-                  <span style={{ fontSize:11, fontWeight:700, color: destTipo===opt.k ? C.primary : C.muted, textAlign:'center', lineHeight:1.2 }}>{opt.label}</span>
-                </button>
-              ))}
-            </div>
-            {destTipo === 'persona' && (
-              <select value={destId} onChange={e => setDestId(e.target.value)}
-                style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1px solid ${destId ? C.primary : C.border}`,
-                  fontSize:13, fontFamily:'inherit', color:C.text, marginTop:2 }}>
-                <option value="">— Selecciona persona —</option>
-                {limpiadoras.filter((l:any) => l.activa).map((l: any) => (
-                  <option key={l.id} value={l.id}>{l.nombre}</option>
+          {/* 5. Visibilidad — solo si es mensaje a todo el equipo */}
+          {destTipo === 'todos' && (
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:C.muted, marginBottom:8, textTransform:'uppercase', letterSpacing:'.05em' }}>¿Quién puede ver este hilo?</div>
+              <div style={{ display:'flex', gap:6 }}>
+                {Object.entries(VIS_CFG).map(([k, v]) => (
+                  <button key={k} onClick={() => setVisib(k)}
+                    style={{ flex:1, padding:'9px 6px', borderRadius:10, border:`2px solid ${visib===k ? C.primary : C.border}`,
+                      background: visib===k ? C.light : 'white', cursor:'pointer', fontFamily:'inherit',
+                      display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+                    <span style={{ fontSize:18 }}>{v.icon}</span>
+                    <span style={{ fontSize:10, fontWeight: visib===k ? 700 : 500, color: visib===k ? C.primary : C.muted, textAlign:'center', lineHeight:1.2 }}>{v.label}</span>
+                  </button>
                 ))}
-              </select>
-            )}
-          </div>
-
-          {/* Visibilidad */}
-          <div>
-            <div style={{ fontSize:12, fontWeight:700, color:C.muted, marginBottom:8, textTransform:'uppercase', letterSpacing:'.05em' }}>¿Quién puede ver este hilo?</div>
-            <div style={{ display:'flex', gap:6 }}>
-              {Object.entries(VIS_CFG).map(([k, v]) => (
-                <button key={k} onClick={() => setVisib(k)}
-                  style={{ flex:1, padding:'9px 6px', borderRadius:10, border:`2px solid ${visib===k ? C.primary : C.border}`,
-                    background: visib===k ? C.light : 'white', cursor:'pointer', fontFamily:'inherit',
-                    display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
-                  <span style={{ fontSize:18 }}>{v.icon}</span>
-                  <span style={{ fontSize:10, fontWeight: visib===k ? 700 : 500, color: visib===k ? C.primary : C.muted, textAlign:'center', lineHeight:1.2 }}>{v.label}</span>
-                </button>
-              ))}
+              </div>
             </div>
-          </div>
+          )}
+          {/* Mensaje directo: visibilidad implícita */}
+          {destTipo === 'persona' && (
+            <div style={{ background:'#f8fafc', border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 14px',
+              fontSize:12, color:C.muted, display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ fontSize:16 }}>🔒</span>
+              <span>Solo visible para <strong style={{ color:C.text }}>
+                {limpiadoras.find((l:any) => l.id === destId)?.nombre || 'la persona seleccionada'}
+              </strong> y el equipo de empresa</span>
+            </div>
+          )}
 
           {error && <div style={{ background:'#fef2f2', border:'1px solid #fca5a5', borderRadius:8, padding:'10px 14px', fontSize:13, color:C.red }}>{error}</div>}
 
@@ -492,3 +507,4 @@ export default function AdminChatPage() {
     </div>
   )
 }
+
