@@ -38,7 +38,7 @@ interface ExtraIda {
   total: number | null
   descripcion_corta: string
   notas: string | null
-  confianza: 'alta' | 'media' | 'baja'
+  nivel_certeza: 'alto' | 'medio' | 'bajo'
 }
 
 async function analizarDocumento(
@@ -81,7 +81,7 @@ Extrae TODOS los datos y devuelve ÚNICAMENTE un JSON válido, sin markdown, sin
   "total": número o null,
   "descripcion_corta": "resumen en máx 60 chars",
   "notas": "observaciones importantes o null",
-  "confianza": "alta|media|baja"
+  "nivel_certeza": "alto|medio|bajo"
 }
 
 Reglas:
@@ -90,8 +90,11 @@ Reglas:
 - Usa IVA 21% si no se especifica y el total parece incluirlo.
 - base_imponible + cuota_iva = total (verifica).`
 
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 90000)
   const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
     method: 'POST',
+    signal: controller.signal,
     headers: {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ' + NVIDIA_API_KEY,
@@ -110,6 +113,7 @@ Reglas:
     }),
   })
 
+  clearTimeout(timeoutId)
   if (!res.ok) throw new Error('Error NVIDIA NIM visión: ' + res.status)
   const data = await res.json()
   const content = (data.choices?.[0]?.message?.content || '{}')
