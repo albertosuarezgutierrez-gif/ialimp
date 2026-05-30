@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   try {
     const empresa_id = await requireEmpresaId()
     const { searchParams } = new URL(req.url)
-    const tipo = searchParams.get('tipo') // general | sesion | propiedad | null=todos
+    const tipo = searchParams.get('tipo')
 
     const hilos = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT
@@ -23,6 +23,11 @@ export async function GET(req: Request) {
         h.ultimo_msg_at,
         h.contexto_id::text,
         h.cliente_id::text,
+        h.destinatario_tipo,
+        h.destinatario_id::text,
+        -- nombre limpiadora destinataria
+        ld.nombre AS destinatario_nombre,
+        ld.color  AS destinatario_color,
         -- último mensaje
         lm.texto        AS ultimo_texto,
         lm.remitente_tipo AS ultimo_remitente,
@@ -61,6 +66,7 @@ export async function GET(req: Request) {
       LEFT JOIN cleaning_sessions cs ON cs.id = h.contexto_id AND h.tipo = 'sesion'
       LEFT JOIN propiedades p        ON p.id  = h.contexto_id AND h.tipo = 'propiedad'
       LEFT JOIN clientes c           ON c.id  = h.cliente_id
+      LEFT JOIN limpiadoras ld       ON ld.id = h.destinatario_id
       WHERE h.empresa_id = ${empresa_id}::uuid
         ${tipo ? Prisma.sql`AND h.tipo = ${tipo}` : Prisma.sql``}
       ORDER BY COALESCE(lm.creado_at, h.creado_at) DESC
@@ -81,14 +87,17 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const empresa_id = await requireEmpresaId()
-    const { tipo, titulo, contexto_id, visibilidad, cliente_id } = await req.json()
+    const { tipo, titulo, contexto_id, visibilidad, cliente_id, destinatario_tipo, destinatario_id } = await req.json()
 
     if (!tipo || !titulo?.trim()) {
       return NextResponse.json({ error: 'tipo y titulo requeridos' }, { status: 400 })
     }
 
+    const destTipo = destinatario_tipo || 'todos'
+    const destId   = destTipo === 'persona' && destinatario_id ? destinatario_id : null
+
     const hilo = await prisma.$queryRaw<any[]>(Prisma.sql`
-      INSERT INTO chat_hilos (empresa_id, tipo, titulo, contexto_id, visibilidad, cliente_id, creado_por)
+      INSERT INTO chat_hilos (empresa_id, tipo, titulo, contexto_id, visibilidad, cliente_id, creado_por, destinatario_tipo, destinatario_id)
       VALUES (
         ${empresa_id}::uuid,
         ${tipo},
@@ -96,9 +105,11 @@ export async function POST(req: Request) {
         ${contexto_id ? Prisma.sql`${contexto_id}::uuid` : Prisma.sql`NULL`},
         ${visibilidad || 'todos'},
         ${cliente_id ? Prisma.sql`${cliente_id}::uuid` : Prisma.sql`NULL`},
-        'admin'
+        'admin',
+        ${destTipo},
+        ${destId ? Prisma.sql`${destId}::uuid` : Prisma.sql`NULL`}
       )
-      RETURNING id::text, tipo, titulo, visibilidad, creado_at
+      RETURNING id::text, tipo, titulo, visibilidad, destinatario_tipo, destinatario_id::text, creado_at
     `)
 
     return NextResponse.json({ ok: true, hilo: hilo[0] })
