@@ -93,8 +93,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'tipo y titulo requeridos' }, { status: 400 })
     }
 
-    const destTipo = destinatario_tipo || 'todos'
-    const destId   = destTipo === 'persona' && destinatario_id ? destinatario_id : null
+    const destTipo  = destinatario_tipo || 'todos'
+    const destId    = destTipo === 'persona' && destinatario_id ? destinatario_id : null
+    // Mensaje directo → visibilidad siempre equipo_empresa (regla de negocio)
+    const visibFinal = destTipo === 'persona' ? 'equipo_empresa' : (visibilidad || 'todos')
 
     const hilo = await prisma.$queryRaw<any[]>(Prisma.sql`
       INSERT INTO chat_hilos (empresa_id, tipo, titulo, contexto_id, visibilidad, cliente_id, creado_por, destinatario_tipo, destinatario_id)
@@ -103,7 +105,7 @@ export async function POST(req: Request) {
         ${tipo},
         ${titulo.trim()},
         ${contexto_id ? Prisma.sql`${contexto_id}::uuid` : Prisma.sql`NULL`},
-        ${visibilidad || 'todos'},
+        ${visibFinal},
         ${cliente_id ? Prisma.sql`${cliente_id}::uuid` : Prisma.sql`NULL`},
         'admin',
         ${destTipo},
@@ -117,3 +119,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
+
