@@ -27,16 +27,42 @@ function fmtHora(t: string) {
     : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
+/* ── Badge destinatario ── */
+function DestBadge({ tipo, nombre, color }: { tipo: string; nombre?: string; color?: string }) {
+  if (tipo === 'todos') return (
+    <span style={{ fontSize:10, fontWeight:700, padding:'1px 7px', borderRadius:20,
+      background:'#f1f5f9', color:C.muted, border:`1px solid ${C.border}` }}>
+      🌐 Todo el equipo
+    </span>
+  )
+  return (
+    <span style={{ fontSize:10, fontWeight:700, padding:'1px 7px', borderRadius:20,
+      background: (color || C.brand)+'20', color: color || C.brand, border:`1px solid ${(color||C.brand)}40` }}>
+      👤 {nombre || 'Persona'}
+    </span>
+  )
+}
+
 /* ── Modal nuevo hilo ── */
 function NuevoHiloModal({ onClose, onCreado }: { onClose: () => void; onCreado: (h: any) => void }) {
-  const [tipo, setTipo]         = useState('general')
-  const [titulo, setTitulo]     = useState('')
-  const [visib, setVisib]       = useState('todos')
-  const [sesiones, setSesiones] = useState<any[]>([])
-  const [props, setProps]       = useState<any[]>([])
-  const [ctxId, setCtxId]       = useState('')
-  const [saving, setSaving]     = useState(false)
-  const [error, setError]       = useState('')
+  const [tipo, setTipo]           = useState('general')
+  const [titulo, setTitulo]       = useState('')
+  const [visib, setVisib]         = useState('todos')
+  const [sesiones, setSesiones]   = useState<any[]>([])
+  const [props, setProps]         = useState<any[]>([])
+  const [ctxId, setCtxId]         = useState('')
+  const [destTipo, setDestTipo]   = useState<'todos'|'persona'>('todos')
+  const [destId, setDestId]       = useState('')
+  const [limpiadoras, setLimpiadoras] = useState<any[]>([])
+  const [saving, setSaving]       = useState(false)
+  const [error, setError]         = useState('')
+
+  // Cargar limpiadoras al montar (siempre necesario para el selector)
+  useEffect(() => {
+    fetch('/api/admin/limpiadoras')
+      .then(r => r.json())
+      .then(d => setLimpiadoras(d.limpiadoras || []))
+  }, [])
 
   useEffect(() => {
     if (tipo === 'sesion')
@@ -48,11 +74,17 @@ function NuevoHiloModal({ onClose, onCreado }: { onClose: () => void; onCreado: 
   async function crear() {
     if (!titulo.trim()) { setError('El título es obligatorio'); return }
     if ((tipo === 'sesion' || tipo === 'propiedad') && !ctxId) { setError('Selecciona el contexto'); return }
+    if (destTipo === 'persona' && !destId) { setError('Selecciona la persona destinataria'); return }
     setSaving(true); setError('')
     const r = await fetch('/api/admin/chat/hilos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tipo, titulo, visibilidad: visib, contexto_id: ctxId || null })
+      body: JSON.stringify({
+        tipo, titulo, visibilidad: visib,
+        contexto_id: ctxId || null,
+        destinatario_tipo: destTipo,
+        destinatario_id: destTipo === 'persona' ? destId : null,
+      })
     })
     const d = await r.json()
     if (d.ok) { onCreado(d.hilo) }
@@ -116,6 +148,37 @@ function NuevoHiloModal({ onClose, onCreado }: { onClose: () => void; onCreado: 
             <input value={titulo} onChange={e => setTitulo(e.target.value)}
               placeholder={tipo==='general' ? 'Ej: Coordinación semana del 2 de junio' : tipo==='sesion' ? 'Ej: Incidencia en esta limpieza' : 'Ej: Acceso al piso'}
               style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1px solid ${C.border}`, fontSize:14, fontFamily:'inherit', color:C.text }} />
+          </div>
+
+          {/* ── DESTINATARIO (NUEVO) ── */}
+          <div>
+            <div style={{ fontSize:12, fontWeight:700, color:C.muted, marginBottom:8, textTransform:'uppercase', letterSpacing:'.05em' }}>Para</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginBottom: destTipo==='persona' ? 10 : 0 }}>
+              {([
+                { k:'todos',   icon:'🌐', label:'Todo el equipo' },
+                { k:'persona', icon:'👤', label:'Persona concreta' },
+              ] as const).map(opt => (
+                <button key={opt.k} onClick={() => { setDestTipo(opt.k); setDestId('') }}
+                  style={{ padding:'10px 8px', borderRadius:10,
+                    border:`2px solid ${destTipo===opt.k ? C.primary : C.border}`,
+                    background: destTipo===opt.k ? C.light : 'white',
+                    cursor:'pointer', fontFamily:'inherit',
+                    display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+                  <span style={{ fontSize:22 }}>{opt.icon}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color: destTipo===opt.k ? C.primary : C.muted, textAlign:'center', lineHeight:1.2 }}>{opt.label}</span>
+                </button>
+              ))}
+            </div>
+            {destTipo === 'persona' && (
+              <select value={destId} onChange={e => setDestId(e.target.value)}
+                style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1px solid ${destId ? C.primary : C.border}`,
+                  fontSize:13, fontFamily:'inherit', color:C.text, marginTop:2 }}>
+                <option value="">— Selecciona persona —</option>
+                {limpiadoras.filter((l:any) => l.activa).map((l: any) => (
+                  <option key={l.id} value={l.id}>{l.nombre}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Visibilidad */}
@@ -197,11 +260,10 @@ function HiloChat({ hilo, nombreAdmin, onBack }: { hilo: any; nombreAdmin: strin
         </div>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontWeight:700, fontSize:14, color:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{hilo.titulo}</div>
-          <div style={{ fontSize:11, color:C.muted, display:'flex', alignItems:'center', gap:6, marginTop:2 }}>
+          <div style={{ fontSize:11, color:C.muted, display:'flex', alignItems:'center', gap:6, marginTop:2, flexWrap:'wrap' }}>
             <span style={{ background:cfg.color+'15', color:cfg.color, fontWeight:700, fontSize:10, padding:'1px 6px', borderRadius:20 }}>{cfg.label}</span>
             {hilo.contexto_nombre && <span>· {hilo.contexto_nombre}</span>}
-            {hilo.contexto_fecha && <span>· {hilo.contexto_fecha}</span>}
-            <span>· {VIS_CFG[hilo.visibilidad]?.icon} {VIS_CFG[hilo.visibilidad]?.label}</span>
+            <DestBadge tipo={hilo.destinatario_tipo || 'todos'} nombre={hilo.destinatario_nombre} color={hilo.destinatario_color} />
           </div>
         </div>
       </div>
@@ -250,7 +312,7 @@ function HiloChat({ hilo, nombreAdmin, onBack }: { hilo: any; nombreAdmin: strin
           value={texto}
           onChange={e => setTexto(e.target.value)}
           onKeyDown={e => { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); enviar() } }}
-          placeholder="Escribe un mensaje..."
+          placeholder={hilo.destinatario_tipo === 'persona' ? `Mensaje para ${hilo.destinatario_nombre || 'persona'}...` : 'Escribe un mensaje al equipo...'}
           style={{ flex:1, padding:'10px 14px', borderRadius:20, border:`1px solid ${C.border}`, fontSize:14, fontFamily:'inherit', outline:'none', color:C.text }}
         />
         <button onClick={enviar} disabled={sending || !texto.trim()}
@@ -354,6 +416,7 @@ export default function AdminChatPage() {
           {hilosFiltrados.map(h => {
             const cfg = TIPO_CFG[h.tipo] || TIPO_CFG.general
             const isSelected = selected?.id === h.id
+            const esDirec = h.destinatario_tipo === 'persona'
             return (
               <button key={h.id} onClick={() => setSelected(h)}
                 style={{
@@ -376,9 +439,20 @@ export default function AdminChatPage() {
                     </div>
                     <div style={{ fontSize:10, color:C.muted, flexShrink:0 }}>{fmtHora(h.ultimo_msg_at)}</div>
                   </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:3 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:3, flexWrap:'wrap' }}>
                     <span style={{ fontSize:10, fontWeight:700, padding:'1px 6px', borderRadius:20, background:cfg.color+'15', color:cfg.color }}>{cfg.label}</span>
                     {h.contexto_nombre && <span style={{ fontSize:11, color:C.muted }}>· {h.contexto_nombre}</span>}
+                    {/* Badge destinatario */}
+                    {esDirec ? (
+                      <span style={{ fontSize:10, fontWeight:700, padding:'1px 6px', borderRadius:20,
+                        background:(h.destinatario_color||C.brand)+'20', color:h.destinatario_color||C.brand }}>
+                        👤 {h.destinatario_nombre || 'Persona'}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize:10, padding:'1px 6px', borderRadius:20, background:'#f1f5f9', color:C.muted }}>
+                        🌐 Equipo
+                      </span>
+                    )}
                   </div>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:4 }}>
                     <div style={{ fontSize:12, color:C.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'80%' }}>
