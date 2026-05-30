@@ -120,12 +120,16 @@ function TabClientes() {
           const tipo = t(c.tipo)
           return (
             <div key={c.id} style={{ background: C.white, borderRadius: 12, border: `1px solid ${C.border}`, padding: '14px 18px', borderLeft: `4px solid ${tipo.color}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 20 }}>{tipo.icon}</span>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 140 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{c.nombre}</div>
                   <div style={{ fontSize: 12, color: C.muted }}>{tipo.label} {c.contacto_nombre ? `· ${c.contacto_nombre}` : ''}</div>
                 </div>
+                <a href={`/admin/clientes/${c.id}/propiedades`}
+                  style={{ padding: '5px 12px', borderRadius: 8, border: `1px solid ${C.primary}`, background: C.light, fontSize: 12, cursor: 'pointer', color: C.primary, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                  🏠 Propiedades
+                </a>
                 <button onClick={() => { setEditando(c); setForm({ nombre: c.nombre||'', tipo: c.tipo||'', contacto_nombre: c.contacto_nombre||'', contacto_tel: c.contacto_tel||'', contacto_email: c.contacto_email||'', direccion: c.direccion||'', notas: c.notas||'' }); setShowModal(true) }}
                   style={{ padding: '5px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.bg, fontSize: 12, cursor: 'pointer', color: C.text }}>
                   Editar
