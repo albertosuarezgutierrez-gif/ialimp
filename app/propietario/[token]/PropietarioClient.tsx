@@ -664,6 +664,12 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
             <div style={{ background:'rgba(255,255,255,0.15)', borderRadius:8, padding:'4px 10px', fontSize:12, color:'white', fontWeight:700 }}>
               {completadas}/{propiedades.length} ✓
             </div>
+            {propiedades.length>0 && (
+              <button onClick={()=>setNuevaModal(true)} aria-label="Nueva limpieza" title="Nueva limpieza"
+                style={{ background:'white', border:'none', borderRadius:8, width:36, height:36, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:C.primary, fontSize:24, fontWeight:700, lineHeight:1 }}>
+                +
+              </button>
+            )}
             <button onClick={()=>setMenu(true)}
               style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:8, width:36, height:36, cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4 }}>
               {[0,1,2].map(i=><span key={i} style={{ display:'block', width:16, height:2, background:'white', borderRadius:2 }} />)}
@@ -855,17 +861,6 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
               onCancelar={()=>setFirma(null)} />
           </div>
         </div>
-      )}
-
-      {/* Acceso directo: crear limpieza */}
-      {(tab==='hoy' || tab==='reservas') && propiedades.length>0 && (
-        <button onClick={()=>setNuevaModal(true)} aria-label="Nueva limpieza"
-          style={{ position:'fixed', bottom:20, zIndex:90, left:'50%', transform:'translateX(calc(240px - 100% - 16px))',
-            display:'flex', alignItems:'center', gap:8, padding:'14px 20px', borderRadius:999, border:'none',
-            background:C.primary, color:'white', fontSize:14, fontWeight:800, fontFamily:'inherit', cursor:'pointer',
-            boxShadow:'0 8px 24px rgba(79,70,229,0.4)' }}>
-          <span style={{ fontSize:18, lineHeight:1 }}>+</span> Nueva limpieza
-        </button>
       )}
 
       {nuevaModal && (
