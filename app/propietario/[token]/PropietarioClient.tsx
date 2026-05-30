@@ -137,6 +137,104 @@ function QuejaModal({ sesion, token, onClose, onSent }: any) {
   )
 }
 
+// ─── MODAL NUEVA LIMPIEZA (el propietario la crea directamente) ──────────────
+const TIPOS_SERVICIO = [
+  { id:'rotacion', label:'🔄 Rotación (salida + entrada)' },
+  { id:'checkout',  label:'🚪 Solo check-out' },
+  { id:'extra',     label:'✨ Limpieza extra' },
+  { id:'profunda',  label:'🧽 Limpieza profunda' },
+]
+function NuevaReservaModal({ token, propiedades, onClose, onCreated }: any) {
+  const propsActivas = (propiedades || []).filter((p:any)=>p && p.id)
+  const [propiedadId, setPropiedadId] = useState(propsActivas.length===1 ? propsActivas[0].id : '')
+  const [fecha, setFecha]             = useState(HOY)
+  const [tipo, setTipo]               = useState('rotacion')
+  const [horaOut, setHoraOut]         = useState('')
+  const [horaIn, setHoraIn]           = useState('')
+  const [huespedes, setHuespedes]     = useState('')
+  const [notas, setNotas]             = useState('')
+  const [loading, setLoading]         = useState(false)
+  const [error, setError]             = useState('')
+
+  // Prefijar horas habituales de la propiedad seleccionada
+  useEffect(() => {
+    const p = propsActivas.find((x:any)=>x.id===propiedadId)
+    if (p) { if (p.hora_checkout) setHoraOut(p.hora_checkout.slice(0,5)); if (p.hora_checkin_siguiente) setHoraIn(p.hora_checkin_siguiente.slice(0,5)) }
+  }, [propiedadId])
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault()
+    if (!propiedadId) { setError('Elige una propiedad'); return }
+    if (!fecha)       { setError('Elige una fecha'); return }
+    setError(''); setLoading(true)
+    try {
+      const r = await fetch(`/api/propietario/${token}/sesiones`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          propiedad_id: propiedadId, session_date: fecha, tipo_servicio: tipo,
+          hora_checkout: horaOut || null, hora_checkin_siguiente: horaIn || null,
+          num_huespedes: huespedes || null, notas: notas || null,
+        }),
+      })
+      const d = await r.json()
+      if (r.ok) { onCreated() } else { setError(d.error || 'Error al crear'); setLoading(false) }
+    } catch { setError('Error de conexión'); setLoading(false) }
+  }
+
+  const inputStyle = { width:'100%', border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', fontSize:14, fontFamily:'inherit', outline:'none', background:'white', color:C.text }
+  const labelStyle = { display:'block', fontSize:12, fontWeight:700, color:C.muted, marginBottom:6 }
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:200, padding:16 }}>
+      <div style={{ background:'white', borderRadius:20, width:'100%', maxWidth:480, maxHeight:'90vh', overflowY:'auto' }}>
+        <div style={{ padding:'18px 20px 16px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'space-between', position:'sticky', top:0, background:'white', zIndex:1 }}>
+          <div><h3 style={{ fontWeight:800, fontSize:17, color:C.text }}>Nueva limpieza</h3>
+               <p style={{ fontSize:12, color:C.muted, marginTop:2 }}>Solicita un servicio para uno de tus pisos</p></div>
+          <button onClick={onClose} style={{ background:'none', border:'none', fontSize:22, color:C.muted, cursor:'pointer' }}>✕</button>
+        </div>
+        <form onSubmit={enviar} style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:16 }}>
+          <div><label style={labelStyle}>Propiedad *</label>
+            <select value={propiedadId} onChange={e=>setPropiedadId(e.target.value)} style={inputStyle as any}>
+              <option value="">— Elige propiedad —</option>
+              {propsActivas.map((p:any)=><option key={p.id} value={p.id}>{p.nombre}</option>)}
+            </select></div>
+
+          <div style={{ display:'flex', gap:10 }}>
+            <div style={{ flex:1 }}><label style={labelStyle}>Fecha *</label>
+              <input type="date" value={fecha} min={HOY} onChange={e=>setFecha(e.target.value)} style={inputStyle as any} /></div>
+            <div style={{ flex:1 }}><label style={labelStyle}>Huéspedes</label>
+              <input type="number" min={0} value={huespedes} onChange={e=>setHuespedes(e.target.value)} placeholder="—" style={inputStyle as any} /></div>
+          </div>
+
+          <div><label style={labelStyle}>Tipo de servicio</label>
+            <select value={tipo} onChange={e=>setTipo(e.target.value)} style={inputStyle as any}>
+              {TIPOS_SERVICIO.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
+            </select></div>
+
+          <div style={{ display:'flex', gap:10 }}>
+            <div style={{ flex:1 }}><label style={labelStyle}>🚪 Salida huésped</label>
+              <input type="time" value={horaOut} onChange={e=>setHoraOut(e.target.value)} style={inputStyle as any} /></div>
+            <div style={{ flex:1 }}><label style={labelStyle}>🔑 Entrada siguiente</label>
+              <input type="time" value={horaIn} onChange={e=>setHoraIn(e.target.value)} style={inputStyle as any} /></div>
+          </div>
+
+          <div><label style={labelStyle}>Notas para el equipo</label>
+            <textarea value={notas} onChange={e=>setNotas(e.target.value)} rows={3} placeholder="Ej: dejar toallas extra, revisar terraza..."
+              style={{ ...(inputStyle as any), resize:'none' }} /></div>
+
+          <div style={{ background:C.light, borderRadius:10, padding:'10px 14px', fontSize:12, color:C.brand }}>💡 Sique Brilla recibirá la solicitud y asignará una limpiadora.</div>
+          {error && <p style={{ color:C.red, fontSize:13 }}>{error}</p>}
+          <div style={{ display:'flex', gap:10 }}>
+            <button type="button" onClick={onClose} style={{ flex:1, padding:12, borderRadius:10, border:`1px solid ${C.border}`, background:'white', color:C.muted, fontSize:13, cursor:'pointer' }}>Cancelar</button>
+            <button type="submit" disabled={loading} style={{ flex:2, padding:12, borderRadius:10, border:'none', background:C.primary, color:'white', fontSize:13, fontWeight:700, cursor:'pointer', opacity:loading?0.5:1 }}>
+              {loading?'Creando...':'✓ Crear limpieza'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // ─── TARJETA HOY (expandible con datos de reserva) ───────────────────────────
 function SesionCardHoy({ p, token, ingresosPorPropiedad, onChat, onChecklist, onQueja, quejaEnviada }: any) {
   const [open, setOpen] = useState(false)
@@ -442,6 +540,7 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
   const [quejaEnviada, setQuejaEnviada] = useState<Set<string>>(new Set())
   const [chatSesion, setChatSesion]     = useState<{id:string;titulo:string}|null>(null)
   const [checklistSesion,setChecklist]  = useState<{id:string;titulo:string}|null>(null)
+  const [nuevaModal, setNuevaModal]     = useState(false)
 
   const [reservas, setReservas]     = useState<any[]>([])
   const [loadingRes, setLoadingRes] = useState(false)
@@ -490,13 +589,16 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
     return { bruto, neto, count: hoyIngresos.length }
   }, [ingresosHoy])
 
+  const cargarReservas = () => {
+    setLoadingRes(true)
+    fetch(`/api/propietario/${token}/sesiones`)
+      .then(r=>r.json())
+      .then(d=>{ setReservas(d.sesiones||[]); setLoadingRes(false) })
+      .catch(()=>setLoadingRes(false))
+  }
+
   useEffect(() => {
-    if (tab==='reservas' && reservas.length===0 && !loadingRes) {
-      setLoadingRes(true)
-      fetch(`/api/propietario/${token}/sesiones`)
-        .then(r=>r.json())
-        .then(d=>{ setReservas(d.sesiones||[]); setLoadingRes(false) })
-    }
+    if (tab==='reservas' && reservas.length===0 && !loadingRes) cargarReservas()
   }, [tab])
 
   const propiedadesUnicas = useMemo(() => {
@@ -753,6 +855,23 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
               onCancelar={()=>setFirma(null)} />
           </div>
         </div>
+      )}
+
+      {/* Acceso directo: crear limpieza */}
+      {(tab==='hoy' || tab==='reservas') && propiedades.length>0 && (
+        <button onClick={()=>setNuevaModal(true)} aria-label="Nueva limpieza"
+          style={{ position:'fixed', bottom:20, zIndex:90, left:'50%', transform:'translateX(calc(240px - 100% - 16px))',
+            display:'flex', alignItems:'center', gap:8, padding:'14px 20px', borderRadius:999, border:'none',
+            background:C.primary, color:'white', fontSize:14, fontWeight:800, fontFamily:'inherit', cursor:'pointer',
+            boxShadow:'0 8px 24px rgba(79,70,229,0.4)' }}>
+          <span style={{ fontSize:18, lineHeight:1 }}>+</span> Nueva limpieza
+        </button>
+      )}
+
+      {nuevaModal && (
+        <NuevaReservaModal token={token} propiedades={propiedades}
+          onClose={()=>setNuevaModal(false)}
+          onCreated={()=>{ setNuevaModal(false); setTab('reservas'); cargarReservas() }} />
       )}
     </div>
   )
