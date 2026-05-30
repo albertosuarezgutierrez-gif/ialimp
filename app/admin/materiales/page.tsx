@@ -48,6 +48,7 @@ const TABS = [
   { id: 'lenceria',    label: '🛏️ Lencería'    },
   { id: 'proveedores', label: '🏪 Proveedores'  },
   { id: 'checklists',  label: '✅ Checklists'   },
+  { id: 'documentos',  label: '📄 Documentos'  },
 ]
 
 export default function MaterialesPage() {
@@ -80,6 +81,7 @@ export default function MaterialesPage() {
         {tab === 'lenceria'    && <TabLenceriaMateriales />}
         {tab === 'proveedores' && <TabProveedoresMateriales />}
         {tab === 'checklists'  && <TabChecklistsMateriales />}
+        {tab === 'documentos'  && <TabDocumentosMateriales />}
       </div>
     </div>
   )
@@ -671,4 +673,368 @@ function TabChecklistsMateriales() {
       </div>
     </div>
   )
+}
+
+
+// ─── TAB DOCUMENTOS ──────────────────────────────────────────────
+const TIPO_EMOJI: Record<string, string> = {
+  factura: '🧾', albaran: '📦', ticket: '🏷️', otro: '📄'
+}
+const CONFIANZA_COLOR: Record<string, string> = {
+  alta: '#16a34a', media: '#d97706', baja: '#dc2626'
+}
+
+function TabDocumentosMateriales() {
+  const [fase, setFase] = useState<'lista'|'escaner'|'analizando'|'resultado'>('lista')
+  const [docs, setDocs]       = useState<any[]>([])
+  const [loadingDocs, setLoadingDocs] = useState(true)
+  const [imgSrc, setImgSrc]   = useState<string | null>(null)
+  const [imgFile, setImgFile] = useState<File | null>(null)
+  const [resultado, setResultado] = useState<any>(null)
+  const [error, setError]     = useState<string | null>(null)
+  const [expandId, setExpandId] = useState<string | null>(null)
+  const camRef = useRef<HTMLInputElement>(null)
+  const galRef = useRef<HTMLInputElement>(null)
+
+  const cargarDocs = useCallback(async () => {
+    setLoadingDocs(true)
+    const r = await fetch('/api/admin/escanear?limit=30')
+    const d = await r.json()
+    setDocs(d.docs || [])
+    setLoadingDocs(false)
+  }, [])
+
+  useEffect(() => { cargarDocs() }, [cargarDocs])
+
+  const cargarImagen = useCallback((file: File) => {
+    setImgFile(file)
+    const r = new FileReader()
+    r.onload = (e) => { setImgSrc(e.target?.result as string); setFase('escaner') }
+    r.readAsDataURL(file)
+  }, [])
+
+  const analizar = async () => {
+    if (!imgSrc || !imgFile) return
+    setFase('analizando')
+    setError(null)
+    try {
+      const base64 = imgSrc.split(',')[1]
+      const res = await fetch('/api/admin/escanear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imagen_base64: base64, media_type: imgFile.type || 'image/jpeg', actualizar_stock: true }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error servidor')
+      setResultado(data)
+      setFase('resultado')
+    } catch (e: any) {
+      setError(e.message)
+      setFase('escaner')
+    }
+  }
+
+  const reiniciar = () => {
+    setFase('lista'); setImgSrc(null); setImgFile(null)
+    setResultado(null); setError(null)
+    cargarDocs()
+  }
+
+  // ── LISTA ──
+  if (fase === 'lista') return (
+    <div>
+      {/* KPIs rápidos */}
+      {!loadingDocs && docs.length > 0 && (() => {
+        const totalGasto = docs.reduce((s, d) => s + (Number(d.total) || 0), 0)
+        const conStock   = docs.filter(d => d.procesado_stock).length
+        return (
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+            <StatCard value={docs.length}             label="Documentos"    />
+            <StatCard value={`${totalGasto.toFixed(0)} €`} label="Gasto total" color={C.primary} />
+            <StatCard value={conStock}                label="📦 Stock actualizados" color={C.ok} />
+          </div>
+        )
+      })()}
+
+      {/* Botón escanear */}
+      <button
+        onClick={() => { setFase('escaner'); camRef.current?.click() }}
+        style={{
+          width: '100%', background: `linear-gradient(135deg, ${C.primary}, ${C.brand})`,
+          color: C.white, border: 'none', borderRadius: 14, padding: '18px 20px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+          cursor: 'pointer', fontFamily: 'inherit', marginBottom: 16,
+          boxShadow: '0 4px 18px rgba(79,70,229,.3)',
+        }}>
+        <span style={{ fontSize: 28 }}>📷</span>
+        <div style={{ textAlign: 'left' }}>
+          <div style={{ fontWeight: 800, fontSize: 16 }}>Escanear documento</div>
+          <div style={{ fontSize: 12, opacity: 0.8 }}>Factura · Albarán · Ticket — la IA lo registra</div>
+        </div>
+      </button>
+
+      {/* También desde galería */}
+      <button onClick={() => { setFase('escaner'); galRef.current?.click() }}
+        style={{ width: '100%', background: C.white, border: `2px solid ${C.primary}`, color: C.primary,
+          borderRadius: 11, padding: '11px 16px', fontSize: 14, fontWeight: 700,
+          cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20 }}>
+        🖼️ Subir desde galería / archivo
+      </button>
+
+      <input ref={camRef} type="file" accept="image/*" capture="environment"
+        style={{ display: 'none' }} onChange={e => e.target.files?.[0] && cargarImagen(e.target.files[0])} />
+      <input ref={galRef} type="file" accept="image/*"
+        style={{ display: 'none' }} onChange={e => e.target.files?.[0] && cargarImagen(e.target.files[0])} />
+
+      {/* Lista documentos */}
+      {loadingDocs ? <Spinner /> : docs.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '32px 16px', color: C.muted }}>
+          <div style={{ fontSize: 40, marginBottom: 10 }}>📄</div>
+          <div style={{ fontWeight: 600 }}>Sin documentos escaneados</div>
+          <div style={{ fontSize: 13, marginTop: 4 }}>Escanea tu primera factura o albarán</div>
+        </div>
+      ) : docs.map(doc => {
+        const isOpen = expandId === doc.id
+        const lineas: any[] = doc.lineas_json || []
+        const apunte: any[] = doc.apunte_json || []
+        return (
+          <div key={doc.id} style={{
+            background: C.white, border: `1px solid ${C.border}`, borderRadius: 12,
+            marginBottom: 8, overflow: 'hidden',
+          }}>
+            {/* Cabecera */}
+            <div onClick={() => setExpandId(isOpen ? null : doc.id)}
+              style={{ padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 26 }}>{TIPO_EMOJI[doc.tipo_doc] || '📄'}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: C.text }}>
+                  {doc.proveedor || doc.descripcion || doc.tipo_doc}
+                </div>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
+                  {doc.fecha_doc ? new Date(doc.fecha_doc).toLocaleDateString('es-ES') : 'Sin fecha'}
+                  {doc.numero_doc ? ` · ${doc.numero_doc}` : ''}
+                  {doc.categoria ? ` · ${doc.categoria}` : ''}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                {doc.total != null && (
+                  <div style={{ fontWeight: 800, fontSize: 15, color: C.text }}>
+                    {Number(doc.total).toFixed(2)} €
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', marginTop: 3 }}>
+                  {doc.procesado_stock && (
+                    <span style={{ fontSize: 10, background: C.okBg, color: C.ok, borderRadius: 6, padding: '2px 6px', fontWeight: 700 }}>📦</span>
+                  )}
+                  <span style={{ fontSize: 10, color: C.muted }}>{isOpen ? '▲' : '▼'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Detalle expandible */}
+            {isOpen && (
+              <div style={{ borderTop: `1px solid ${C.border}`, padding: '12px 14px' }}>
+                {/* Líneas */}
+                {lineas.length > 0 && (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>Líneas</div>
+                    {lineas.map((l: any, i: number) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: `1px solid ${C.bg}` }}>
+                        <span style={{ color: C.text }}>
+                          {l.cantidad}× {l.descripcion}
+                          {l.producto_id && <span style={{ marginLeft: 4, color: C.ok, fontWeight: 700 }}>✓</span>}
+                        </span>
+                        <span style={{ color: C.muted }}>{l.total_linea != null ? `${Number(l.total_linea).toFixed(2)} €` : ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Apunte PGC */}
+                {apunte.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>Apunte PGC</div>
+                    {apunte.map((a: any, i: number) => (
+                      <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12, padding: '3px 0' }}>
+                        <span style={{ color: C.primary, fontWeight: 700, minWidth: 52 }}>{a.cuenta}</span>
+                        <span style={{ flex: 1, color: '#374151' }}>{a.nombre}</span>
+                        <span style={{ color: C.ok, minWidth: 52, textAlign: 'right' }}>{a.debe ? `D: ${a.debe}` : ''}</span>
+                        <span style={{ color: C.red, minWidth: 52, textAlign: 'right' }}>{a.haber ? `H: ${a.haber}` : ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+
+  // ── PREVIEW FOTO ──
+  if (fase === 'escaner') return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {imgSrc ? (
+        <>
+          <div style={{ borderRadius: 13, overflow: 'hidden', boxShadow: '0 4px 14px rgba(0,0,0,.11)', background: C.white, maxHeight: 380, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={imgSrc} alt="doc" style={{ width: '100%', maxHeight: 380, objectFit: 'contain' }} />
+          </div>
+          {error && <div style={{ background: C.redBg, border: '1px solid #fca5a5', color: '#991b1b', borderRadius: 9, padding: '9px 13px', fontSize: 13 }}>{error}</div>}
+          <button onClick={analizar}
+            style={{ background: `linear-gradient(135deg, ${C.primary}, ${C.brand})`, color: C.white, border: 'none', padding: '14px 24px', borderRadius: 11, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 12px rgba(79,70,229,.28)' }}>
+            ✨ Analizar con IA
+          </button>
+          <button onClick={reiniciar}
+            style={{ background: 'transparent', border: 'none', color: C.muted, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline', alignSelf: 'center' }}>
+            Cancelar
+          </button>
+        </>
+      ) : (
+        <div style={{ textAlign: 'center', padding: '40px 16px', color: C.muted }}>
+          Selecciona una imagen…
+          <br />
+          <button onClick={reiniciar} style={{ marginTop: 12, background: 'none', border: 'none', color: C.primary, cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>Cancelar</button>
+        </div>
+      )}
+      <input ref={camRef} type="file" accept="image/*" capture="environment"
+        style={{ display: 'none' }} onChange={e => e.target.files?.[0] && cargarImagen(e.target.files[0])} />
+      <input ref={galRef} type="file" accept="image/*"
+        style={{ display: 'none' }} onChange={e => e.target.files?.[0] && cargarImagen(e.target.files[0])} />
+    </div>
+  )
+
+  // ── ANALIZANDO ──
+  if (fase === 'analizando') return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 16px', gap: 20 }}>
+      <div style={{ width: 52, height: 52, borderRadius: '50%', border: `4px solid ${C.light}`, borderTop: `4px solid ${C.primary}`, animation: 'giro .85s linear infinite' }} />
+      <div style={{ fontWeight: 700, fontSize: 17 }}>Analizando con IA…</div>
+      {[
+        { t: 'Leyendo imagen',               done: true  },
+        { t: 'Identificando tipo documento', done: false, active: true },
+        { t: 'Extrayendo líneas e importes', done: false },
+        { t: 'Mapeando productos en stock',  done: false },
+        { t: 'Generando apunte PGC',         done: false },
+      ].map((st, i) => (
+        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', width: '100%', maxWidth: 300 }}>
+          <div style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700,
+            background: st.done ? C.primary : st.active ? C.light : '#e5e7eb',
+            border: st.active ? `2px solid ${C.primary}` : '2px solid transparent',
+            color: st.done ? '#fff' : st.active ? C.primary : '#9ca3af' }}>
+            {st.done ? '✓' : st.active ? '●' : ''}
+          </div>
+          <span style={{ fontSize: 14, color: st.done ? C.text : st.active ? C.primary : '#9ca3af', fontWeight: st.active ? 600 : 400 }}>{st.t}</span>
+        </div>
+      ))}
+      <style>{`@keyframes giro { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
+
+  // ── RESULTADO ──
+  if (fase === 'resultado' && resultado) {
+    const lineas: any[] = resultado.datos_ia?.lineas || []
+    const apunte: any[] = resultado.apunte || []
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* Tipo + total */}
+        <div style={{ background: C.white, borderRadius: 13, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+            <span style={{ fontSize: 34 }}>{TIPO_EMOJI[resultado.tipo_doc] || '📄'}</span>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 14, color: C.primary }}>{(resultado.tipo_doc || 'doc').toUpperCase()} detectado</div>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{resultado.datos_ia?.descripcion_corta}</div>
+              <div style={{ fontSize: 11, marginTop: 2 }}>
+                Confianza: <span style={{ fontWeight: 700, color: CONFIANZA_COLOR[resultado.confianza] || C.muted }}>{resultado.confianza}</span>
+              </div>
+            </div>
+          </div>
+          {resultado.total != null && (
+            <div style={{ fontWeight: 800, fontSize: 22, color: C.text }}>{Number(resultado.total).toFixed(2)} €</div>
+          )}
+        </div>
+
+        {/* Datos IA */}
+        <div style={{ background: C.white, borderRadius: 13, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
+          <div style={{ fontWeight: 700, fontSize: 11, color: C.primary, textTransform: 'uppercase', letterSpacing: '.05em', borderBottom: `1px solid ${C.light}`, paddingBottom: 7, marginBottom: 8 }}>Datos extraídos</div>
+          {[
+            ['Proveedor',        resultado.proveedor],
+            ['Fecha',            resultado.datos_ia?.fecha],
+            ['Nº documento',     resultado.datos_ia?.numero_doc],
+            ['Base imponible',   resultado.datos_ia?.base_imponible != null ? `${Number(resultado.datos_ia.base_imponible).toFixed(2)} €` : null],
+            [`IVA (${resultado.datos_ia?.porcentaje_iva ?? '?'}%)`, resultado.datos_ia?.cuota_iva != null ? `${Number(resultado.datos_ia.cuota_iva).toFixed(2)} €` : null],
+          ].map(([lbl, val]: any) => val ? (
+            <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${C.bg}`, fontSize: 13 }}>
+              <span style={{ color: C.muted, fontWeight: 600, fontSize: 12 }}>{lbl}</span>
+              <span style={{ color: C.text, fontWeight: 600 }}>{val}</span>
+            </div>
+          ) : null)}
+        </div>
+
+        {/* Líneas */}
+        {lineas.length > 0 && (
+          <div style={{ background: C.white, borderRadius: 13, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
+            <div style={{ fontWeight: 700, fontSize: 11, color: C.primary, textTransform: 'uppercase', letterSpacing: '.05em', borderBottom: `1px solid ${C.light}`, paddingBottom: 7, marginBottom: 8 }}>Líneas detectadas</div>
+            {lineas.map((l: any, i: number) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${C.bg}`, fontSize: 13 }}>
+                <div>
+                  <span style={{ fontWeight: 600 }}>{l.cantidad}× {l.descripcion}</span>
+                  <div style={{ fontSize: 11, color: C.muted }}>{l.categoria} · {l.unidad}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  {l.total_linea != null && <div style={{ fontWeight: 700 }}>{Number(l.total_linea).toFixed(2)} €</div>}
+                  {l.producto_id
+                    ? <span style={{ fontSize: 10, background: C.okBg, color: C.ok, borderRadius: 5, padding: '1px 5px', fontWeight: 700 }}>📦 Stock ✓</span>
+                    : <span style={{ fontSize: 10, color: C.muted }}>Sin match</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Apunte PGC */}
+        {apunte.length > 0 && (
+          <div style={{ background: C.white, borderRadius: 13, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
+            <div style={{ fontWeight: 700, fontSize: 11, color: C.primary, textTransform: 'uppercase', letterSpacing: '.05em', borderBottom: `1px solid ${C.light}`, paddingBottom: 7, marginBottom: 8 }}>Apunte contable PGC</div>
+            <div style={{ display: 'flex', fontWeight: 700, fontSize: 11, color: C.muted, textTransform: 'uppercase', padding: '0 0 4px' }}>
+              <span style={{ flex: '0 0 56px' }}>Cuenta</span>
+              <span style={{ flex: 1 }}>Descripción</span>
+              <span style={{ width: 56, textAlign: 'right' }}>Debe</span>
+              <span style={{ width: 56, textAlign: 'right' }}>Haber</span>
+            </div>
+            {apunte.map((a: any, i: number) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '5px 0', borderBottom: `1px solid ${C.bg}`, fontSize: 13 }}>
+                <span style={{ flex: '0 0 56px', color: C.primary, fontWeight: 700 }}>{a.cuenta}</span>
+                <span style={{ flex: 1, color: '#374151' }}>{a.nombre}</span>
+                <span style={{ width: 56, textAlign: 'right', color: C.ok, fontWeight: a.debe ? 700 : 400 }}>{a.debe || '—'}</span>
+                <span style={{ width: 56, textAlign: 'right', color: C.red, fontWeight: a.haber ? 700 : 400 }}>{a.haber || '—'}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Stock badge */}
+        {resultado.stock_actualizado > 0 && (
+          <div style={{ background: C.okBg, border: `1px solid #bbf7d0`, borderRadius: 12, padding: '12px 16px', fontSize: 14, color: C.ok, fontWeight: 700 }}>
+            📦 {resultado.stock_actualizado} artículo(s) actualizados en stock automáticamente
+          </div>
+        )}
+
+        {/* Confirmación guardado */}
+        <div style={{ background: C.light, borderRadius: 12, padding: '12px 16px', fontSize: 13, color: C.brand }}>
+          ✅ Guardado en contabilidad · ID <b>{resultado.doc_id?.slice(0, 8)}…</b>
+        </div>
+
+        <button onClick={reiniciar}
+          style={{ background: `linear-gradient(135deg, ${C.primary}, ${C.brand})`, color: C.white, border: 'none', padding: '14px 24px', borderRadius: 11, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 12px rgba(79,70,229,.28)' }}>
+          ✓ Volver a documentos
+        </button>
+        <button onClick={() => { setFase('escaner'); setImgSrc(null); setImgFile(null); setResultado(null) }}
+          style={{ background: 'transparent', border: 'none', color: C.muted, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline', alignSelf: 'center' }}>
+          Escanear otro documento
+        </button>
+      </div>
+    )
+  }
+
+  return null
 }
