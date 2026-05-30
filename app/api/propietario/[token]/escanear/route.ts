@@ -43,7 +43,7 @@ Analiza este documento y devuelve ÚNICAMENTE JSON válido sin markdown:
   "total": null,
   "descripcion_corta": "resumen max 60 chars",
   "notas": null,
-  "confianza": "alta|media|baja"
+  "nivel_certeza": "alto|medio|bajo"
 }
 
 CATÁLOGO STOCK EMPRESA:
@@ -51,8 +51,11 @@ ${catalogoStr}
 
 Mapea producto_id si coincide nombre/descripción con el catálogo. IVA 21% si no se especifica.`
 
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 90000)
   const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
     method: 'POST',
+    signal: controller.signal,
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + NVIDIA_API_KEY },
     body: JSON.stringify({
       model: 'meta/llama-3.2-90b-vision-instruct',
@@ -63,10 +66,18 @@ Mapea producto_id si coincide nombre/descripción con el catálogo. IVA 21% si n
       temperature: 0.1, max_tokens: 1200,
     }),
   })
+  clearTimeout(timeoutId)
   if (!res.ok) throw new Error('Error NVIDIA NIM: ' + res.status)
   const data = await res.json()
   const content = (data.choices?.[0]?.message?.content || '{}').replace(/```json|```/g, '').trim()
-  try { return JSON.parse(content) } catch {
+  try {
+    const parsed = JSON.parse(content) as any
+    if (parsed.nivel_certeza && !parsed.confianza) {
+      parsed.confianza = parsed.nivel_certeza === 'alto' ? 'alta' : parsed.nivel_certeza === 'medio' ? 'media' : 'baja'
+    }
+    parsed.confianza = parsed.confianza || 'media'
+    return parsed
+  } catch {
     return { tipo_doc:'otro', proveedor:null, fecha:null, numero_doc:null, lineas:[],
       base_imponible:null, porcentaje_iva:null, cuota_iva:null, total:null,
       descripcion_corta:'Documento no procesado', notas:'Error IA', confianza:'baja' }
