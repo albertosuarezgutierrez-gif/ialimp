@@ -2,6 +2,7 @@
 import LogoIalimp from '@/components/LogoIalimp'
 // Módulos movidos a: /admin/materiales, /admin/negocio, /admin/equipo
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 
 // ─── Constantes ────────────────────────────────────────────────
 const PROPS = [
@@ -966,12 +967,19 @@ function TabStock() {
 // ─── MAIN PAGE ───────────────────────────────────────────────────
 export default function AdminLimpiadoras() {
   const [activeTab, setActiveTab] = useState(0)
+  const router = useRouter()
 
   return (
     <div style={{ fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif', minHeight: '100vh', background: '#f9fafb' }}>
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg,#1B4332,#2D6A4F)', padding: '20px 24px 0' }}>
         <div style={{ color: '#fff', marginBottom: 16 }}>
+          <button onClick={() => router.push('/dashboard')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 10, padding: '6px 14px',
+              borderRadius: 8, border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.12)',
+              color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            ← Volver al inicio
+          </button>
           <LogoIalimp size={13} style={{ opacity:0.8 }} />
           <div style={{ fontSize: 22, fontWeight: 800 }}>Gestión limpiadoras</div>
         </div>
