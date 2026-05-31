@@ -43,6 +43,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
+  // Crons de Vercel: vienen con Authorization: Bearer <CRON_SECRET>
+  const cronSecret = process.env.CRON_SECRET
+  if (cronSecret && req.headers.get('authorization') === `Bearer ${cronSecret}`) {
+    return NextResponse.next()
+  }
+
   // Rutas limpiadora — auth por PIN/cookie propia
   if (pathname.startsWith('/l/') || pathname.startsWith('/api/l/')) {
     return NextResponse.next()
