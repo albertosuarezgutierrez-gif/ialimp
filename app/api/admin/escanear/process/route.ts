@@ -36,10 +36,19 @@ Return ONLY a valid JSON object, no markdown, no explanations:
   "nivel_certeza": "alto|medio|bajo"
 }
 
+RULES (read carefully):
+- Read every amount EXACTLY as printed. NEVER calculate, infer or guess any number.
+- "total" = the amount the recipient must actually PAY. Look for "Total", "Total a pagar", "Importe total", "Importe total pendiente", "Total factura". This is the real expense.
+- "cuota_iva" = the VAT amount PRINTED on the document. Do NOT recompute it. "porcentaje_iva" = the printed VAT rate. Only if NO VAT figure appears anywhere, set porcentaje_iva to 21 and cuota_iva to 0.
+- "base_imponible" = the taxable base printed (subtotal before VAT). It must satisfy base_imponible + cuota_iva = total (within 0.02). If they do not reconcile, trust the printed "total" and set base_imponible = total - cuota_iva.
+- Ignore any amount that is NOT part of the total to pay: informational subtotals, gross sales/booking volumes used only to compute a fee, previous balances, deposits already paid.
+- "lineas": one entry per concept/product line, with precio_unitario and total_linea exactly as printed.
+- Set "nivel_certeza" to "bajo" if the image is blurry/partial or the numbers do not reconcile.
+
 Stock catalog:
 ${catalogoStr}
 
-Map producto_id if item name matches catalog. Use 21% VAT if not specified.`
+Map producto_id only if the item name clearly matches a catalog entry; copy the catalog id verbatim, otherwise null.`
 
   const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
     method: 'POST',
