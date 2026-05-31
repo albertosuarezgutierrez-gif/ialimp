@@ -79,7 +79,7 @@ export async function POST(req: Request) {
 
     const result = await prisma.$queryRaw<any[]>(Prisma.sql`
       INSERT INTO cleaning_sessions (
-        empresa_id, cliente_id, propiedad_id, property_name,
+        empresa_id, cliente_id, propiedad_id, property_id, property_name,
         session_date, hora_inicio, limpiadora_id, tipo_servicio, notas,
         hora_checkout, hora_checkin_siguiente, ventana_minutos, alerta_ventana,
         num_huespedes, origen
@@ -87,6 +87,7 @@ export async function POST(req: Request) {
         ${empresa_id}::uuid,
         ${cliente_id}::uuid,
         ${propiedad_id}::uuid,
+        ${propiedad_id},
         ${propNombre},
         ${session_date}::date,
         ${hora_inicio || null},
