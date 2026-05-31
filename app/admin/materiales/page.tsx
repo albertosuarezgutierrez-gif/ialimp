@@ -819,6 +819,19 @@ function TabDocumentos() {
     setFase('lista'); setImgSrc(null); setImgFile(null); setResultado(null); setError(null); cargarDocs()
   }
 
+  const [borrando, setBorrando] = useState<string|null>(null)
+  const borrarDoc = async (id:string) => {
+    if(!confirm('¿Eliminar este documento? Se quitará de la contabilidad (borrado reversible).')) return
+    setBorrando(id)
+    try {
+      const r = await fetch(`/api/admin/escanear/${id}`, { method:'DELETE' })
+      if(!r.ok){ const d=await r.json().catch(()=>({})); throw new Error(d.error||'Error al borrar') }
+      setDocs(prev=>prev.filter(d=>d.id!==id))
+      setExpandId(prev=>prev===id?null:prev)
+    } catch(e:any){ alert(e.message) }
+    finally { setBorrando(null) }
+  }
+
   if(fase==='lista') return (
     <div>
       {!loadingDocs&&docs.length>0&&(()=>{
@@ -888,6 +901,11 @@ function TabDocumentos() {
                   {!isPending&&<span style={{fontSize:10,color:C.muted}}>{isOpen?'▲':'▼'}</span>}
                 </div>
               </div>
+              <button onClick={(e)=>{e.stopPropagation();borrarDoc(doc.id)}} disabled={borrando===doc.id}
+                title="Eliminar documento" aria-label="Eliminar documento"
+                style={{background:'transparent',border:'none',color:C.red,cursor:'pointer',fontSize:16,padding:'4px 6px',flexShrink:0,lineHeight:1,opacity:borrando===doc.id?.4:1}}>
+                {borrando===doc.id?'…':'🗑'}
+              </button>
             </div>
             {isOpen&&!isPending&&(
               <div style={{borderTop:`1px solid ${C.border}`,padding:'12px 14px'}}>
