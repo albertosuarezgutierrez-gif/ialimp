@@ -1,6 +1,6 @@
 'use client'
 import LogoIalimp from '@/components/LogoIalimp'
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ChatSesion from '@/components/ChatSesion'
 import ConsumoProductos from '@/components/ConsumoProductos'
@@ -484,7 +484,68 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
           </button>
         )}
 
-        {hecho && (
+        {hecho && !botesOk && (
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 14, padding: '16px', marginTop: 8 }}>
+            <div style={{ fontWeight: 800, fontSize: 15, color: '#92400e', marginBottom: 6 }}>📷 Foto de tus productos</div>
+            <div style={{ fontSize: 13, color: '#78350f', marginBottom: 12, lineHeight: 1.5 }}>
+              Pon tus botes juntos en el suelo y haz una foto. La IA registra cuánto queda de cada producto.
+            </div>
+            {analizandoBotes ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#92400e', fontSize: 13 }}>
+                <div style={{ width: 18, height: 18, borderRadius: '50%', border: '3px solid #fde68a', borderTop: '3px solid #d97706', animation: 'giro .8s linear infinite' }} />
+                Analizando niveles…
+                <style>{'.giro-anim{animation:giro .8s linear infinite}@keyframes giro{to{transform:rotate(360deg)}}'}</style>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => fotoBotesRef.current?.click()}
+                  style={{ flex: 2, padding: '12px', borderRadius: 10, border: 'none', background: '#d97706', color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  📷 Hacer foto
+                </button>
+                <button onClick={() => setBotesOk(true)}
+                  style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid #fde68a', background: 'transparent', color: '#92400e', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Saltar
+                </button>
+              </div>
+            )}
+            <input ref={fotoBotesRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+              onChange={async e => {
+                const file = e.target.files?.[0]
+                if (!file || !limpiadora?.id) return
+                setAnalizandoBotes(true)
+                try {
+                  const reader = new FileReader()
+                  reader.onload = async ev => {
+                    const b64 = (ev.target?.result as string).split(',')[1]
+                    const res = await fetch('/api/admin/ia/analizar-botes', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        imagen_base64: b64,
+                        media_type: file.type || 'image/jpeg',
+                        limpiadora_id: limpiadora.id,
+                        session_id: sesion.id,
+                      })
+                    })
+                    const d = await res.json()
+                    setAnalizandoBotes(false)
+                    setBotesOk(true)
+                    if (d.ok && d.productos_actualizados > 0) {
+                      // Show brief confirmation
+                      const niveles = (d.niveles || []).map((n: any) => `${n.nombre}: ${n.nivel_estimado}%`).join(', ')
+                      alert(`✅ Niveles registrados: ${niveles}`)
+                    } else {
+                      setBotesOk(true) // skip silently if no match
+                    }
+                  }
+                  reader.readAsDataURL(file)
+                } catch { setAnalizandoBotes(false); setBotesOk(true) }
+              }}
+            />
+          </div>
+        )}
+
+        {hecho && botesOk && (
           <div style={{ background: C.okBg, border: `1px solid ${C.ok}33`, borderRadius: 14, padding: '16px', textAlign: 'center' }}>
             <div style={{ fontSize: 32, marginBottom: 6 }}>✅</div>
             <div style={{ fontWeight: 800, color: C.ok, fontSize: 16 }}>Limpieza completada</div>
