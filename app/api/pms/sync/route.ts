@@ -132,28 +132,63 @@ async function syncPropertyIcal(prop: any): Promise<{ synced: number; errors: st
 }
 
 // ── Sync Smoobu API (para Alberto — mantener mientras siga usando Smoobu) ─────
-async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ synced: number; errors: string[] }> {
-  if (!conn.smoobu_api_key) return { synced: 0, errors: ['No smoobu_api_key'] }
-  const from = new Date().toISOString().split('T')[0]
-  const to   = new Date(Date.now() + 120 * 86400000).toISOString().split('T')[0]
-  const res  = await fetch(
-    'https://login.smoobu.com/api/reservations?arrival_from=' + from + '&arrival_to=' + to + '&pageSize=100',
-    { headers: { 'Api-Key': conn.smoobu_api_key }, signal: AbortSignal.timeout(15000) }
-  )
-  if (!res.ok) return { synced: 0, errors: ['Smoobu API ' + res.status] }
-  const { bookings = [] } = await res.json()
+// Reconcilia en cada pasada: da de alta/actualiza reservas (filtradas por SALIDA,
+// que es lo que define una limpieza) y elimina las limpiezas pendientes cuya
+// reserva ya no existe en Smoobu (cancelada o borrada).
+async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ synced: number; cancelled: number; reconciled: number; errors: string[] }> {
+  if (!conn.smoobu_api_key) return { synced: 0, cancelled: 0, reconciled: 0, errors: ['No smoobu_api_key'] }
 
-  let synced = 0; const errors: string[] = []
+  const today = new Date().toISOString().split('T')[0]
+  const to    = new Date(Date.now() + 150 * 86400000).toISOString().split('T')[0]
+
+  // Descarga por SALIDA, todas las paginas
+  const bookings: any[] = []
+  let page = 1
+  let complete = false
+  const errors: string[] = []
+  while (true) {
+    const res = await fetch(
+      'https://login.smoobu.com/api/reservations?pageSize=100&departureFrom=' + today + '&departureTo=' + to + '&page=' + page,
+      { headers: { 'Api-Key': conn.smoobu_api_key }, cache: 'no-store', signal: AbortSignal.timeout(15000) }
+    )
+    if (!res.ok) { errors.push('Smoobu API ' + res.status); break }
+    const data = await res.json()
+    bookings.push(...(data.bookings || []))
+    const pageCount = data.page_count || 1
+    if (page >= pageCount) { complete = true; break }
+    page++
+  }
+
+  let synced = 0
+  let cancelled = 0
+  let reconciled = 0
+  const activeIds = new Set<string>()   // reservas vivas con salida en ventana
+
   for (const b of bookings) {
-    if (b.type === 'BlockedPeriod' || !b.departure) continue
+    const propDef = SMOOBU_MAP[b.apartment?.id]
+    if (!propDef) continue
+    const external_id = 'smoobu_' + b.id
+
+    // Cancelacion / bloqueo -> borrar limpieza pendiente (no tocar las completadas)
+    if (b.type === 'cancellation' || b['is-blocked-booking']) {
+      try {
+        const del = await prisma.$executeRaw`
+          DELETE FROM cleaning_sessions
+          WHERE external_reservation_id = ${external_id}
+            AND origen = 'smoobu_api'
+            AND completed_at IS NULL`
+        cancelled += Number(del) || 0
+      } catch (e: any) { errors.push('Cancel ' + b.id + ': ' + (e.message || '').slice(0, 50)) }
+      continue
+    }
+    if (!b.departure) continue
+
+    activeIds.add(external_id)
+
+    // Reserva o modificacion -> alta/actualizacion (la salida se refresca via ON CONFLICT)
     try {
-      const smoobuId = b.apartment?.id
-      const propDef  = SMOOBU_MAP[smoobuId]
-      if (!propDef) continue
       const prop = propMap.get(propDef.uuid)
       const limp = prop?.limpiadora_principal_id || VANESSA_ID
-
-      const external_id   = 'smoobu_' + b.id
       const num_huespedes = (b.adults || 0) + (b.children || 0)
 
       await prisma.$executeRawUnsafe(`
@@ -186,7 +221,36 @@ async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ sy
       synced++
     } catch (e: any) { errors.push('Booking ' + b.id + ': ' + (e.message || '').slice(0, 60)) }
   }
-  return { synced, errors }
+
+  // Reconciliacion por diferencia de conjuntos: dentro de la MISMA ventana consultada,
+  // borra limpiezas smoobu_api pendientes cuya reserva ya no aparece (cancelada o borrada).
+  // Guardas: solo si la descarga fue completa y hay reservas activas (evita vaciar por respuesta parcial).
+  if (complete && activeIds.size > 0) {
+    try {
+      const del = await prisma.$executeRaw(Prisma.sql`
+        DELETE FROM cleaning_sessions
+        WHERE pms_connection_id = ${conn.id}::uuid
+          AND origen = 'smoobu_api'
+          AND completed_at IS NULL
+          AND session_date >= CURRENT_DATE
+          AND session_date <= ${to}::date
+          AND external_reservation_id NOT IN (${Prisma.join([...activeIds])})
+      `)
+      reconciled = Number(del) || 0
+    } catch (e: any) { errors.push('Reconcile: ' + (e.message || '').slice(0, 60)) }
+  }
+
+  // Refrescar contadores de la conexion
+  try {
+    await prisma.$executeRaw`
+      UPDATE pms_connections SET
+        last_sync_at   = now(),
+        total_sessions = (SELECT COUNT(*) FROM cleaning_sessions WHERE pms_connection_id = ${conn.id}::uuid),
+        sync_error     = ${errors.length ? errors.slice(0, 3).join(' | ') : null}
+      WHERE id = ${conn.id}::uuid`
+  } catch {}
+
+  return { synced, cancelled, reconciled, errors }
 }
 
 // ── Endpoint ──────────────────────────────────────────────────────────────────
@@ -228,12 +292,16 @@ export async function GET(req: Request) {
     }
 
     const all     = [...icalResults, ...smoobuResults]
-    const total   = all.reduce((a, r) => a + r.synced, 0)
+    const total      = all.reduce((a, r) => a + r.synced, 0)
+    const cancelados = all.reduce((a, r) => a + (r.cancelled || 0), 0)
+    const reconciliados = all.reduce((a, r) => a + (r.reconciled || 0), 0)
     const errores = all.flatMap(r => r.errors || [])
 
     return NextResponse.json({
       ok: true,
       total_synced:  total,
+      total_cancelled: cancelados,
+      total_reconciled: reconciliados,
       ical_props:    icalResults.length,
       smoobu_conns:  smoobuResults.length,
       results:       all,
