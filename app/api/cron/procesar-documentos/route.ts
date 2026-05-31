@@ -19,14 +19,36 @@ async function analizarDocumento(base64img: string, mediaType: string, productos
     ? productosStock.map(p => `- id:"${p.id}" nombre:"${p.nombre}" cat:"${p.categoria}" unidad:"${p.unidad}"`).join('\n')
     : '(sin productos en catálogo)'
 
-  const prompt = `You are a Spanish accounting assistant. Analyze this invoice/receipt/delivery note.
-Return ONLY a valid JSON object, no markdown:
-{"tipo_doc":"factura|albaran|ticket|otro","proveedor":"name or null","fecha":"YYYY-MM-DD or null","numero_doc":"num or null","lineas":[{"descripcion":"item","cantidad":1,"unidad":"unidad","precio_unitario":0.0,"total_linea":0.0,"producto_id":null,"categoria":"limpieza|consumible|lenceria|amenities|herramienta|mantenimiento|otros"}],"base_imponible":0.0,"porcentaje_iva":21,"cuota_iva":0.0,"total":0.0,"descripcion_corta":"summary max 60 chars","notas":null,"nivel_certeza":"alto|medio|bajo"}
+  const prompt = `You are a Spanish accounting assistant. Analyze this invoice/receipt/delivery note image.
+Return ONLY a valid JSON object, no markdown, no explanations:
+{
+  "tipo_doc": "factura|albaran|ticket|otro",
+  "proveedor": "supplier name or null",
+  "fecha": "YYYY-MM-DD or null",
+  "numero_doc": "document number or null",
+  "lineas": [{"descripcion":"item","cantidad":1,"unidad":"unidad","precio_unitario":0.0,"total_linea":0.0,"producto_id":null,"categoria":"limpieza|consumible|lenceria|amenities|herramienta|mantenimiento|otros"}],
+  "base_imponible": 0.0,
+  "porcentaje_iva": 21,
+  "cuota_iva": 0.0,
+  "total": 0.0,
+  "descripcion_corta": "summary max 60 chars",
+  "notas": null,
+  "nivel_certeza": "alto|medio|bajo"
+}
+
+RULES (read carefully):
+- Read every amount EXACTLY as printed. NEVER calculate, infer or guess any number.
+- "total" = the amount the recipient must actually PAY. Look for "Total", "Total a pagar", "Importe total", "Importe total pendiente", "Total factura". This is the real expense.
+- "cuota_iva" = the VAT amount PRINTED on the document. Do NOT recompute it. "porcentaje_iva" = the printed VAT rate. Only if NO VAT figure appears anywhere, set porcentaje_iva to 21 and cuota_iva to 0.
+- "base_imponible" = the taxable base printed (subtotal before VAT). It must satisfy base_imponible + cuota_iva = total (within 0.02). If they do not reconcile, trust the printed "total" and set base_imponible = total - cuota_iva.
+- Ignore any amount that is NOT part of the total to pay: informational subtotals, gross sales/booking volumes used only to compute a fee, previous balances, deposits already paid.
+- "lineas": one entry per concept/product line, with precio_unitario and total_linea exactly as printed.
+- Set "nivel_certeza" to "bajo" if the image is blurry/partial or the numbers do not reconcile.
 
 Stock catalog:
 ${catalogoStr}
 
-Map producto_id if item matches catalog. Use 21% VAT if not specified.`
+Map producto_id only if the item name clearly matches a catalog entry; copy the catalog id verbatim, otherwise null.`
 
   const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
     method: 'POST',
