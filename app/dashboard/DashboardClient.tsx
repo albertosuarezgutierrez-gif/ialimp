@@ -117,21 +117,21 @@ export default function DashboardClient({
       {/* Logo */}
       <div style={{
         padding: collapsed ? '20px 0' : '20px 20px 18px',
-        borderBottom:'1px solid rgba(255,255,255,.08)',
+        borderBottom:'1px solid #e2e8f0',
         marginBottom:12, textAlign: collapsed ? 'center' : 'left',
       }}>
         <div style={{
           fontFamily:"'Syne',sans-serif", fontSize: collapsed ? 18 : 20,
-          fontWeight:800, color:'white', letterSpacing:'-.01em',
+          fontWeight:800, color:'#4f46e5', letterSpacing:'-.01em',
         }}>
           {collapsed ? 'ia' : 'ialimp'}
         </div>
         {!collapsed && (
           <>
-            <div style={{fontSize:10,color:'rgba(255,255,255,.35)',letterSpacing:'.1em',textTransform:'uppercase',marginTop:2}}>
+            <div style={{fontSize:10,color:'#94a3b8',letterSpacing:'.1em',textTransform:'uppercase',marginTop:2}}>
               Gestión limpieza
             </div>
-            <div style={{fontSize:11,color:'#818cf8',fontWeight:600,marginTop:6}}>
+            <div style={{fontSize:11,color:'#6366f1',fontWeight:600,marginTop:6}}>
               {empresa.nombre}
             </div>
           </>
@@ -141,7 +141,7 @@ export default function DashboardClient({
       {/* Nav */}
       <nav style={{flex:1,overflowY:'auto',padding:'0 8px'}}>
         {!collapsed && (
-          <div style={{fontSize:9,color:'rgba(255,255,255,.25)',letterSpacing:'.12em',textTransform:'uppercase',padding:'0 10px',marginBottom:4}}>
+          <div style={{fontSize:9,color:'#94a3b8',letterSpacing:'.12em',textTransform:'uppercase',padding:'0 10px',marginBottom:4}}>
             Módulos
           </div>
         )}
@@ -151,15 +151,15 @@ export default function DashboardClient({
             gap: collapsed ? 0 : 10,
             justifyContent: collapsed ? 'center' : 'flex-start',
             padding: collapsed ? '10px 0' : '9px 10px',
-            borderRadius:10, color:'rgba(255,255,255,.5)',
+            borderRadius:10, color:'#475569',
             fontSize:13, fontWeight:500, textDecoration:'none',
             marginBottom:1, transition:'all .15s',
           }}
-          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='rgba(255,255,255,.07)';(e.currentTarget as HTMLElement).style.color='rgba(255,255,255,.9)'}}
-          onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='transparent';(e.currentTarget as HTMLElement).style.color='rgba(255,255,255,.5)'}}>
+          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='#eef2ff';(e.currentTarget as HTMLElement).style.color='#4f46e5'}}
+          onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='transparent';(e.currentTarget as HTMLElement).style.color='#475569'}}>
             <div style={{
               width:28,height:28,borderRadius:8,
-              background:'rgba(255,255,255,.08)',
+              background:'#eef2ff',
               display:'flex',alignItems:'center',justifyContent:'center',
               fontSize:14,flexShrink:0,
             }}>
@@ -173,7 +173,7 @@ export default function DashboardClient({
       {/* Footer */}
       <div style={{
         padding: collapsed ? '14px 0' : '14px 16px',
-        borderTop:'1px solid rgba(255,255,255,.08)',
+        borderTop:'1px solid #e2e8f0',
         display:'flex', alignItems:'center',
         justifyContent: collapsed ? 'center' : 'space-between',
         gap:8,
@@ -188,23 +188,23 @@ export default function DashboardClient({
               {empresa.nombre?.[0] || 'E'}
             </div>
             <div>
-              <div style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.75)'}}>
+              <div style={{fontSize:11,fontWeight:600,color:'#1e1b4b'}}>
                 {empresa.nombre}
               </div>
-              <div style={{fontSize:9,color:'rgba(255,255,255,.3)'}}>
+              <div style={{fontSize:9,color:'#94a3b8'}}>
                 {empresa.plan || 'starter'}
               </div>
             </div>
           </div>
         )}
         <button onClick={logout} title="Cerrar sesión" style={{
-          background:'rgba(255,255,255,.07)',border:'none',borderRadius:8,
+          background:'#f1f5f9',border:'none',borderRadius:8,
           width:30,height:30,display:'flex',alignItems:'center',justifyContent:'center',
-          cursor:'pointer',fontSize:14,color:'rgba(255,255,255,.5)',flexShrink:0,
+          cursor:'pointer',fontSize:14,color:'#64748b',flexShrink:0,
           transition:'background .15s',
         }}
-        onMouseEnter={e=>(e.currentTarget.style.background='rgba(239,68,68,.2)')}
-        onMouseLeave={e=>(e.currentTarget.style.background='rgba(255,255,255,.07)')}>
+        onMouseEnter={e=>(e.currentTarget.style.background='rgba(239,68,68,.15)')}
+        onMouseLeave={e=>(e.currentTarget.style.background='#f1f5f9')}>
           🚪
         </button>
       </div>
@@ -226,7 +226,8 @@ export default function DashboardClient({
         /* ── Sidebar desktop ── */
         .dash-sidebar {
           width: 220px;
-          background: #0f172a;
+          background: #ffffff;
+          border-right: 1px solid #e2e8f0;
           flex-shrink: 0;
           display: flex;
           flex-direction: column;
@@ -249,7 +250,7 @@ export default function DashboardClient({
             width: 240px;
             height: 100dvh;
             z-index: 100;
-            box-shadow: 4px 0 32px rgba(0,0,0,.3);
+            box-shadow: 4px 0 32px rgba(15,23,42,.15);
           }
         }
 
@@ -293,14 +294,12 @@ export default function DashboardClient({
 
         .dash-collapse-btn {
           width: 28px; height: 28px; border-radius: 8px;
-          border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.07);
-          color: rgba(255,255,255,.5); font-size: 12px; cursor: pointer;
+          color: #64748b; font-size: 12px; cursor: pointer;
           display: flex; align-items: center; justify-content: center;
           transition: background .15s;
           position: absolute; bottom: 60px; right: -14px;
-          box-shadow: 0 2px 8px rgba(0,0,0,.3);
-          background: #1e293b; border: 1px solid #334155;
-          color: rgba(255,255,255,.6); border-radius: 50%;
+          box-shadow: 0 2px 8px rgba(15,23,42,.15);
+          background: #ffffff; border: 1px solid #e2e8f0; border-radius: 50%;
           width: 26px; height: 26px;
         }
         @media (max-width: 1023px) { .dash-collapse-btn { display: none; } }

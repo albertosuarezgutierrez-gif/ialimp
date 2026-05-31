@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react'
 
 const C = {
   primary: '#1e1b4b', accent: '#4f46e5', light: '#eef2ff',
-  bg: '#0f0e1a', card: '#1a1830', border: '#2d2b52',
-  text: '#f1f5f9', muted: '#94a3b8',
-  ok: '#22c55e', okBg: '#052e16', warn: '#f59e0b', red: '#ef4444',
+  bg: '#f1f5f9', card: '#ffffff', border: '#e2e8f0',
+  text: '#1e1b4b', muted: '#64748b',
+  ok: '#16a34a', okBg: '#f0fdf4', warn: '#d97706', red: '#dc2626',
 }
 
 function StatCard({ label, value, sub, color }: any) {
@@ -61,19 +61,19 @@ export default function SuperadminPage() {
         </div>
         <form onSubmit={doLogin}>
           {loginErr && (
-            <div style={{ background: '#2d0a0a', border: '1px solid #ef444440', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: C.red }}>{loginErr}</div>
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: C.red }}>{loginErr}</div>
           )}
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: 'block', marginBottom: 6 }}>EMAIL</label>
             <input value={loginForm.email} onChange={e => setLoginForm(f => ({ ...f, email: e.target.value }))}
               type="email" required
-              style={{ width: '100%', padding: '11px 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#25234a', color: C.text, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+              style={{ width: '100%', padding: '11px 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#f8fafc', color: C.text, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' }} />
           </div>
           <div style={{ marginBottom: 24 }}>
             <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, display: 'block', marginBottom: 6 }}>CONTRASEÑA</label>
             <input value={loginForm.password} onChange={e => setLoginForm(f => ({ ...f, password: e.target.value }))}
               type="password" required placeholder="••••••••"
-              style={{ width: '100%', padding: '11px 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#25234a', color: C.text, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+              style={{ width: '100%', padding: '11px 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#f8fafc', color: C.text, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' }} />
           </div>
           <button type="submit"
             style={{ width: '100%', padding: '13px', background: C.accent, border: 'none', borderRadius: 10, fontSize: 15, color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800 }}>
@@ -154,7 +154,7 @@ export default function SuperadminPage() {
                         <td style={{ padding: '12px 16px' }}>
                           <span style={{
                             fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '3px 10px',
-                            background: e.activa ? C.okBg : '#2d0a0a',
+                            background: e.activa ? C.okBg : '#fef2f2',
                             color: e.activa ? C.ok : C.red
                           }}>
                             {e.activa ? '● Activa' : '● Inactiva'}

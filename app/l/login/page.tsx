@@ -46,12 +46,12 @@ export default function LLoginPage() {
           align-items: center; justify-content: center;
           padding: clamp(24px, 6vw, 60px) clamp(16px, 4vw, 40px);
           font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
-          background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 60%, #312e81 100%);
+          background: linear-gradient(160deg, #eef2ff 0%, #f1f5f9 60%, #e0e7ff 100%);
           position: relative; overflow: hidden;
         }
         .ll-blob {
           position: absolute; pointer-events: none; border-radius: 50%;
-          background: radial-gradient(circle, rgba(99,102,241,.2) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(99,102,241,.12) 0%, transparent 70%);
           width: min(420px, 90vw); height: min(420px, 90vw);
           top: -15%; right: -15%;
         }
@@ -63,23 +63,22 @@ export default function LLoginPage() {
         
         
         .ll-sub {
-          font-size: 11px; color: rgba(255,255,255,.35);
+          font-size: 11px; color: #94a3b8;
           letter-spacing: .12em; text-transform: uppercase;
           margin-bottom: clamp(28px, 6vw, 44px);
         }
         .ll-card {
-          background: rgba(255,255,255,.06);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(255,255,255,.12);
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
           border-radius: 24px;
           padding: clamp(20px, 5vw, 32px);
           width: 100%;
+          box-shadow: 0 10px 40px rgba(79,70,229,.10);
         }
         .ll-label {
           text-align: center;
           font-size: 12px; font-weight: 700;
-          color: rgba(255,255,255,.4);
+          color: #64748b;
           text-transform: uppercase; letter-spacing: .1em;
           margin-bottom: 18px;
         }
@@ -91,14 +90,14 @@ export default function LLoginPage() {
           width: clamp(14px, 4vw, 18px);
           height: clamp(14px, 4vw, 18px);
           border-radius: 50%;
-          border: 2px solid rgba(255,255,255,.25);
+          border: 2px solid #cbd5e1;
           background: transparent;
           transition: all .15s;
         }
         .ll-dot.filled {
-          background: #818cf8;
-          border-color: #818cf8;
-          box-shadow: 0 0 8px rgba(129,140,248,.5);
+          background: #4f46e5;
+          border-color: #4f46e5;
+          box-shadow: 0 0 8px rgba(79,70,229,.4);
         }
         /* Teclado */
         .ll-keypad {
@@ -110,9 +109,9 @@ export default function LLoginPage() {
         .ll-key {
           aspect-ratio: 1.4;
           border-radius: 14px;
-          border: 1px solid rgba(255,255,255,.1);
-          background: rgba(255,255,255,.07);
-          color: white;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+          color: #1e1b4b;
           font-family: inherit;
           font-size: clamp(18px, 4.5vw, 22px);
           font-weight: 700;
@@ -120,7 +119,7 @@ export default function LLoginPage() {
           transition: all .12s;
           display: flex; align-items: center; justify-content: center;
         }
-        .ll-key:hover:not(:disabled) { background: rgba(255,255,255,.13); }
+        .ll-key:hover:not(:disabled) { background: #eef2ff; }
         .ll-key:active:not(:disabled) { transform: scale(.94); }
         .ll-key.empty { background: transparent; border: none; cursor: default; }
         .ll-key.back { font-size: clamp(16px, 4vw, 20px); }
@@ -131,32 +130,32 @@ export default function LLoginPage() {
           color: white; font-family: inherit;
           font-size: 15px; font-weight: 800;
           cursor: pointer;
-          box-shadow: 0 4px 20px rgba(79,70,229,.5);
+          box-shadow: 0 4px 20px rgba(79,70,229,.3);
           transition: all .15s;
         }
         .ll-btn:hover:not(:disabled) { background: #3730a3; transform: translateY(-1px); }
         .ll-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
         .ll-error {
-          background: rgba(239,68,68,.15);
-          border: 1px solid rgba(239,68,68,.3);
+          background: #fef2f2;
+          border: 1px solid #fecaca;
           border-radius: 10px; padding: 10px 14px;
-          color: #fca5a5; font-size: 13px;
+          color: #dc2626; font-size: 13px;
           text-align: center; margin-top: 12px;
         }
         .ll-back-link {
           margin-top: 20px;
-          font-size: 12px; color: rgba(255,255,255,.3);
+          font-size: 12px; color: #94a3b8;
           text-align: center;
         }
         .ll-back-link a {
-          color: #818cf8; font-weight: 700; text-decoration: none;
+          color: #4f46e5; font-weight: 700; text-decoration: none;
         }
       `}</style>
 
       <div className="ll-root">
         <div className="ll-blob" />
         <div className="ll-wrap">
-          <LogoIalimp size={28} />
+          <LogoIalimp size={28} color="#4f46e5" />
           <div className="ll-sub">Acceso equipo de limpieza</div>
 
           <div className="ll-card">
