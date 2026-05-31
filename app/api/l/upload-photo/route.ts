@@ -14,7 +14,8 @@ export async function POST(req: NextRequest) {
   try {
     const form       = await req.formData()
     const file       = form.get('file') as File | null
-    const session_id = form.get('session_id') as string
+    // /l envía 'sesion_id'; aceptamos ambos por compatibilidad
+    const session_id = (form.get('session_id') as string) || (form.get('sesion_id') as string)
     const item_id    = (form.get('item_id') as string) || (form.get('tipo') as string) || 'foto'
     const slot       = (form.get('slot') as string) || '1'
 
@@ -46,12 +47,10 @@ export async function POST(req: NextRequest) {
 
     const publicUrl = SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + path
 
-    // Disparar agente calidad-fotos en background para TODAS las fotos
-    // excepto las marcadas explícitamente como referencia
+    // Disparar agentes IA en background para TODAS las fotos excepto las marcadas como referencia
     const esReferencia = EXCLUIR_ANALISIS.some(ex => item_id.toLowerCase().includes(ex))
 
     if (!esReferencia && process.env.NVIDIA_API_KEY) {
-      // Obtener empresa_id y propiedad de la sesión
       const sesionData = await prisma.$queryRaw<any[]>(Prisma.sql`
         SELECT empresa_id, propiedad_id, property_name
         FROM cleaning_sessions
@@ -61,12 +60,38 @@ export async function POST(req: NextRequest) {
 
       if (sesionData.length > 0) {
         const { empresa_id, propiedad_id, property_name } = sesionData[0]
-        // Fire-and-forget — no bloquea respuesta a la limpiadora
+
+        // 1) calidad-fotos (detección de incidencias) — fire-and-forget
         fetch(APP_URL + '/api/admin/ia/analizar-foto', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ foto_url: publicUrl, session_id, empresa_id, propiedad_id, property_name })
         }).catch(() => {})
+
+        // 2) comparación con la foto OBJETIVO del protocolo, si existe para este item — fire-and-forget
+        try {
+          const ref = await prisma.$queryRaw<any[]>(Prisma.sql`
+            SELECT pf.url, pf.caption, pf.estancia
+            FROM protocolos p
+            JOIN protocolo_fotos pf
+              ON pf.protocolo_id = p.id AND pf.categoria = 'objetivo' AND pf.item_key = ${item_id}
+            WHERE p.propiedad_id = ${propiedad_id}::uuid AND p.activo
+            LIMIT 1
+          `)
+          if (ref.length > 0) {
+            fetch(APP_URL + '/api/admin/ia/comparar-foto', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                referencia_url: ref[0].url,
+                foto_url: publicUrl,
+                contexto: ref[0].caption || ref[0].estancia || 'el estado esperado',
+                empresa_id,
+                property_name
+              })
+            }).catch(() => {})
+          }
+        } catch (_) { /* comparación no crítica */ }
       }
     }
 
