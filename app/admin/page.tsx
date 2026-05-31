@@ -76,8 +76,20 @@ function TabHoy() {
     setLoading(true)
     const r = await fetch(`/api/admin/historial?from=${today}&to=${today}`)
     const d = await r.json()
-    setSessions(d.sessions || [])
+    const sess: any[] = d.sessions || []
+    setSessions(sess)
     setLoading(false)
+    // Precargar candidatas por propiedad para que el desplegable muestre ya a todas
+    const props = Array.from(new Set(sess.map(s => s.property_id).filter(Boolean)))
+    const entries = await Promise.all(props.map(async (pid: any) => {
+      const rr = await fetch(`/api/admin/asignacion?fecha=${today}&property_id=${pid}`)
+      const dd = await rr.json()
+      return [pid, dd.candidatas || []] as const
+    }))
+    const byProp: Record<string, any[]> = Object.fromEntries(entries)
+    const bySession: Record<string, any[]> = {}
+    for (const s of sess) bySession[s.id] = byProp[s.property_id] || []
+    setCandidatas(bySession)
   }, [today])
 
   useEffect(() => { load() }, [load])
@@ -168,8 +180,9 @@ function TabHoy() {
                   <option value="">Sin asignar</option>
                   {(candidatas[s.id] || (s.limpiadora_id ? [{ id: s.limpiadora_id, nombre: s.limpiadora_nombre || s.limpiadora_id }] : [])).map((c: any) => (
                     <option key={c.id} value={c.id}>
-                      {c.nombre}{c.horas_asignadas_min > 0 ? ` (${Math.round(c.horas_asignadas_min/60*10)/10}h asig.)` : ''}
-                      {c.prioridad === 1 ? ' ⭐' : ''}
+                      {c.prioridad === 1 ? '⭐ ' : ''}{c.nombre}
+                      {c.horas_asignadas_min > 0 ? ` · ${Math.round(c.horas_asignadas_min/60*10)/10}h` : ''}
+                      {c.ausente ? ' · 🚫 ausente' : (c.disponible_hoy === false ? ' · sin disp.' : '')}
                     </option>
                   ))}
                 </select>
