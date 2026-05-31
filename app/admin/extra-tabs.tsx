@@ -144,7 +144,7 @@ function TabChecklists() {
                 </div>
                 <div style={{display:'flex',gap:8}}>
                   <button onClick={saveEdit} disabled={saving}
-                    style={{background:prop?.color||'#1B4332',color:'#fff',border:'none',borderRadius:8,padding:'7px 16px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
+                    style={{background:prop?.color||'#4f46e5',color:'#fff',border:'none',borderRadius:8,padding:'7px 16px',fontSize:13,fontWeight:700,cursor:'pointer'}}>
                     Guardar
                   </button>
                   <button onClick={()=>setEditId(null)}
@@ -216,7 +216,7 @@ function TabChecklists() {
           </div>
         </div>
         <button onClick={addItem} disabled={saving||!newItem.description.trim()}
-          style={{background:prop?.color||'#1B4332',color:'#fff',border:'none',borderRadius:9,padding:'9px 20px',fontWeight:700,fontSize:13,cursor:'pointer',opacity:saving||!newItem.description.trim()?.5:1}}>
+          style={{background:prop?.color||'#4f46e5',color:'#fff',border:'none',borderRadius:9,padding:'9px 20px',fontWeight:700,fontSize:13,cursor:'pointer',opacity:saving||!newItem.description.trim()?.5:1}}>
           {saving?'Guardando...':'+ Añadir ítem'}
         </button>
       </div>
@@ -285,7 +285,7 @@ function TabInformes() {
             👁 Vista previa
           </button>
           <button onClick={openInforme} disabled={!selLimp}
-            style={{flex:1,background:'#1B4332',color:'#fff',border:'none',borderRadius:9,padding:'10px 0',fontWeight:700,fontSize:14,cursor:'pointer'}}>
+            style={{flex:1,background:'#4f46e5',color:'#fff',border:'none',borderRadius:9,padding:'10px 0',fontWeight:700,fontSize:14,cursor:'pointer'}}>
             🖨️ Abrir / PDF
           </button>
         </div>
@@ -363,7 +363,7 @@ function TabFacturacion() {
         {['facturas','tarifas'].map(v=>(
           <button key={v} onClick={()=>setView(v as any)}
             style={{padding:'7px 18px',borderRadius:9,border:'1px solid #e5e7eb',fontWeight:600,fontSize:13,cursor:'pointer',
-              background:view===v?'#1B4332':'#fff',color:view===v?'#fff':'#374151'}}>
+              background:view===v?'#4f46e5':'#fff',color:view===v?'#fff':'#374151'}}>
             {v==='facturas'?`📄 Facturas (${facturas.length})`:`⚙️ Tarifas (${tarifas.length})`}
           </button>
         ))}
@@ -390,7 +390,7 @@ function TabFacturacion() {
                 style={{border:'1px solid #e5e7eb',borderRadius:8,padding:'8px 10px',fontSize:13}}/>
             </div>
             <button onClick={saveTarifa} disabled={!newTarifa.limpiadora_id||!newTarifa.importe}
-              style={{background:'#1B4332',color:'#fff',border:'none',borderRadius:9,padding:'9px 20px',fontWeight:700,fontSize:13,cursor:'pointer'}}>
+              style={{background:'#4f46e5',color:'#fff',border:'none',borderRadius:9,padding:'9px 20px',fontWeight:700,fontSize:13,cursor:'pointer'}}>
               Guardar tarifa
             </button>
           </div>
@@ -400,7 +400,7 @@ function TabFacturacion() {
                 <div style={{fontWeight:700,fontSize:14}}>{t.limpiadora_nombre}</div>
                 <div style={{fontSize:12,color:'#6b7280'}}>{t.tipo==='hora'?'Por hora':'Por sesión'}</div>
               </div>
-              <div style={{fontWeight:800,fontSize:18,color:'#1B4332'}}>{t.importe}€</div>
+              <div style={{fontWeight:800,fontSize:18,color:'#4f46e5'}}>{t.importe}€</div>
             </div>
           ))}
         </div>
@@ -409,8 +409,8 @@ function TabFacturacion() {
       {view==='facturas'&&(
         <div>
           {/* Generar factura */}
-          <div style={{background:'#f0fdf4',border:'1px solid #86efac',borderRadius:12,padding:16,marginBottom:16}}>
-            <div style={{fontWeight:700,fontSize:13,marginBottom:10,color:'#1B4332'}}>📄 Generar nueva factura</div>
+          <div style={{background:'#eef2ff',border:'1px solid #c7d2fe',borderRadius:12,padding:16,marginBottom:16}}>
+            <div style={{fontWeight:700,fontSize:13,marginBottom:10,color:'#4f46e5'}}>📄 Generar nueva factura</div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:10}}>
               <select value={gen.limpiadora_id} onChange={e=>setGen(p=>({...p,limpiadora_id:e.target.value}))}
                 style={{border:'1px solid #e5e7eb',borderRadius:8,padding:'8px 10px',fontSize:13}}>
@@ -423,7 +423,7 @@ function TabFacturacion() {
                 style={{border:'1px solid #e5e7eb',borderRadius:8,padding:'8px 10px',fontSize:13}}/>
             </div>
             <button onClick={generateFactura} disabled={generating||!gen.limpiadora_id||!gen.desde||!gen.hasta}
-              style={{background:'#1B4332',color:'#fff',border:'none',borderRadius:9,padding:'10px 22px',fontWeight:700,fontSize:14,cursor:'pointer',opacity:generating?.6:1}}>
+              style={{background:'#4f46e5',color:'#fff',border:'none',borderRadius:9,padding:'10px 22px',fontWeight:700,fontSize:14,cursor:'pointer',opacity:generating?.6:1}}>
               {generating?'Generando...':'⚡ Generar factura'}
             </button>
           </div>
@@ -440,7 +440,7 @@ function TabFacturacion() {
                     <div style={{fontSize:12,color:'#6b7280',marginTop:2}}>{f.num_sesiones} sesiones · {f.total_horas}h</div>
                   </div>
                   <div style={{textAlign:'right'}}>
-                    <div style={{fontWeight:800,fontSize:20,color:'#1B4332'}}>{f.importe_total}€</div>
+                    <div style={{fontWeight:800,fontSize:20,color:'#4f46e5'}}>{f.importe_total}€</div>
                     <span style={{background:est.bg,color:est.col,fontSize:11,fontWeight:700,borderRadius:10,padding:'2px 8px'}}>{est.label}</span>
                   </div>
                 </div>
@@ -454,7 +454,7 @@ function TabFacturacion() {
                     📤 Marcar enviada
                   </button>}
                   {f.estado==='enviada'&&<button onClick={()=>updateEstado(f.id,'pagada')}
-                    style={{border:'1px solid #86efac',borderRadius:8,padding:'6px 12px',fontSize:12,cursor:'pointer',background:'#dcfce7',color:'#16a34a',fontWeight:600}}>
+                    style={{border:'1px solid #c7d2fe',borderRadius:8,padding:'6px 12px',fontSize:12,cursor:'pointer',background:'#dcfce7',color:'#16a34a',fontWeight:600}}>
                     ✓ Marcar pagada
                   </button>}
                 </div>
