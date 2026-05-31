@@ -67,8 +67,14 @@ export async function GET() {
         SELECT
           COUNT(*) FILTER (WHERE estado IN ('emitida','vencida'))::int                  AS pendientes_count,
           COALESCE(SUM(total) FILTER (WHERE estado IN ('emitida','vencida')),0)::float8 AS pendientes_importe,
-          COUNT(*) FILTER (WHERE estado = 'vencida')::int                               AS vencidas_count,
-          COALESCE(SUM(total) FILTER (WHERE estado = 'vencida'),0)::float8              AS vencidas_importe,
+          COUNT(*) FILTER (
+            WHERE estado = 'vencida'
+               OR (estado = 'emitida' AND fecha_vencimiento IS NOT NULL AND fecha_vencimiento < CURRENT_DATE)
+          )::int                                                                        AS vencidas_count,
+          COALESCE(SUM(total) FILTER (
+            WHERE estado = 'vencida'
+               OR (estado = 'emitida' AND fecha_vencimiento IS NOT NULL AND fecha_vencimiento < CURRENT_DATE)
+          ),0)::float8                                                                  AS vencidas_importe,
           COUNT(*) FILTER (WHERE estado = 'borrador')::int                              AS borradores_count
         FROM facturas_clientes
         WHERE empresa_id = ${empresa_id}::uuid
