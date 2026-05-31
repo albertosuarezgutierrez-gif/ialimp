@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import PropietarioClient from './PropietarioClient'
+import PropietarioConsentGate from '@/components/PropietarioConsentGate'
 import { serialize } from '@/lib/serialize'
 
 export default async function PropietarioPage({ params }: { params: Promise<{ token: string }> }) {
@@ -16,6 +17,33 @@ export default async function PropietarioPage({ params }: { params: Promise<{ to
   `)
   if (!clientes.length) redirect('/')
   const cliente = clientes[0]
+
+  // ── Puerta de consentimiento (RGPD/LSSI) ──────────────────────────
+  // Solo se muestra cuando la columna existe y vale false (estricto):
+  // si la migración aún no se ha ejecutado, acepto_terminos será undefined
+  // y el portal funciona como antes (no bloquea a nadie).
+  if (cliente.acepto_terminos === false) {
+    let empresaRazon: string = cliente.empresa_nombre
+    let empresaNif = ''
+    try {
+      const f = await prisma.$queryRaw<any[]>(Prisma.sql`
+        SELECT razon_social, nif FROM empresas WHERE id = ${cliente.empresa_id}::uuid LIMIT 1
+      `)
+      if (f.length) {
+        empresaRazon = f[0].razon_social || empresaRazon
+        empresaNif = f[0].nif || ''
+      }
+    } catch { /* columnas fiscales no disponibles: usamos el nombre */ }
+
+    return (
+      <PropietarioConsentGate
+        token={token}
+        empresaNombre={empresaRazon}
+        empresaNif={empresaNif || '—'}
+        empresaEmail={cliente.empresa_email}
+      />
+    )
+  }
 
   // Extraer permisos del chat_config
   const cfg      = (cliente.chat_config as any) || {}
