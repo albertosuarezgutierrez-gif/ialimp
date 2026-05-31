@@ -61,10 +61,13 @@ export async function POST(req: NextRequest) {
       if (sesionData.length > 0) {
         const { empresa_id, propiedad_id, property_name } = sesionData[0]
 
+        // Auth interna: el middleware exime las llamadas con Bearer CRON_SECRET
+        const INTERNAL_AUTH = 'Bearer ' + (process.env.CRON_SECRET || '')
+
         // 1) calidad-fotos (detección de incidencias) — fire-and-forget
         fetch(APP_URL + '/api/admin/ia/analizar-foto', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': INTERNAL_AUTH },
           body: JSON.stringify({ foto_url: publicUrl, session_id, empresa_id, propiedad_id, property_name })
         }).catch(() => {})
 
@@ -81,7 +84,7 @@ export async function POST(req: NextRequest) {
           if (ref.length > 0) {
             fetch(APP_URL + '/api/admin/ia/comparar-foto', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'application/json', 'Authorization': INTERNAL_AUTH },
               body: JSON.stringify({
                 referencia_url: ref[0].url,
                 foto_url: publicUrl,
