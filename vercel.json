@@ -13,7 +13,7 @@
     },
     {
       "path": "/api/admin/auto-assign",
-      "schedule": "30 5 * * *"
+      "schedule": "30 3 * * *"
     },
     {
       "path": "/api/admin/auto-assign",
