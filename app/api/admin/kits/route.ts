@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
       INSERT INTO kits_limpiadoras (empresa_id, limpiadora_id, producto_id, cantidad_inicial, sesiones_desde_repo, notas)
       VALUES (${empresa_id}::uuid, ${limpiadora_id}::uuid, ${producto_id}::uuid,
               ${Number(cantidad_inicial || 1)}, 0, ${notas || null})
-      ON CONFLICT ON CONSTRAINT uq_kit_limp_prod_activo DO UPDATE
+      ON CONFLICT (limpiadora_id, producto_id) WHERE activo = true DO UPDATE
         SET cantidad_inicial = EXCLUDED.cantidad_inicial, notas = EXCLUDED.notas, updated_at = now()
       RETURNING *
     `)
