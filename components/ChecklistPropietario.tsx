@@ -68,7 +68,7 @@ export default function ChecklistPropietario({ token, sesionId, titulo, onClose 
   const agrupar = Object.keys(grupos).length > 1
 
   return (
-    <div style={{ fontFamily:"'DM Sans',-apple-system,sans-serif", background:C.bg, minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
+    <div style={{ fontFamily:"'Nunito',-apple-system,sans-serif", background:C.bg, minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
 
       {/* Header */}
       <div style={{ background:C.primary, padding:'14px 16px', position:'sticky', top:0, zIndex:50 }}>

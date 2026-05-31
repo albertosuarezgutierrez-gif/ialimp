@@ -968,7 +968,7 @@ export default function AdminLimpiadoras() {
   const [activeTab, setActiveTab] = useState(0)
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", minHeight: '100vh', background: '#f1f5f9' }}>
+    <div style={{ fontFamily: "'Nunito', sans-serif", minHeight: '100vh', background: '#f1f5f9' }}>
       {/* Header */}
       <header style={{ background: '#4f46e5', padding: '0 24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 0 0' }}>

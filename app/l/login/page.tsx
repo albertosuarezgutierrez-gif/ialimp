@@ -39,13 +39,13 @@ export default function LLoginPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Syne:wght@800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap');
         .ll-root {
           min-height: 100dvh;
           display: flex; flex-direction: column;
           align-items: center; justify-content: center;
           padding: clamp(24px, 6vw, 60px) clamp(16px, 4vw, 40px);
-          font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+          font-family: 'Nunito', -apple-system, sans-serif;
           background: linear-gradient(160deg, #eef2ff 0%, #f1f5f9 60%, #e0e7ff 100%);
           position: relative; overflow: hidden;
         }

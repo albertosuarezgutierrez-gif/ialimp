@@ -364,7 +364,7 @@ export default function AdminChatPage() {
   const totalUnread = hilos.reduce((a, h) => a + (h.unread || 0), 0)
 
   return (
-    <div style={{ height:'100vh', display:'flex', flexDirection:'column', fontFamily:"'DM Sans',sans-serif", background:C.bg }}>
+    <div style={{ height:'100vh', display:'flex', flexDirection:'column', fontFamily:"'Nunito',sans-serif", background:C.bg }}>
 
       {/* Header */}
       <header style={{ background:C.primary, padding:'14px 20px', display:'flex', alignItems:'center', gap:16, flexShrink:0 }}>

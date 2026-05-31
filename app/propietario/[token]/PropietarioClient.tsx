@@ -629,14 +629,14 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
   const currentItem = MENU_ITEMS.find(m=>m.id===tab)
 
   if (chatSesion) return (
-    <div style={{ fontFamily:"'DM Sans',-apple-system,sans-serif", minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
+    <div style={{ fontFamily:"'Nunito',-apple-system,sans-serif", minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
       <ChatSesionPropietario token={token} sesionId={chatSesion.id} miNombre={cliente.nombre}
         titulo={chatSesion.titulo} height="100vh" onClose={()=>setChatSesion(null)} />
     </div>
   )
   if (checklistSesion) return (
-    <div style={{ fontFamily:"'DM Sans',-apple-system,sans-serif", minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
+    <div style={{ fontFamily:"'Nunito',-apple-system,sans-serif", minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
       <ChecklistPropietario token={token} sesionId={checklistSesion.id}
         titulo={checklistSesion.titulo} onClose={()=>setChecklist(null)} />
@@ -646,7 +646,7 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
   const cardProps = { token, permisos, onChat:setChatSesion, onChecklist:setChecklist, onQueja:setQueja, quejaEnviada }
 
   return (
-    <div style={{ fontFamily:"'DM Sans',-apple-system,sans-serif", background:C.bg, minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
+    <div style={{ fontFamily:"'Nunito',-apple-system,sans-serif", background:C.bg, minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{display:none}`}</style>
 
       {/* ── Header ── */}
@@ -718,7 +718,7 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
             <style>{`@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
             <div style={{ background:C.primary, padding:'20px 20px 16px' }}>
               <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
-                <div style={{ fontFamily:"'Syne',sans-serif", fontSize:18, fontWeight:800, color:'white' }}><LogoIalimp size={17} /></div>
+                <div style={{ fontFamily:"'Nunito',sans-serif", fontSize:18, fontWeight:800, color:'white' }}><LogoIalimp size={17} /></div>
                 <button onClick={()=>setMenu(false)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:6, width:28, height:28, color:'white', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
               </div>
               <div style={{ color:'white', fontWeight:700, fontSize:13 }}>{cliente.nombre.split(' ').slice(0,2).join(' ')}</div>

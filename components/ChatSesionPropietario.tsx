@@ -114,7 +114,7 @@ export default function ChatSesionPropietario({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height, background: '#e5ddd5', fontFamily: "'DM Sans', sans-serif", position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height, background: '#e5ddd5', fontFamily: "'Nunito', sans-serif", position: 'relative' }}>
 
       {/* Header */}
       <div style={{ background: C.primary, padding: compact ? '10px 14px' : '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>

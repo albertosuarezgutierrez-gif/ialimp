@@ -76,7 +76,7 @@ export default function EscanerDocumento({ token, propiedadId, onGuardado }: Pro
   }
 
   return (
-    <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", color: C.text }}>
+    <div style={{ fontFamily: "'Nunito','Segoe UI',sans-serif", color: C.text }}>
 
       {/* ── INICIO ── */}
       {fase === 'inicio' && (

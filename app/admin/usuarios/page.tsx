@@ -257,7 +257,7 @@ export default function EquipoPage() {
 
   // ── RENDER ────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Nunito', sans-serif" }}>
 
       {/* Header */}
       <header style={{ background: `linear-gradient(135deg, ${C.primary} 0%, ${C.brand} 100%)`, padding: '18px 20px' }}>

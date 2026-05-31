@@ -42,7 +42,7 @@ export default async function ClienteDetallePage({ params }: { params: Promise<{
   }
 
   return (
-    <div style={{ fontFamily: "'DM Sans',-apple-system,sans-serif", background: C.bg, minHeight: '100vh', padding: '0 0 40px' }}>
+    <div style={{ fontFamily: "'Nunito',-apple-system,sans-serif", background: C.bg, minHeight: '100vh', padding: '0 0 40px' }}>
       {/* Header */}
       <div style={{ background: C.primary, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <a href="/admin/clientes"

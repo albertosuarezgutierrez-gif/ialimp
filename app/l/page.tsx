@@ -31,13 +31,13 @@ function fmtTime(t: string|null): string|null {
 
 // ── CSS global de la app ─────────────────────────────────────────────────
 const APP_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap');
 
 .l-app * { box-sizing: border-box; }
 .l-app {
   min-height: 100dvh;
   background: #f1f5f9;
-  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  font-family: 'Nunito', -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -309,7 +309,7 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
   const limite = fmtTime(sesion.hora_checkin_siguiente)
 
   return (
-    <div style={{ minHeight: '100dvh', background: C.bg, fontFamily: "'Plus Jakarta Sans', -apple-system, sans-serif" }}>
+    <div style={{ minHeight: '100dvh', background: C.bg, fontFamily: "'Nunito', -apple-system, sans-serif" }}>
       {/* Header */}
       <div style={{ background: C.primary, padding: '0 0 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 16px 14px' }}>
@@ -555,7 +555,7 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
       </div>
 
       {showChatGlobal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', flexDirection: 'column', fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', flexDirection: 'column', fontFamily: "'Nunito',sans-serif" }}>
           <div style={{ background: '#4f46e5', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <button onClick={() => setShowChatGlobal(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', width: 34, height: 34, borderRadius: 9, fontSize: 16, cursor: 'pointer' }}>←</button>
             <div style={{ color: 'white', fontWeight: 800, fontSize: 16 }}>💬 Chat del equipo</div>
@@ -574,7 +574,7 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
       )}
 
       {showConsumo && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', fontFamily: "'Nunito',sans-serif" }}>
           <div style={{ background: 'white', borderRadius: '20px 20px 0 0', maxHeight: '85vh', overflow: 'auto' }}>
             <div style={{ background: '#4f46e5', borderRadius: '20px 20px 0 0', padding: '16px 16px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ flex: 1 }}>

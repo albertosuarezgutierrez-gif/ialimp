@@ -86,7 +86,7 @@ export default function CotizadorConfigPage() {
     setConfig((c: any) => ({ ...c, recargos: [...c.recargos, { id: `r${Date.now()}`, label: 'Nuevo recargo', valor: 10, tipo: 'fijo', activo: true }] }))
   }
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: C.muted, fontFamily: "'DM Sans', sans-serif" }}>Cargando...</div>
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: C.muted, fontFamily: "'Nunito', sans-serif" }}>Cargando...</div>
 
   const TABS = [
     { id: 'servicios',   label: '🧹 Servicios' },
@@ -97,7 +97,7 @@ export default function CotizadorConfigPage() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Nunito', sans-serif" }}>
       {/* Header */}
       <header style={{ background: C.primary, padding: '18px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 4 }}>

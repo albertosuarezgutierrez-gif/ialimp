@@ -85,7 +85,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
 <style>
   :root{ --indigo:#4f46e5; --ink:#1e1b4b; --muted:#64748b; --line:#e2e8f0; }
   *{ box-sizing:border-box; }
-  body{ font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color:var(--ink);
+  body{ font-family:'Nunito',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color:var(--ink);
         margin:0; background:#f1f5f9; padding:24px; }
   .sheet{ max-width:780px; margin:0 auto; background:#fff; border:1px solid var(--line); border-radius:14px;
           padding:36px 40px; }

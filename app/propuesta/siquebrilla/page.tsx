@@ -12,7 +12,7 @@ export default function PropuestaSiqueBrilla() {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Propuesta ialimp — Sique Brilla SL</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
     --primary:   #4f46e5;
@@ -34,7 +34,7 @@ export default function PropuestaSiqueBrilla() {
   body {
     background: var(--bg);
     color: var(--body);
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Nunito', sans-serif;
     font-size: 15px;
     line-height: 1.6;
     -webkit-text-size-adjust: 100%;

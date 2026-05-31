@@ -61,7 +61,7 @@ const TABS = [
 export default function MaterialesPage() {
   const [tab, setTab] = useState('stock')
   return (
-    <div style={{minHeight:'100vh',background:C.bg,fontFamily:"'DM Sans',sans-serif"}}>
+    <div style={{minHeight:'100vh',background:C.bg,fontFamily:"'Nunito',sans-serif"}}>
       <header style={{background:C.primary,padding:'0 24px'}}>
         <div style={{display:'flex',alignItems:'center',gap:16,padding:'18px 0 0'}}>
           <a href="/dashboard" style={{color:'rgba(255,255,255,0.7)',fontSize:13,textDecoration:'none'}}>← Dashboard</a>

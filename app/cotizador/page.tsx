@@ -129,13 +129,13 @@ export default function CotizadorPage() {
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Nunito', sans-serif" }}>
       <div style={{ color: C.muted }}>Cargando...</div>
     </div>
   )
 
   if (enviado) return (
-    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Nunito', sans-serif" }}>
       <div style={{ textAlign: 'center', padding: 32, maxWidth: 400 }}>
         <div style={{ fontSize: 64, marginBottom: 16 }}>✅</div>
         <h2 style={{ fontWeight: 800, fontSize: 24, color: C.text, marginBottom: 8 }}>¡Presupuesto solicitado!</h2>
@@ -157,8 +157,8 @@ export default function CotizadorPage() {
     : []
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'DM Sans', -apple-system, sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Nunito', -apple-system, sans-serif" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
       {/* Header */}
       <div style={{ background: C.primary, padding: '24px 20px', textAlign: 'center' }}>

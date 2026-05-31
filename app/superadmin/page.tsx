@@ -53,7 +53,7 @@ export default function SuperadminPage() {
 
   // ── LOGIN ────────────────────────────────────────────────────────
   if (!loggedIn) return (
-    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Nunito', sans-serif" }}>
       <div style={{ background: C.card, borderRadius: 20, padding: '40px 36px', width: '100%', maxWidth: 380, border: `1px solid ${C.border}` }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontSize: 32, fontWeight: 900, color: C.accent, letterSpacing: '-0.03em' }}>IALIMP</div>
@@ -95,8 +95,8 @@ export default function SuperadminPage() {
   const mrr                  = empresas.reduce((a, e) => a + 49 + Number(e.limpiadoras_activas || 0) * 12, 0)
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'DM Sans', sans-serif", color: C.text }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
+    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Nunito', sans-serif", color: C.text }}>
+      <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
       {/* Header */}
       <header style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: '16px 28px', display: 'flex', alignItems: 'center', gap: 16 }}>

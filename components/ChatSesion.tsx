@@ -86,7 +86,7 @@ export default function ChatSesion({ sesionId, apiBase, miNombre, miTipo, titulo
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height, background: '#e5ddd5', fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height, background: '#e5ddd5', fontFamily: "'Nunito', sans-serif" }}>
       {titulo && (
         <div style={{ background: C.primary, padding: compact ? '10px 14px' : '14px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>

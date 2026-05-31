@@ -87,7 +87,7 @@ export default function CRMPage() {
   const conPropuesta = leads.filter(l => l.propuesta_url).length
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Nunito', sans-serif" }}>
 
       {/* Header */}
       <header style={{ background: C.primary, padding: '18px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>

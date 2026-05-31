@@ -132,7 +132,7 @@ export default function RRHHClient({ limpiadoras: initialLimp, quejas }: Props) 
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'DM Sans', -apple-system, sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Nunito', -apple-system, sans-serif" }}>
       <style>{`* { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
 
       {/* Header */}

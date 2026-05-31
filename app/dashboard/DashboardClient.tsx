@@ -112,7 +112,7 @@ export default function DashboardClient({
   const SidebarContent = ({ collapsed }: { collapsed?: boolean }) => (
     <div style={{
       display:'flex', flexDirection:'column', height:'100%',
-      fontFamily:"'Plus Jakarta Sans',sans-serif",
+      fontFamily:"'Nunito',sans-serif",
     }}>
       {/* Logo */}
       <div style={{
@@ -121,7 +121,7 @@ export default function DashboardClient({
         marginBottom:12, textAlign: collapsed ? 'center' : 'left',
       }}>
         <div style={{
-          fontFamily:"'Syne',sans-serif", fontSize: collapsed ? 18 : 20,
+          fontFamily:"'Nunito',sans-serif", fontSize: collapsed ? 18 : 20,
           fontWeight:800, color:'#4f46e5', letterSpacing:'-.01em',
         }}>
           {collapsed ? 'ia' : 'ialimp'}
@@ -214,12 +214,12 @@ export default function DashboardClient({
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap');
 
         .dash-root {
           min-height: 100dvh;
           background: #f1f5f9;
-          font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+          font-family: 'Nunito', -apple-system, sans-serif;
           display: flex;
         }
 
@@ -305,7 +305,7 @@ export default function DashboardClient({
         @media (max-width: 1023px) { .dash-collapse-btn { display: none; } }
 
         .topbar-title {
-          font-family: 'Syne', sans-serif;
+          font-family: 'Nunito', sans-serif;
           font-size: clamp(15px, 3vw, 18px);
           font-weight: 800;
           color: #0f172a;
@@ -358,7 +358,7 @@ export default function DashboardClient({
           text-align: center;
         }
         .kpi-num {
-          font-family: 'Syne', sans-serif;
+          font-family: 'Nunito', sans-serif;
           font-size: clamp(26px, 5vw, 34px);
           font-weight: 800;
           line-height: 1;
@@ -507,7 +507,7 @@ export default function DashboardClient({
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                 {/* Logo ialimp */}
                 <div style={{
-                  fontFamily:"'Syne', 'Plus Jakarta Sans', sans-serif",
+                  fontFamily:"'Nunito', 'Nunito', sans-serif",
                   fontSize:22, fontWeight:800, letterSpacing:'-.02em',
                   color:'#1e1b4b', lineHeight:1,
                 }}>

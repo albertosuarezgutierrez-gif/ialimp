@@ -9,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans:    ['Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        display: ['Syne', 'sans-serif'],
+        sans:    ['Nunito', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        display: ['Nunito', 'sans-serif'],
       },
       colors: {
         indigo: {

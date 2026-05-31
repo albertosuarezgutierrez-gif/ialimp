@@ -135,7 +135,7 @@ export default function ConsumoProductos({ sessionId, limpadoraId, onGuardado, o
   }
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ fontFamily: "'Nunito', sans-serif" }}>
       {/* Header */}
       <div style={{ background: C.light, borderRadius: 12, padding: '14px 16px', margin: '0 16px 16px', border: `1px solid ${C.border}` }}>
         <div style={{ fontWeight: 700, fontSize: 15, color: C.text, marginBottom: 4 }}>

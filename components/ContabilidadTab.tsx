@@ -511,7 +511,7 @@ export default function ContabilidadTab({ token }: { token: string }) {
   const maxCat = Math.max(...Object.values(categorias||{}).map((v: any) => v), 1)
 
   return (
-    <div style={{ fontFamily:"'DM Sans',sans-serif", paddingBottom:40 }}>
+    <div style={{ fontFamily:"'Nunito',sans-serif", paddingBottom:40 }}>
 
       {/* ── Header ── */}
       <div style={{ background:`linear-gradient(135deg, ${C.primary} 0%, ${C.brand} 100%)`, borderRadius:16, padding:'18px 16px', marginBottom:16 }}>

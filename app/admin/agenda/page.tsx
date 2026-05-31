@@ -57,7 +57,7 @@ export default function AgendaPage() {
   const completadas_sem = sesiones.filter(s => s.completed_at).length
 
   return (
-    <div style={{ minHeight:'100vh', background: C.bg, fontFamily:"'DM Sans',-apple-system,sans-serif" }}>
+    <div style={{ minHeight:'100vh', background: C.bg, fontFamily:"'Nunito',-apple-system,sans-serif" }}>
       <header style={{ background: C.primary, padding:'18px 24px', display:'flex', alignItems:'center', gap:16 }}>
         <a href="/dashboard" style={{ color:'rgba(255,255,255,0.7)', fontSize:13, textDecoration:'none' }}>← Dashboard</a>
         <div style={{ flex:1 }}>

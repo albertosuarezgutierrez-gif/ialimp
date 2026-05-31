@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────
 // LogoIalimp — componente único de logo para toda la app
 // Uso: <LogoIalimp size={20} />
-// Renderiza: "ia" bold + "limp" regular, fuente Syne, color blanco
+// Renderiza: "ia" bold + "limp" regular, fuente Nunito, color blanco
 // ─────────────────────────────────────────────────────────────────
 interface Props {
   size?:  number   // font-size en px (default 18)
@@ -12,7 +12,7 @@ interface Props {
 export default function LogoIalimp({ size = 18, color = '#ffffff', style }: Props) {
   return (
     <span style={{
-      fontFamily: "'Syne', 'Plus Jakarta Sans', sans-serif",
+      fontFamily: "'Nunito', 'Nunito', sans-serif",
       fontSize:   size,
       fontWeight: 800,
       letterSpacing: '-0.02em',
