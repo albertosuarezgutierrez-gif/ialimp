@@ -102,13 +102,13 @@ export async function POST(req: Request) {
     let lineasFinales = [...lineas]
     if (auto_generar) {
       const sesiones = await prisma.$queryRaw<any[]>(Prisma.sql`
-        SELECT tipo_servicio, COUNT(*) as cantidad, property_name
+        SELECT tipo_servicio, COUNT(*) as cantidad, property_name, propiedad_id::text AS propiedad_id
         FROM cleaning_sessions
         WHERE cliente_id = ${cliente_id}::uuid
           AND empresa_id = ${empresa_id}::uuid
           AND completed_at IS NOT NULL
           AND session_date BETWEEN ${periodo_desde}::date AND ${periodo_hasta}::date
-        GROUP BY tipo_servicio, property_name
+        GROUP BY tipo_servicio, property_name, propiedad_id
         ORDER BY tipo_servicio, property_name
       `)
 
@@ -124,7 +124,8 @@ export async function POST(req: Request) {
       lineasFinales = sesiones.map((s: any) => ({
         descripcion:    'Limpieza ' + (s.tipo_servicio || 'rotacion') + ' — ' + s.property_name,
         cantidad:       Number(s.cantidad),
-        precio_unitario: tarifaMap[s.tipo_servicio] || 0
+        precio_unitario: tarifaMap[s.tipo_servicio] || 0,
+        propiedad_id:   s.propiedad_id || null
       }))
     }
 
@@ -158,8 +159,8 @@ export async function POST(req: Request) {
     for (const linea of lineasFinales) {
       if (!linea.descripcion) continue
       await prisma.$executeRaw(Prisma.sql`
-        INSERT INTO factura_clientes_lineas (factura_id, descripcion, cantidad, precio_unitario, orden)
-        VALUES (${factura_id}::uuid, ${linea.descripcion}, ${Number(linea.cantidad)}, ${Number(linea.precio_unitario)}, ${lineasFinales.indexOf(linea)})
+        INSERT INTO factura_clientes_lineas (factura_id, descripcion, cantidad, precio_unitario, orden, propiedad_id)
+        VALUES (${factura_id}::uuid, ${linea.descripcion}, ${Number(linea.cantidad)}, ${Number(linea.precio_unitario)}, ${lineasFinales.indexOf(linea)}, ${linea.propiedad_id || null})
       `)
     }
 

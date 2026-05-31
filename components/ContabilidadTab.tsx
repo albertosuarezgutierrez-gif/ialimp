@@ -483,7 +483,7 @@ export default function ContabilidadTab({ token }: { token: string }) {
   const [loading, setLoading]       = useState(true)
   const [anio, setAnio]             = useState(anioActual)
   const [propFiltro, setPropFiltro] = useState('')
-  const [seccion, setSeccion]       = useState<'resumen'|'gastos'|'ingresos'|'pisos'>('resumen')
+  const [seccion, setSeccion]       = useState<'resumen'|'gastos'|'ingresos'|'pisos'|'facturas'>('resumen')
   const [showGasto, setShowGasto]   = useState(false)
   const [showIngreso, setShowIngreso] = useState(false)
 
@@ -506,7 +506,7 @@ export default function ContabilidadTab({ token }: { token: string }) {
     </div>
   )
 
-  const { totales, kpisMes, categorias, porPropiedad, gastos, ingresos, propiedades } = data || {}
+  const { totales, kpisMes, categorias, porPropiedad, gastos, ingresos, propiedades, facturas } = data || {}
   const maxBar = Math.max(...(kpisMes||[]).map((m: any) => Math.max(m.ingresos, m.gastos, 1)))
   const maxCat = Math.max(...Object.values(categorias||{}).map((v: any) => v), 1)
 
@@ -578,6 +578,7 @@ export default function ContabilidadTab({ token }: { token: string }) {
           {k:'gastos',  label:'📉 Gastos'},
           {k:'ingresos',label:'📈 Ingresos'},
           {k:'pisos',   label:'🏢 Por piso'},
+          {k:'facturas',label:'🧾 Facturas'},
         ] as const).map(s => (
           <button key={s.k} onClick={() => setSeccion(s.k)}
             style={{ flex:1, padding:'8px 4px', borderRadius:8, border:'none', background: seccion===s.k ? C.primary : 'transparent',
@@ -902,6 +903,56 @@ export default function ContabilidadTab({ token }: { token: string }) {
             <div style={{ textAlign:'center', padding:'40px 0', color:C.muted }}>
               <div style={{ fontSize:36, marginBottom:8 }}>🏢</div>
               <div>Sin propiedades configuradas</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ══ SECCIÓN FACTURAS ══ */}
+      {seccion === 'facturas' && (
+        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+          {(facturas||[]).map((f:any) => {
+            const porPiso: Record<string, number> = {}
+            ;(f.lineas||[]).forEach((l:any) => {
+              const k = l.propiedad_nombre || 'Sin piso'
+              porPiso[k] = (porPiso[k]||0) + Number(l.importe||0)
+            })
+            const estadoColor = f.estado==='pagada' ? C.ok : f.estado==='vencida' ? C.red : C.primary
+            return (
+              <div key={f.id} style={{ background:'white', borderRadius:14, border:`1px solid ${C.border}`, overflow:'hidden' }}>
+                <div style={{ padding:'14px 16px', borderBottom:`1px solid ${C.border}`, display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10 }}>
+                  <div>
+                    <div style={{ fontWeight:800, fontSize:15, color:C.text }}>🧾 {f.numero_factura}</div>
+                    <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>{f.periodo_desde} – {f.periodo_hasta}</div>
+                  </div>
+                  <div style={{ textAlign:'right' }}>
+                    <div style={{ fontWeight:800, fontSize:16, color:C.text }}>{fmt(f.total||0)}</div>
+                    <span style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', color:estadoColor }}>{f.estado}</span>
+                  </div>
+                </div>
+                <div style={{ padding:'12px 16px' }}>
+                  <div style={{ fontSize:10, color:C.muted, fontWeight:700, textTransform:'uppercase', marginBottom:6 }}>Desglose por piso</div>
+                  {Object.entries(porPiso).map(([piso, imp]: any) => (
+                    <div key={piso} style={{ display:'flex', justifyContent:'space-between', fontSize:13, padding:'4px 0' }}>
+                      <span style={{ color:C.text }}>🏢 {piso}</span>
+                      <span style={{ fontWeight:700, color:C.text }}>{fmt(imp)}</span>
+                    </div>
+                  ))}
+                  {Object.keys(porPiso).length===0 && <div style={{ fontSize:12, color:C.muted }}>Sin líneas</div>}
+                </div>
+                <div style={{ padding:'0 16px 14px' }}>
+                  <a href={`/api/propietario/${token}/factura/${f.id}`} target="_blank" rel="noopener noreferrer"
+                     style={{ display:'inline-flex', alignItems:'center', gap:8, background:C.primary, color:'white', textDecoration:'none', fontSize:13, fontWeight:700, padding:'10px 16px', borderRadius:10 }}>
+                    ⬇ Descargar PDF
+                  </a>
+                </div>
+              </div>
+            )
+          })}
+          {(facturas||[]).length===0 && (
+            <div style={{ textAlign:'center', padding:'40px 0', color:C.muted }}>
+              <div style={{ fontSize:36, marginBottom:8 }}>🧾</div>
+              <div>Sin facturas emitidas en {anio}</div>
             </div>
           )}
         </div>

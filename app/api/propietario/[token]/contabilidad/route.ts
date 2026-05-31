@@ -75,23 +75,62 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
       ORDER BY i.fecha DESC
     `)
 
-    // ── Limpiezas del año (coste limpieza) ──
-    const limpiezas = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT
-        EXTRACT(MONTH FROM cs.session_date)::int AS mes,
-        p.nombre AS propiedad_nombre,
-        p.id::text AS propiedad_id,
-        COUNT(*)::int AS num_limpiezas,
-        SUM(COALESCE(cs.precio_final, 0))::float AS coste_limpiezas
-      FROM cleaning_sessions cs
-      LEFT JOIN propiedades p ON p.id = cs.propiedad_id
-      WHERE cs.cliente_id = ${cliente.id}::uuid
-        AND cs.completed_at IS NOT NULL
-        AND EXTRACT(YEAR FROM cs.session_date) = ${parseInt(anio)}
-        ${propiedad_id ? Prisma.sql`AND cs.propiedad_id = ${propiedad_id}::uuid` : Prisma.sql``}
-      GROUP BY mes, p.id, p.nombre
-      ORDER BY mes
+    // ── Coste de limpieza = FACTURAS EMITIDAS (fuente del gasto), desglosado por piso ──
+    // Cabeceras de factura del año (se ignoran borradores)
+    const factCab = await prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT f.id::text, f.numero_factura,
+             f.periodo_desde::text, f.periodo_hasta::text, f.fecha_emision::text,
+             f.estado, f.concepto,
+             f.base_imponible::float, f.iva_porcentaje::float,
+             f.iva_importe::float, f.total::float,
+             f.dest_razon_social, f.dest_nif
+      FROM facturas_clientes f
+      WHERE f.cliente_id = ${cliente.id}::uuid
+        AND f.estado <> 'borrador'
+        AND EXTRACT(YEAR FROM f.periodo_desde) = ${parseInt(anio)}
+      ORDER BY f.periodo_desde DESC, f.numero_factura DESC
     `)
+    // Líneas de esas facturas (cada línea sabe su piso → imputación por propiedad)
+    const factLin = await prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT fl.factura_id::text, fl.descripcion,
+             fl.cantidad::float, fl.precio_unitario::float,
+             COALESCE(fl.importe, fl.cantidad * fl.precio_unitario)::float AS importe,
+             fl.propiedad_id::text, p.nombre AS propiedad_nombre,
+             EXTRACT(MONTH FROM f.periodo_desde)::int AS mes
+      FROM factura_clientes_lineas fl
+      JOIN facturas_clientes f ON f.id = fl.factura_id
+      LEFT JOIN propiedades p ON p.id = fl.propiedad_id
+      WHERE f.cliente_id = ${cliente.id}::uuid
+        AND f.estado <> 'borrador'
+        AND EXTRACT(YEAR FROM f.periodo_desde) = ${parseInt(anio)}
+        ${propiedad_id ? Prisma.sql`AND fl.propiedad_id = ${propiedad_id}::uuid` : Prisma.sql``}
+      ORDER BY fl.orden ASC
+    `)
+
+    // Agregado por mes + propiedad — misma forma que el cálculo anterior por sesión
+    const limpMap: Record<string, any> = {}
+    factLin.forEach((l: any) => {
+      const key = `${l.mes}|${l.propiedad_id || 'sin'}`
+      if (!limpMap[key]) limpMap[key] = {
+        mes: Number(l.mes), propiedad_id: l.propiedad_id,
+        propiedad_nombre: l.propiedad_nombre, num_limpiezas: 0, coste_limpiezas: 0,
+      }
+      limpMap[key].num_limpiezas   += Number(l.cantidad || 0)
+      limpMap[key].coste_limpiezas += Number(l.importe || 0)
+    })
+    const limpiezas = Object.values(limpMap)
+
+    // Facturas con sus líneas (para mostrar y descargar en el panel del dueño)
+    const lineasPorFactura: Record<string, any[]> = {}
+    factLin.forEach((l: any) => {
+      if (!lineasPorFactura[l.factura_id]) lineasPorFactura[l.factura_id] = []
+      lineasPorFactura[l.factura_id].push({
+        descripcion: l.descripcion, cantidad: l.cantidad,
+        precio_unitario: l.precio_unitario, importe: l.importe,
+        propiedad_id: l.propiedad_id, propiedad_nombre: l.propiedad_nombre,
+      })
+    })
+    const facturas = factCab.map((f: any) => ({ ...f, lineas: lineasPorFactura[f.id] || [] }))
 
     // ── KPIs por mes (gastos + ingresos agrupados) ──
     const kpisMes = Array.from({ length: 12 }, (_, i) => {
@@ -148,7 +187,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
 
     return NextResponse.json({
       ok: true, anio: parseInt(anio),
-      propiedades, gastos, ingresos, limpiezas,
+      propiedades, gastos, ingresos, limpiezas, facturas,
       kpisMes, categorias, porPropiedad,
       totales: { totalGastos, totalIngresos, beneficioNeto, margen, totalLimpiezas }
     })
