@@ -19,7 +19,7 @@ const CAT_PROVEEDOR = ['general','limpieza','lenceria','lavanderia','mantenimien
 const CAT_PRODUCTO  = ['limpieza','lenceria','amenities','consumible','herramienta']
 const CAT_STOCK     = ['limpieza','lenceria','consumible','amenities','herramienta']
 const UNIDADES      = ['unidad','kg','litro','rollo','pack','caja','par','ml','gr']
-const TIPO_EMOJI: Record<string,string> = { factura:'🧾', albaran:'📦', ticket:'🏷️', otro:'📄', pendiente:'⏳', error:'❌' }
+const TIPO_EMOJI: Record<string,string> = { factura:'🧾', albaran:'📦', ticket:'🏷️', curriculum:'👤', otro:'📄', pendiente:'⏳', error:'❌' }
 const CONFIANZA_COLOR: Record<string,string> = { alta:'#16a34a', media:'#d97706', baja:'#dc2626' }
 
 function pBy(id: string) { return PROPS.find(p => p.id === id) }
@@ -858,7 +858,7 @@ function TabDocumentos() {
         <span style={{fontSize:26}}>📷</span>
         <div style={{textAlign:'left'}}>
           <div style={{fontWeight:800,fontSize:15}}>Escanear con cámara</div>
-          <div style={{fontSize:11,opacity:.8}}>Factura · Albarán · Ticket</div>
+          <div style={{fontSize:11,opacity:.8}}>Factura · Albarán · Ticket · CV</div>
         </div>
       </button>
       <button onClick={()=>{setFase('preview');setTimeout(()=>galRef.current?.click(),50)}}
@@ -913,6 +913,18 @@ function TabDocumentos() {
             </div>
             {isOpen&&!isPending&&(
               <div style={{borderTop:`1px solid ${C.border}`,padding:'12px 14px'}}>
+                {doc.tipo_doc==='curriculum'&&(()=>{
+                  const c:any=doc.lineas_json||{}
+                  return (
+                    <div style={{display:'grid',gap:5,fontSize:12}}>
+                      {c.telefono&&<div>📞 {c.telefono}</div>}
+                      {c.email&&<div>✉️ {c.email}</div>}
+                      {c.puesto&&<div><b>Puesto:</b> {c.puesto}</div>}
+                      {c.experiencia_anios!=null&&<div><b>Experiencia:</b> {c.experiencia_anios} años</div>}
+                      {c.resumen&&<div style={{color:C.muted,marginTop:3}}>{c.resumen}</div>}
+                    </div>
+                  )
+                })()}
                 {lineas.length>0&&(
                   <div style={{marginBottom:10}}>
                     <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:'uppercase',letterSpacing:'.05em',marginBottom:5}}>Líneas</div>

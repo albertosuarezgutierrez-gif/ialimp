@@ -19,10 +19,10 @@ async function analizarDocumento(base64: string, mediaType: string, productosSto
     ? productosStock.map(p => `- id:"${p.id}" nombre:"${p.nombre}" cat:"${p.categoria}" unidad:"${p.unidad}"`).join('\n')
     : '(sin productos en catálogo)'
 
-  const prompt = `You are a Spanish accounting assistant. Analyze this invoice/receipt/delivery note image.
+  const prompt = `You are a Spanish document assistant. The image is EITHER an accounting document (invoice/receipt/delivery note) OR a person's CV/résumé. Detect which.
 Return ONLY a valid JSON object, no markdown, no explanations:
 {
-  "tipo_doc": "factura|albaran|ticket|otro",
+  "tipo_doc": "factura|albaran|ticket|curriculum|otro",
   "proveedor": "supplier name or null",
   "fecha": "YYYY-MM-DD or null",
   "numero_doc": "document number or null",
@@ -33,6 +33,7 @@ Return ONLY a valid JSON object, no markdown, no explanations:
   "total": 0.0,
   "descripcion_corta": "summary max 60 chars",
   "notas": null,
+  "candidato": {"nombre":null,"email":null,"telefono":null,"puesto":null,"experiencia_anios":null,"resumen":null},
   "nivel_certeza": "alto|medio|bajo"
 }
 
@@ -44,6 +45,7 @@ RULES (read carefully):
 - Ignore any amount that is NOT part of the total to pay: informational subtotals, gross sales/booking volumes used only to compute a fee, previous balances, deposits already paid.
 - "lineas": one entry per concept/product line, with precio_unitario and total_linea exactly as printed.
 - Set "nivel_certeza" to "bajo" if the image is blurry/partial or the numbers do not reconcile.
+- If the image is a CV / résumé (personal data, work experience, education, skills), set "tipo_doc":"curriculum", fill "candidato" (experiencia_anios = total years of experience as a number, resumen = 1-line profile in Spanish, max 120 chars), and set proveedor, lineas, base_imponible, porcentaje_iva, cuota_iva and total all to null.
 
 Stock catalog:
 ${catalogoStr}
@@ -110,6 +112,24 @@ export async function POST(req: NextRequest) {
     `)
 
     const ext = await analizarDocumento(imagen_base64, media_type, productosStock)
+
+    // Currículum → guardar como candidato (sin apunte PGC ni stock)
+    if (ext.tipo_doc === 'curriculum') {
+      const c = ext.candidato || {}
+      const nombre = c.nombre || 'Candidato sin nombre'
+      const contacto = [c.telefono, c.email].filter(Boolean).join(' · ')
+      const desc = ([c.puesto, c.resumen].filter(Boolean).join(' · ') || 'Currículum').slice(0, 200)
+      await prisma.$executeRaw(Prisma.sql`
+        UPDATE documentos_contables SET
+          tipo_doc='curriculum', proveedor=${nombre}, fecha_doc=${ext.fecha || null}::date,
+          categoria='rrhh', descripcion=${desc}, notas=${contacto || null},
+          base_imponible=null, porcentaje_iva=null, cuota_iva=null, total=null, cuenta_gasto=null,
+          apunte_json='[]'::jsonb, lineas_json=${JSON.stringify(c)}::jsonb
+        WHERE id = ${doc_id}::uuid
+      `)
+      return NextResponse.json({ ok: true, tipo: 'curriculum' })
+    }
+
     const apunte = generarApunte(ext)
 
     // Update the pending doc with results
