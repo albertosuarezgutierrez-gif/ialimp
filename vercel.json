@@ -17,7 +17,15 @@
     },
     {
       "path": "/api/admin/auto-assign",
+      "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/admin/auto-assign",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/admin/auto-assign",
+      "schedule": "0 15 * * *"
     },
     {
       "path": "/api/admin/informes/cron",
