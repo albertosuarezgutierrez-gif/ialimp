@@ -132,43 +132,45 @@ async function syncPropertyIcal(prop: any): Promise<{ synced: number; errors: st
 }
 
 // ── Sync Smoobu API (para Alberto — mantener mientras siga usando Smoobu) ─────
-// Consulta Smoobu en cada pasada y reconcilia: alta/actualiza reservas y
-// elimina la limpieza si la reserva fue CANCELADA (si no está ya completada).
-async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ synced: number; cancelled: number; errors: string[] }> {
-  if (!conn.smoobu_api_key) return { synced: 0, cancelled: 0, errors: ['No smoobu_api_key'] }
+// Reconcilia en cada pasada: da de alta/actualiza reservas (filtradas por SALIDA,
+// que es lo que define una limpieza) y elimina las limpiezas pendientes cuya
+// reserva ya no existe en Smoobu (cancelada o borrada).
+async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ synced: number; cancelled: number; reconciled: number; errors: string[] }> {
+  if (!conn.smoobu_api_key) return { synced: 0, cancelled: 0, reconciled: 0, errors: ['No smoobu_api_key'] }
 
-  // Ventana amplia por llegada: -30d para coger estancias en curso, +150d hacia delante
-  const from = new Date(Date.now() -  30 * 86400000).toISOString().split('T')[0]
-  const to   = new Date(Date.now() + 150 * 86400000).toISOString().split('T')[0]
+  const today = new Date().toISOString().split('T')[0]
+  const to    = new Date(Date.now() + 150 * 86400000).toISOString().split('T')[0]
 
-  // Traer TODAS las páginas (antes solo se leía la primera)
+  // Descarga por SALIDA, todas las paginas
   const bookings: any[] = []
   let page = 1
+  let complete = false
   const errors: string[] = []
   while (true) {
     const res = await fetch(
-      'https://login.smoobu.com/api/reservations?from=' + from + '&to=' + to + '&pageSize=100&page=' + page,
-      { headers: { 'Api-Key': conn.smoobu_api_key }, signal: AbortSignal.timeout(15000) }
+      'https://login.smoobu.com/api/reservations?pageSize=100&departureFrom=' + today + '&departureTo=' + to + '&page=' + page,
+      { headers: { 'Api-Key': conn.smoobu_api_key }, cache: 'no-store', signal: AbortSignal.timeout(15000) }
     )
     if (!res.ok) { errors.push('Smoobu API ' + res.status); break }
     const data = await res.json()
     bookings.push(...(data.bookings || []))
     const pageCount = data.page_count || 1
-    if (page >= pageCount) break
+    if (page >= pageCount) { complete = true; break }
     page++
   }
-  if (bookings.length === 0) return { synced: 0, cancelled: 0, errors }
 
   let synced = 0
   let cancelled = 0
+  let reconciled = 0
+  const activeIds = new Set<string>()   // reservas vivas con salida en ventana
+
   for (const b of bookings) {
-    const smoobuId = b.apartment?.id
-    const propDef  = SMOOBU_MAP[smoobuId]
+    const propDef = SMOOBU_MAP[b.apartment?.id]
     if (!propDef) continue
     const external_id = 'smoobu_' + b.id
 
-    // 1) CANCELACION -> quitar la limpieza pendiente (no tocar las ya completadas)
-    if (b.type === 'cancellation') {
+    // Cancelacion / bloqueo -> borrar limpieza pendiente (no tocar las completadas)
+    if (b.type === 'cancellation' || b['is-blocked-booking']) {
       try {
         const del = await prisma.$executeRaw`
           DELETE FROM cleaning_sessions
@@ -179,11 +181,11 @@ async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ sy
       } catch (e: any) { errors.push('Cancel ' + b.id + ': ' + (e.message || '').slice(0, 50)) }
       continue
     }
+    if (!b.departure) continue
 
-    // 2) Bloqueos / periodos sin salida -> ignorar
-    if (!b.departure || b.type === 'BlockedPeriod') continue
+    activeIds.add(external_id)
 
-    // 3) Reserva o modificacion -> alta/actualizacion (la fecha de salida se refresca via ON CONFLICT)
+    // Reserva o modificacion -> alta/actualizacion (la salida se refresca via ON CONFLICT)
     try {
       const prop = propMap.get(propDef.uuid)
       const limp = prop?.limpiadora_principal_id || VANESSA_ID
@@ -220,7 +222,25 @@ async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ sy
     } catch (e: any) { errors.push('Booking ' + b.id + ': ' + (e.message || '').slice(0, 60)) }
   }
 
-  // 4) Refrescar contadores de la conexion (antes quedaban desfasados)
+  // Reconciliacion por diferencia de conjuntos: dentro de la MISMA ventana consultada,
+  // borra limpiezas smoobu_api pendientes cuya reserva ya no aparece (cancelada o borrada).
+  // Guardas: solo si la descarga fue completa y hay reservas activas (evita vaciar por respuesta parcial).
+  if (complete && activeIds.size > 0) {
+    try {
+      const del = await prisma.$executeRaw(Prisma.sql`
+        DELETE FROM cleaning_sessions
+        WHERE pms_connection_id = ${conn.id}::uuid
+          AND origen = 'smoobu_api'
+          AND completed_at IS NULL
+          AND session_date >= CURRENT_DATE
+          AND session_date <= ${to}::date
+          AND external_reservation_id NOT IN (${Prisma.join([...activeIds])})
+      `)
+      reconciled = Number(del) || 0
+    } catch (e: any) { errors.push('Reconcile: ' + (e.message || '').slice(0, 60)) }
+  }
+
+  // Refrescar contadores de la conexion
   try {
     await prisma.$executeRaw`
       UPDATE pms_connections SET
@@ -230,7 +250,7 @@ async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ sy
       WHERE id = ${conn.id}::uuid`
   } catch {}
 
-  return { synced, cancelled, errors }
+  return { synced, cancelled, reconciled, errors }
 }
 
 // ── Endpoint ──────────────────────────────────────────────────────────────────
@@ -274,12 +294,14 @@ export async function GET(req: Request) {
     const all     = [...icalResults, ...smoobuResults]
     const total      = all.reduce((a, r) => a + r.synced, 0)
     const cancelados = all.reduce((a, r) => a + (r.cancelled || 0), 0)
+    const reconciliados = all.reduce((a, r) => a + (r.reconciled || 0), 0)
     const errores = all.flatMap(r => r.errors || [])
 
     return NextResponse.json({
       ok: true,
       total_synced:  total,
       total_cancelled: cancelados,
+      total_reconciled: reconciliados,
       ical_props:    icalResults.length,
       smoobu_conns:  smoobuResults.length,
       results:       all,
