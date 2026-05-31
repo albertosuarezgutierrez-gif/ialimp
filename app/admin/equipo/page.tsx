@@ -12,6 +12,7 @@ const TABS = [
   { id: 'quejas',        label: '⚠️ Quejas' },
   { id: 'equipo',        label: '👥 Equipo' },
   { id: 'limpiadoras',   label: '🧹 Limpiadoras' },
+  { id: 'kits',          label: '🎒 Kits' },
   { id: 'disponibilidad',label: '📅 Disponibilidad' },
   { id: 'usuarios',      label: '🔐 Accesos' },
   { id: 'ia',            label: '🤖 Análisis IA' },
@@ -49,6 +50,7 @@ export default function EquipoPage() {
         {tab === 'limpiadoras'    && <TabLimpiadoras />}
         {tab === 'disponibilidad' && <TabDisponibilidad />}
         {tab === 'usuarios'       && <TabUsuarios />}
+        {tab === 'kits'          && <TabKits />}
         {tab === 'ia'             && <TabAnalisisIA />}
       </div>
     </div>
@@ -582,6 +584,318 @@ function TabAnalisisIA() {
       {(!analisis.alertas?.length && !analisis.insights?.length && !analisis.recomendaciones?.length) && (
         <div style={{ background: C.white, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px' }}>
           <p style={{ fontSize: 14, color: C.text, lineHeight: 1.6 }}>{analisis.resumen || analisis.texto || JSON.stringify(analisis)}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+// ─── TAB KITS ─────────────────────────────────────────────────────
+function TabKits() {
+  const [limpiadoras, setLimpiadoras] = useState<any[]>([])
+  const [productos,   setProductos]   = useState<any[]>([])
+  const [kits,        setKits]        = useState<any[]>([])
+  const [reposiciones,setReposiciones]= useState<any[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [selLimp,     setSelLimp]     = useState<string>('all')
+  const [modalKit,    setModalKit]    = useState<any>(null)   // {} = nuevo kit
+  const [modalRepo,   setModalRepo]   = useState<any>(null)   // kit para reponer
+  const [saving,      setSaving]      = useState(false)
+  const [formKit,     setFormKit]     = useState<any>({ limpiadora_id:'', producto_id:'', cantidad_inicial:'1', notas:'' })
+  const [formRepo,    setFormRepo]    = useState<any>({ cantidad:'', notas:'' })
+  const [expandRepo,  setExpandRepo]  = useState<string|null>(null)
+
+  const load = async () => {
+    setLoading(true)
+    const [rL, rP, rK, rR] = await Promise.all([
+      fetch('/api/admin/limpiadoras'),
+      fetch('/api/admin/stock'),
+      fetch('/api/admin/kits'),
+      fetch('/api/admin/reposiciones'),
+    ])
+    const [dL, dP, dK, dR] = await Promise.all([rL.json(), rP.json(), rK.json(), rR.json()])
+    setLimpiadoras(dL.limpiadoras || [])
+    setProductos(dP.productos || [])
+    setKits(dK.kits || [])
+    setReposiciones(dR.reposiciones || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  const saveKit = async () => {
+    if (!formKit.limpiadora_id || !formKit.producto_id) return
+    setSaving(true)
+    await fetch('/api/admin/kits', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(formKit) })
+    setSaving(false); setModalKit(null); load()
+  }
+
+  const delKit = async (id: string) => {
+    if (!confirm('¿Quitar este producto del kit?')) return
+    await fetch('/api/admin/kits', { method:'DELETE', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ id }) })
+    load()
+  }
+
+  const saveRepo = async () => {
+    if (!formRepo.cantidad || !modalRepo) return
+    setSaving(true)
+    const r = await fetch('/api/admin/reposiciones', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ kit_id: modalRepo.id, cantidad: formRepo.cantidad, notas: formRepo.notas }) })
+    const d = await r.json()
+    setSaving(false); setModalRepo(null)
+    setFormRepo({ cantidad:'', notas:'' })
+    if (d.ok) {
+      const msg = d.sesiones_previas > 0
+        ? `✅ Repuesto. ${d.sesiones_previas} sesiones desde la última reposición${d.coste ? ` · coste ${Number(d.coste).toFixed(2)} €` : ''}`
+        : '✅ Reposición registrada'
+      alert(msg)
+    }
+    load()
+  }
+
+  const filteredKits = selLimp === 'all' ? kits : kits.filter((k:any) => k.limpiadora_id === selLimp)
+
+  // Group by limpiadora
+  const byLimp: Record<string, any[]> = {}
+  for (const k of filteredKits) {
+    if (!byLimp[k.limpiadora_id]) byLimp[k.limpiadora_id] = []
+    byLimp[k.limpiadora_id].push(k)
+  }
+
+  // KPIs
+  const totalProductos = kits.length
+  const necesitanRepo  = kits.filter((k:any) => k.nivel_actual !== null && k.nivel_actual < 25).length
+  const totalRepos     = reposiciones.length
+
+  if (loading) return <div style={{ textAlign:'center', padding:40, color:C.muted }}>Cargando...</div>
+
+  return (
+    <div>
+      {/* KPIs */}
+      <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap' }}>
+        <div style={{ background:C.white, borderRadius:12, border:`1px solid ${C.border}`, padding:'12px 16px', flex:1, minWidth:90 }}>
+          <div style={{ fontWeight:800, fontSize:20, color:C.primary }}>{totalProductos}</div>
+          <div style={{ fontSize:11, color:C.muted }}>Artículos asignados</div>
+        </div>
+        <div style={{ background:C.white, borderRadius:12, border:`1px solid ${C.border}`, padding:'12px 16px', flex:1, minWidth:90 }}>
+          <div style={{ fontWeight:800, fontSize:20, color:necesitanRepo>0?C.red:C.ok }}>{necesitanRepo}</div>
+          <div style={{ fontSize:11, color:C.muted }}>⚠️ Reponer pronto</div>
+        </div>
+        <div style={{ background:C.white, borderRadius:12, border:`1px solid ${C.border}`, padding:'12px 16px', flex:1, minWidth:90 }}>
+          <div style={{ fontWeight:800, fontSize:20, color:C.brand }}>{totalRepos}</div>
+          <div style={{ fontSize:11, color:C.muted }}>Reposiciones totales</div>
+        </div>
+      </div>
+
+      {/* Toolbar */}
+      <div style={{ display:'flex', gap:8, marginBottom:14, alignItems:'center', flexWrap:'wrap' }}>
+        <select value={selLimp} onChange={e=>setSelLimp(e.target.value)}
+          style={{ border:`1px solid ${C.border}`, borderRadius:9, padding:'8px 12px', fontSize:13, fontFamily:'inherit', background:C.white, flex:1 }}>
+          <option value="all">Todas las limpiadoras</option>
+          {limpiadoras.map((l:any) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
+        </select>
+        <button onClick={() => setModalKit({})}
+          style={{ background:C.primary, color:'#fff', border:'none', borderRadius:9, padding:'9px 18px', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
+          + Asignar producto
+        </button>
+      </div>
+
+      {/* Lista por limpiadora */}
+      {Object.keys(byLimp).length === 0 && (
+        <div style={{ textAlign:'center', padding:'40px 16px', color:C.muted }}>
+          <div style={{ fontSize:40, marginBottom:8 }}>🎒</div>
+          <div style={{ fontWeight:600 }}>Sin kits asignados aún</div>
+          <div style={{ fontSize:13, marginTop:4 }}>Asigna productos a tus limpiadoras para empezar a rastrear el consumo</div>
+        </div>
+      )}
+
+      {Object.entries(byLimp).map(([limp_id, items]: any) => {
+        const limp = limpiadoras.find((l:any) => l.id === limp_id)
+        return (
+          <div key={limp_id} style={{ marginBottom:20 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
+              <div style={{ width:32, height:32, borderRadius:'50%', background:limp?.color||C.brand,
+                display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:14 }}>
+                {limp?.nombre?.[0]?.toUpperCase()}
+              </div>
+              <span style={{ fontWeight:700, fontSize:15, color:C.text }}>{limp?.nombre}</span>
+              <span style={{ fontSize:12, color:C.muted }}>{items.length} productos</span>
+            </div>
+
+            {items.map((kit:any) => {
+              const nivel = kit.nivel_actual
+              const bajo = nivel !== null && nivel < 25
+              const sinFoto = nivel === null
+              const reposKit = reposiciones.filter((r:any) => r.kit_id === kit.id)
+              const isExpanded = expandRepo === kit.id
+              const consumoMedio = kit.consumo_medio
+
+              return (
+                <div key={kit.id} style={{ background:bajo?'#fff7ed':C.white, border:`1px solid ${bajo?'#fed7aa':C.border}`,
+                  borderRadius:12, padding:'12px 14px', marginBottom:8 }}>
+                  <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
+                    {/* Nivel visual */}
+                    <div style={{ flexShrink:0, width:36, display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+                      <div style={{ width:24, height:56, border:`2px solid ${C.border}`, borderRadius:4, overflow:'hidden',
+                        background:'#f8fafc', position:'relative' }}>
+                        <div style={{ position:'absolute', bottom:0, width:'100%',
+                          height:`${nivel ?? 0}%`, background: nivel===null?'transparent':nivel<25?C.red:nivel<50?C.warn:C.ok,
+                          transition:'height .4s', borderRadius:2 }}/>
+                        {sinFoto && <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center',
+                          justifyContent:'center', fontSize:10, color:C.muted }}>?</div>}
+                      </div>
+                      <span style={{ fontSize:10, fontWeight:700, color:nivel===null?C.muted:bajo?C.red:C.ok }}>
+                        {nivel !== null ? `${nivel}%` : '—'}
+                      </span>
+                    </div>
+
+                    {/* Info */}
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontWeight:700, fontSize:14, color:C.text }}>{kit.producto_nombre}</div>
+                      <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>
+                        {kit.producto_categoria} · {kit.cantidad_inicial} {kit.producto_unidad}
+                        {kit.sesiones_actuales > 0 && ` · ${kit.sesiones_actuales} sesiones`}
+                      </div>
+                      {consumoMedio && Number(consumoMedio.num_reposiciones) >= 2 && (
+                        <div style={{ fontSize:11, color:C.brand, marginTop:3, background:C.light, borderRadius:6, padding:'2px 7px', display:'inline-block' }}>
+                          📊 Dura ~{Math.round(Number(consumoMedio.media_sesiones_por_bote))} sesiones/bote
+                          {consumoMedio.coste_medio_por_sesion ? ` · ${Number(consumoMedio.coste_medio_por_sesion).toFixed(3)} €/sesión` : ''}
+                        </div>
+                      )}
+                      {bajo && <div style={{ fontSize:11, fontWeight:700, color:C.red, marginTop:3 }}>⚠️ Nivel bajo — reponer pronto</div>}
+                      {sinFoto && <div style={{ fontSize:11, color:C.muted, marginTop:3 }}>Sin foto aún — nivel desconocido</div>}
+                    </div>
+
+                    {/* Acciones */}
+                    <div style={{ display:'flex', flexDirection:'column', gap:5, alignItems:'flex-end', flexShrink:0 }}>
+                      <button onClick={() => { setModalRepo(kit); setFormRepo({ cantidad: String(kit.cantidad_inicial||1), notas:'' }) }}
+                        style={{ background:C.primary, color:'#fff', border:'none', borderRadius:8, padding:'5px 12px',
+                          fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
+                        🔄 Reponer
+                      </button>
+                      {reposKit.length > 0 && (
+                        <button onClick={() => setExpandRepo(isExpanded ? null : kit.id)}
+                          style={{ background:'none', border:`1px solid ${C.border}`, borderRadius:8, padding:'4px 10px',
+                            fontSize:11, color:C.muted, cursor:'pointer', fontFamily:'inherit' }}>
+                          {reposKit.length} repo {isExpanded?'▲':'▼'}
+                        </button>
+                      )}
+                      <button onClick={() => delKit(kit.id)}
+                        style={{ background:'none', border:'none', color:C.red, cursor:'pointer', fontSize:16, padding:'0 2px' }}>×</button>
+                    </div>
+                  </div>
+
+                  {/* Historial de reposiciones expandible */}
+                  {isExpanded && (
+                    <div style={{ borderTop:`1px solid ${C.border}`, marginTop:10, paddingTop:10 }}>
+                      <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'.05em', marginBottom:6 }}>
+                        Historial de reposiciones
+                      </div>
+                      {reposKit.map((r:any, i:number) => (
+                        <div key={r.id} style={{ display:'flex', justifyContent:'space-between', fontSize:12, padding:'4px 0',
+                          borderBottom:`1px solid ${C.bg}`, color:C.text }}>
+                          <span>{new Date(r.created_at).toLocaleDateString('es-ES')} · {r.cantidad} {r.unidad}</span>
+                          <span style={{ color:C.muted }}>
+                            {r.sesiones_previas} ses.
+                            {r.coste_unitario ? ` · ${(r.cantidad * r.coste_unitario).toFixed(2)} €` : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )
+      })}
+
+      {/* Modal asignar producto */}
+      {modalKit !== null && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', display:'flex', alignItems:'center',
+          justifyContent:'center', zIndex:200, padding:16 }}>
+          <div style={{ background:C.white, borderRadius:16, width:'100%', maxWidth:400, padding:24 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
+              <div style={{ fontWeight:800, fontSize:17, color:C.text }}>Asignar producto al kit</div>
+              <button onClick={() => setModalKit(null)} style={{ background:'none', border:'none', fontSize:22, color:C.muted, cursor:'pointer' }}>×</button>
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:14 }}>
+              <select value={formKit.limpiadora_id} onChange={e=>setFormKit((p:any)=>({...p,limpiadora_id:e.target.value}))}
+                style={{ border:`1px solid ${C.border}`, borderRadius:9, padding:'10px 12px', fontSize:14, fontFamily:'inherit' }}>
+                <option value="">Selecciona limpiadora...</option>
+                {limpiadoras.map((l:any) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
+              </select>
+              <select value={formKit.producto_id} onChange={e=>setFormKit((p:any)=>({...p,producto_id:e.target.value}))}
+                style={{ border:`1px solid ${C.border}`, borderRadius:9, padding:'10px 12px', fontSize:14, fontFamily:'inherit' }}>
+                <option value="">Selecciona producto...</option>
+                {productos.map((p:any) => (
+                  <option key={p.id} value={p.id}>{p.nombre} ({p.unidad}) {p.precio_unitario ? `· ${Number(p.precio_unitario).toFixed(2)}€` : ''}</option>
+                ))}
+              </select>
+              <div style={{ display:'flex', gap:8 }}>
+                <input type="number" placeholder="Cantidad inicial" value={formKit.cantidad_inicial}
+                  onChange={e=>setFormKit((p:any)=>({...p,cantidad_inicial:e.target.value}))} min="0.1" step="0.1"
+                  style={{ flex:1, border:`1px solid ${C.border}`, borderRadius:9, padding:'9px 10px', fontSize:14, fontFamily:'inherit', outline:'none' }}/>
+              </div>
+              <input placeholder="Notas (opcional)" value={formKit.notas||''}
+                onChange={e=>setFormKit((p:any)=>({...p,notas:e.target.value}))}
+                style={{ border:`1px solid ${C.border}`, borderRadius:9, padding:'9px 10px', fontSize:13, fontFamily:'inherit', outline:'none' }}/>
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={() => setModalKit(null)}
+                style={{ flex:1, padding:'10px', borderRadius:9, border:`1px solid ${C.border}`, background:C.white, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
+                Cancelar
+              </button>
+              <button onClick={saveKit} disabled={saving || !formKit.limpiadora_id || !formKit.producto_id}
+                style={{ flex:2, padding:'10px', borderRadius:9, border:'none', background:C.primary, color:'#fff',
+                  fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', opacity:saving?0.6:1 }}>
+                {saving ? 'Guardando…' : 'Asignar al kit'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal reponer */}
+      {modalRepo !== null && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', display:'flex', alignItems:'center',
+          justifyContent:'center', zIndex:200, padding:16 }}>
+          <div style={{ background:C.white, borderRadius:16, width:'100%', maxWidth:380, padding:24 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+              <div style={{ fontWeight:800, fontSize:17, color:C.text }}>Registrar reposición</div>
+              <button onClick={() => setModalRepo(null)} style={{ background:'none', border:'none', fontSize:22, color:C.muted, cursor:'pointer' }}>×</button>
+            </div>
+            <div style={{ fontSize:13, color:C.muted, marginBottom:16 }}>
+              {modalRepo.producto_nombre} · {modalRepo.limpiadora_nombre}
+              {modalRepo.sesiones_actuales > 0 &&
+                <span style={{ display:'block', marginTop:4, color:C.brand, fontWeight:600 }}>
+                  📊 {modalRepo.sesiones_actuales} sesiones desde la última reposición
+                </span>
+              }
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:14 }}>
+              <input type="number" placeholder={`Cantidad (${modalRepo.producto_unidad})`}
+                value={formRepo.cantidad} onChange={e=>setFormRepo((p:any)=>({...p,cantidad:e.target.value}))} min="0.1" step="0.1"
+                style={{ border:`1px solid ${C.border}`, borderRadius:9, padding:'10px 12px', fontSize:14, fontFamily:'inherit', outline:'none' }}/>
+              <input placeholder="Notas (opcional)" value={formRepo.notas||''}
+                onChange={e=>setFormRepo((p:any)=>({...p,notas:e.target.value}))}
+                style={{ border:`1px solid ${C.border}`, borderRadius:9, padding:'9px 10px', fontSize:13, fontFamily:'inherit', outline:'none' }}/>
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={() => setModalRepo(null)}
+                style={{ flex:1, padding:'10px', borderRadius:9, border:`1px solid ${C.border}`, background:C.white, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
+                Cancelar
+              </button>
+              <button onClick={saveRepo} disabled={saving || !formRepo.cantidad}
+                style={{ flex:2, padding:'10px', borderRadius:9, border:'none', background:C.primary, color:'#fff',
+                  fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', opacity:saving?0.6:1 }}>
+                {saving ? 'Guardando…' : '✅ Confirmar reposición'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
