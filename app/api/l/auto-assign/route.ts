@@ -42,8 +42,15 @@ export async function GET(req: NextRequest) {
         ld.horas_max * 60 AS horas_max_min,
         CASE WHEN ${session.property_id} = ANY(l.propiedades::text[]) THEN 1 ELSE 2 END AS prioridad
       FROM limpiadoras l
-      JOIN limpiadora_disponibilidad ld ON ld.limpiadora_id = l.id
-        AND ld.dia_semana = ${diaSemana} AND ld.activo = true
+      JOIN (
+        SELECT limpiadora_id,
+               MIN(hora_inicio) AS hora_inicio,
+               MAX(hora_fin)    AS hora_fin,
+               MAX(horas_max)   AS horas_max
+        FROM limpiadora_disponibilidad
+        WHERE dia_semana = ${diaSemana} AND activo = true
+        GROUP BY limpiadora_id
+      ) ld ON ld.limpiadora_id = l.id
       LEFT JOIN (
         SELECT limpiadora_id, SUM(COALESCE(tiempo_estimado, 120)) AS total_min
         FROM cleaning_sessions
