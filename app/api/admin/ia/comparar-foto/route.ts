@@ -45,11 +45,11 @@ async function componerMontaje(refBuf: Buffer, fotoBuf: Buffer): Promise<string>
 
 async function compararConIA(montajeB64: string, contexto: string): Promise<Comparacion> {
   const prompt = `Eres control de calidad de limpieza de un piso turistico.
-La imagen contiene DOS fotos lado a lado: a la IZQUIERDA la REFERENCIA (como debe quedar «${contexto}») y a la DERECHA la FOTO enviada por la limpiadora.
-Compara el estado, el orden y los elementos presentes. IGNORA diferencias de iluminacion, angulo, encuadre y calidad de la foto.
+La imagen contiene DOS fotos lado a lado: IZQUIERDA = REFERENCIA (como debe quedar «${contexto}»), DERECHA = FOTO enviada por la limpiadora.
+Decide si la foto de la limpiadora es VALIDA. Marca accion="revisar" SOLO si: (a) es claramente OTRA estancia o zona distinta, (b) FALTA un elemento importante que si aparece en la referencia, o (c) hay SUCIEDAD o DESORDEN evidente.
+NO marques revisar por diferencias de iluminacion, angulo, encuadre, calidad de foto ni detalles menores.
 Responde UNICAMENTE con JSON valido, sin markdown:
-{"coincide": true|false, "accion": "ok"|"revisar", "observaciones": ["maximo 3 frases breves"]}
-Usa accion="revisar" si falta algun elemento, hay desorden o suciedad, o es una estancia distinta. Usa "ok" solo si coincide razonablemente.`
+{"coincide": true|false, "accion": "ok"|"revisar", "observaciones": ["maximo 3 frases breves"]}`
 
   const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
     method: 'POST',
