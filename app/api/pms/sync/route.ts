@@ -132,28 +132,61 @@ async function syncPropertyIcal(prop: any): Promise<{ synced: number; errors: st
 }
 
 // ── Sync Smoobu API (para Alberto — mantener mientras siga usando Smoobu) ─────
-async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ synced: number; errors: string[] }> {
-  if (!conn.smoobu_api_key) return { synced: 0, errors: ['No smoobu_api_key'] }
-  const from = new Date().toISOString().split('T')[0]
-  const to   = new Date(Date.now() + 120 * 86400000).toISOString().split('T')[0]
-  const res  = await fetch(
-    'https://login.smoobu.com/api/reservations?arrival_from=' + from + '&arrival_to=' + to + '&pageSize=100',
-    { headers: { 'Api-Key': conn.smoobu_api_key }, signal: AbortSignal.timeout(15000) }
-  )
-  if (!res.ok) return { synced: 0, errors: ['Smoobu API ' + res.status] }
-  const { bookings = [] } = await res.json()
+// Consulta Smoobu en cada pasada y reconcilia: alta/actualiza reservas y
+// elimina la limpieza si la reserva fue CANCELADA (si no está ya completada).
+async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ synced: number; cancelled: number; errors: string[] }> {
+  if (!conn.smoobu_api_key) return { synced: 0, cancelled: 0, errors: ['No smoobu_api_key'] }
 
-  let synced = 0; const errors: string[] = []
+  // Ventana amplia por llegada: -30d para coger estancias en curso, +150d hacia delante
+  const from = new Date(Date.now() -  30 * 86400000).toISOString().split('T')[0]
+  const to   = new Date(Date.now() + 150 * 86400000).toISOString().split('T')[0]
+
+  // Traer TODAS las páginas (antes solo se leía la primera)
+  const bookings: any[] = []
+  let page = 1
+  const errors: string[] = []
+  while (true) {
+    const res = await fetch(
+      'https://login.smoobu.com/api/reservations?from=' + from + '&to=' + to + '&pageSize=100&page=' + page,
+      { headers: { 'Api-Key': conn.smoobu_api_key }, signal: AbortSignal.timeout(15000) }
+    )
+    if (!res.ok) { errors.push('Smoobu API ' + res.status); break }
+    const data = await res.json()
+    bookings.push(...(data.bookings || []))
+    const pageCount = data.page_count || 1
+    if (page >= pageCount) break
+    page++
+  }
+  if (bookings.length === 0) return { synced: 0, cancelled: 0, errors }
+
+  let synced = 0
+  let cancelled = 0
   for (const b of bookings) {
-    if (b.type === 'BlockedPeriod' || !b.departure) continue
+    const smoobuId = b.apartment?.id
+    const propDef  = SMOOBU_MAP[smoobuId]
+    if (!propDef) continue
+    const external_id = 'smoobu_' + b.id
+
+    // 1) CANCELACION -> quitar la limpieza pendiente (no tocar las ya completadas)
+    if (b.type === 'cancellation') {
+      try {
+        const del = await prisma.$executeRaw`
+          DELETE FROM cleaning_sessions
+          WHERE external_reservation_id = ${external_id}
+            AND origen = 'smoobu_api'
+            AND completed_at IS NULL`
+        cancelled += Number(del) || 0
+      } catch (e: any) { errors.push('Cancel ' + b.id + ': ' + (e.message || '').slice(0, 50)) }
+      continue
+    }
+
+    // 2) Bloqueos / periodos sin salida -> ignorar
+    if (!b.departure || b.type === 'BlockedPeriod') continue
+
+    // 3) Reserva o modificacion -> alta/actualizacion (la fecha de salida se refresca via ON CONFLICT)
     try {
-      const smoobuId = b.apartment?.id
-      const propDef  = SMOOBU_MAP[smoobuId]
-      if (!propDef) continue
       const prop = propMap.get(propDef.uuid)
       const limp = prop?.limpiadora_principal_id || VANESSA_ID
-
-      const external_id   = 'smoobu_' + b.id
       const num_huespedes = (b.adults || 0) + (b.children || 0)
 
       await prisma.$executeRawUnsafe(`
@@ -186,7 +219,18 @@ async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ sy
       synced++
     } catch (e: any) { errors.push('Booking ' + b.id + ': ' + (e.message || '').slice(0, 60)) }
   }
-  return { synced, errors }
+
+  // 4) Refrescar contadores de la conexion (antes quedaban desfasados)
+  try {
+    await prisma.$executeRaw`
+      UPDATE pms_connections SET
+        last_sync_at   = now(),
+        total_sessions = (SELECT COUNT(*) FROM cleaning_sessions WHERE pms_connection_id = ${conn.id}::uuid),
+        sync_error     = ${errors.length ? errors.slice(0, 3).join(' | ') : null}
+      WHERE id = ${conn.id}::uuid`
+  } catch {}
+
+  return { synced, cancelled, errors }
 }
 
 // ── Endpoint ──────────────────────────────────────────────────────────────────
@@ -228,12 +272,14 @@ export async function GET(req: Request) {
     }
 
     const all     = [...icalResults, ...smoobuResults]
-    const total   = all.reduce((a, r) => a + r.synced, 0)
+    const total      = all.reduce((a, r) => a + r.synced, 0)
+    const cancelados = all.reduce((a, r) => a + (r.cancelled || 0), 0)
     const errores = all.flatMap(r => r.errors || [])
 
     return NextResponse.json({
       ok: true,
       total_synced:  total,
+      total_cancelled: cancelados,
       ical_props:    icalResults.length,
       smoobu_conns:  smoobuResults.length,
       results:       all,
