@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const ESTADO_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   borrador: { label: 'Borrador', color: '#64748b', bg: '#f1f5f9' },
@@ -38,7 +38,7 @@ export default function FacturasClient({ facturas: init, clientes, resumen }: Pr
     cliente_id: '', periodo_desde: PRIMER_DIA_MES, periodo_hasta: HOY,
     concepto: 'Servicios de limpieza', iva_porcentaje: '21',
     auto_generar: true,
-    lineas: [{ descripcion: '', cantidad: '1', precio_unitario: '' }]
+    lineas: [{ descripcion: '', cantidad: '1', precio_unitario: '', propiedad_id: '' }]
   })
 
   const filtered = facturas.filter(f => {
@@ -96,7 +96,7 @@ export default function FacturasClient({ facturas: init, clientes, resumen }: Pr
         auto_generar:    form.auto_generar,
         lineas: form.auto_generar ? [] : form.lineas
           .filter(l => l.descripcion)
-          .map(l => ({ ...l, cantidad: Number(l.cantidad), precio_unitario: Number(l.precio_unitario) }))
+          .map(l => ({ ...l, cantidad: Number(l.cantidad), precio_unitario: Number(l.precio_unitario), propiedad_id: l.propiedad_id || null }))
       }
       const res  = await fetch('/api/admin/facturas-clientes', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -112,6 +112,18 @@ export default function FacturasClient({ facturas: init, clientes, resumen }: Pr
   }
 
   const f = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }))
+
+  // Pisos del cliente seleccionado (para imputar cada línea a su piso)
+  const [propsCliente, setPropsCliente] = useState<any[]>([])
+  useEffect(() => {
+    if (!form.cliente_id) { setPropsCliente([]); return }
+    let cancel = false
+    fetch('/api/admin/propiedades?cliente_id=' + form.cliente_id)
+      .then(r => r.json())
+      .then(d => { if (!cancel) setPropsCliente(d?.propiedades || []) })
+      .catch(() => { if (!cancel) setPropsCliente([]) })
+    return () => { cancel = true }
+  }, [form.cliente_id])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -299,6 +311,12 @@ export default function FacturasClient({ facturas: init, clientes, resumen }: Pr
                         onChange={e => { const l = [...form.lineas]; l[i].descripcion = e.target.value; f('lineas', l) }}
                         placeholder="Descripción"
                         className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      <select value={linea.propiedad_id || ''}
+                        onChange={e => { const l = [...form.lineas]; l[i].propiedad_id = e.target.value; f('lineas', l) }}
+                        className="w-32 border border-gray-200 rounded-lg px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">— piso —</option>
+                        {propsCliente.map((p:any) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                      </select>
                       <input type="number" value={linea.cantidad}
                         onChange={e => { const l = [...form.lineas]; l[i].cantidad = e.target.value; f('lineas', l) }}
                         placeholder="Ud"
@@ -314,7 +332,7 @@ export default function FacturasClient({ facturas: init, clientes, resumen }: Pr
                     </div>
                   ))}
                   <button type="button"
-                    onClick={() => f('lineas', [...form.lineas, { descripcion: '', cantidad: '1', precio_unitario: '' }])}
+                    onClick={() => f('lineas', [...form.lineas, { descripcion: '', cantidad: '1', precio_unitario: '', propiedad_id: '' }])}
                     className="text-indigo-600 text-sm underline">+ Añadir línea</button>
                 </div>
               )}
