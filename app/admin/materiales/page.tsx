@@ -60,6 +60,10 @@ const TABS = [
 
 export default function MaterialesPage() {
   const [tab, setTab] = useState('stock')
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab')
+    if (t && TABS.some(x => x.id === t)) setTab(t)
+  }, [])
   return (
     <div style={{minHeight:'100vh',background:C.bg,fontFamily:"'Nunito',sans-serif"}}>
       <header style={{background:C.primary,padding:'0 24px'}}>

@@ -780,9 +780,9 @@ export default function DashboardClient({
             <button className="bottom-nav-item" onClick={() => router.push('/admin/chat')}>
               <span>💬</span><span>Chat</span>
             </button>
-            <button className="bottom-nav-item" onClick={() => setShowNueva(true)}>
-              <span style={{ background:'#4f46e5', borderRadius:12, width:42, height:42, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, color:'white', boxShadow:'0 3px 10px rgba(79,70,229,.4)' }}>＋</span>
-              <span>Nueva</span>
+            <button className="bottom-nav-item" onClick={() => router.push('/admin/materiales?tab=documentos')}>
+              <span style={{ background:'#4f46e5', borderRadius:12, width:42, height:42, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, color:'white', boxShadow:'0 3px 10px rgba(79,70,229,.4)' }}>📸</span>
+              <span>Escanear</span>
             </button>
             <button className="bottom-nav-item" onClick={() => router.push('/admin/negocio')}>
               <span>👥</span><span>Clientes</span>
