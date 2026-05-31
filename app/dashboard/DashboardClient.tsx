@@ -45,6 +45,9 @@ export default function DashboardClient({
   const [briefingKpis, setBriefingKpis] = useState<any>(null)
   const [loadingBriefing, setLoadingBriefing] = useState(false)
   const [filtroEstado, setFiltroEstado] = useState<'all'|'pendiente'|'en_curso'|'hecha'>('all')
+  const [asignando,    setAsignando]    = useState(false)
+  const [resAsign,     setResAsign]     = useState<{asignadas:number;fallidas:number;detalle:any[]}|null>(null)
+  const [verDetAsign,  setVerDetAsign]  = useState(false)
 
   const pendientes  = sesiones.filter(s => !s.started_at)
   const enCurso     = sesiones.filter(s => s.started_at && !s.completed_at)
@@ -66,6 +69,28 @@ export default function DashboardClient({
       }
     } finally {
       setLoadingBriefing(false)
+    }
+  }
+
+  async function asignarAhora() {
+    setAsignando(true)
+    try {
+      const r = await fetch('/api/admin/auto-assign')
+      const d = await r.json()
+      if (!r.ok) throw new Error(d?.error || 'Error al asignar')
+      setResAsign({
+        asignadas: d.asignadas ?? 0,
+        fallidas:  d.fallidas ?? 0,
+        detalle:   (d.detalle ?? []).filter((x: any) => x.asignada),
+      })
+      // Refrescar rejilla + KPIs (derivan de sesiones)
+      const res  = await fetch('/api/admin/sesiones?date=' + fecha)
+      const data = await res.json()
+      setSesiones(data.sesiones || [])
+    } catch (e: any) {
+      alert(e.message || 'No se pudo asignar')
+    } finally {
+      setAsignando(false)
     }
   }
 
@@ -630,6 +655,64 @@ export default function DashboardClient({
                   </div>
                 )
               })}
+            </div>
+
+            {/* Asignación automática */}
+            <div style={{
+              background:'linear-gradient(135deg,#4f46e5 0%,#6366f1 100%)',
+              borderRadius:16, padding:'15px 16px', marginBottom:14,
+              boxShadow:'0 8px 22px -6px rgba(79,70,229,.5)', position:'relative', overflow:'hidden',
+            }}>
+              <div style={{ position:'absolute', right:-6, bottom:-14, fontSize:78, opacity:.13, lineHeight:1 }}>🧹</div>
+              <div style={{ fontSize:13.5, fontWeight:800, color:'#fff', display:'flex', alignItems:'center', gap:6, position:'relative', zIndex:1 }}>
+                🧹 Asignación automática
+              </div>
+              <div style={{ fontSize:11, color:'#dbeafe', fontWeight:600, marginTop:2, maxWidth:230, lineHeight:1.35, position:'relative', zIndex:1 }}>
+                Reparte las sesiones de hoy y mañana que están sin limpiadora.
+              </div>
+              <button
+                onClick={asignarAhora}
+                disabled={asignando}
+                style={{
+                  marginTop:11, width:'100%', background: asignando ? '#e0e7ff' : '#fff',
+                  color:'#4f46e5', fontFamily:"'Nunito',sans-serif", fontSize:14, fontWeight:800,
+                  border:'none', borderRadius:11, padding:'11px 0',
+                  cursor: asignando ? 'default' : 'pointer',
+                  boxShadow:'0 2px 6px rgba(0,0,0,.12)', position:'relative', zIndex:1,
+                }}>
+                {asignando ? '⏳ Asignando…' : 'Asignar limpiezas ahora'}
+              </button>
+
+              {resAsign && (
+                <div style={{ marginTop:11, background:'rgba(255,255,255,.96)', borderRadius:11, padding:'10px 12px', position:'relative', zIndex:1 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+                    <span style={{ fontSize:14, fontWeight:900, color:'#16a34a' }}>
+                      ✓ {resAsign.asignadas} asignada{resAsign.asignadas === 1 ? '' : 's'}
+                    </span>
+                    {resAsign.fallidas > 0 && (
+                      <span style={{ fontSize:12, fontWeight:700, color:'#d97706' }}>⚠ {resAsign.fallidas} sin asignar</span>
+                    )}
+                    {resAsign.detalle.length > 0 && (
+                      <button onClick={() => setVerDetAsign(v => !v)}
+                        style={{ marginLeft:'auto', background:'none', border:'none', color:'#4f46e5', fontFamily:"'Nunito',sans-serif", fontSize:12, fontWeight:700, textDecoration:'underline', cursor:'pointer' }}>
+                        {verDetAsign ? 'Ocultar' : 'Ver detalle'}
+                      </button>
+                    )}
+                  </div>
+                  {verDetAsign && (
+                    <ul style={{ listStyle:'none', margin:'9px 0 0', padding:0, display:'grid', gap:6 }}>
+                      {resAsign.detalle.map((d: any) => (
+                        <li key={d.sesion_id} style={{ background:'#f8fafc', borderRadius:8, padding:'7px 9px', fontSize:12 }}>
+                          <span style={{ fontWeight:800, color:'#1e1b4b' }}>{d.limpiadora}</span>
+                          <span style={{ color:'#1e1b4b' }}> → {d.propiedad} </span>
+                          <span style={{ color:'#6366f1' }}>· {d.fecha}</span>
+                          {d.justificacion && <div style={{ color:'#94a3b8', fontSize:11 }}>{d.justificacion}</div>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Fecha + botón */}
