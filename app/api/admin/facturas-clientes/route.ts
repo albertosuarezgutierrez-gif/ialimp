@@ -59,12 +59,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Faltan datos obligatorios' }, { status: 400 })
     }
 
-    // Verificar cliente
+    // Verificar cliente y traer sus datos fiscales (para congelar snapshot — VeriFactu)
     const check = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT id, nombre FROM clientes
+      SELECT id, nombre, razon_social, nif, direccion,
+             via_fiscal, numero_fiscal, cp_fiscal, municipio_fiscal, provincia_fiscal,
+             facturacion_igual_contacto
+      FROM clientes
       WHERE id = ${cliente_id}::uuid AND empresa_id = ${empresa_id}::uuid
     `)
     if (!check.length) return NextResponse.json({ error: 'Cliente no válido' }, { status: 403 })
+
+    // Resolver identidad fiscal del destinatario y congelarla en la factura
+    const cli = check[0]
+    const dest_razon_social: string | null = cli.razon_social || cli.nombre || null
+    const dest_nif: string | null = cli.nif || null
+    let dest_direccion: string | null
+    if (cli.facturacion_igual_contacto === false) {
+      const calle = [cli.via_fiscal, cli.numero_fiscal].filter(Boolean).join(' ')
+      const localidad = [cli.cp_fiscal, cli.municipio_fiscal].filter(Boolean).join(' ')
+      const prov = cli.provincia_fiscal ? `(${cli.provincia_fiscal})` : ''
+      dest_direccion = [calle, localidad, prov].filter(Boolean).join(', ') || null
+    } else {
+      dest_direccion = cli.direccion || null
+    }
 
     // Generar número de factura único: F-YYYY-NNNN
     const año = new Date(periodo_desde).getFullYear()
@@ -122,13 +139,15 @@ export async function POST(req: Request) {
         empresa_id, cliente_id, numero_factura,
         periodo_desde, periodo_hasta, concepto,
         base_imponible, iva_porcentaje, estado,
-        fecha_emision
+        fecha_emision,
+        dest_razon_social, dest_nif, dest_direccion
       ) VALUES (
         ${empresa_id}::uuid, ${cliente_id}::uuid, ${numero_factura},
         ${periodo_desde}::date, ${periodo_hasta}::date,
         ${concepto || 'Servicios de limpieza'},
         ${base}, ${iva_porcentaje}, 'borrador',
-        CURRENT_DATE
+        CURRENT_DATE,
+        ${dest_razon_social}, ${dest_nif}, ${dest_direccion}
       )
       RETURNING *
     `)
