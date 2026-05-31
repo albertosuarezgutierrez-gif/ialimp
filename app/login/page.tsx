@@ -192,6 +192,14 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
+
+        <div style={{ position: 'absolute', bottom: 16, left: 0, right: 0, textAlign: 'center', fontSize: 12, color: '#94a3b8', zIndex: 1 }}>
+          <a href="/aviso-legal" style={{ color: '#94a3b8', textDecoration: 'none' }}>Aviso legal</a>
+          {' · '}
+          <a href="/privacidad" style={{ color: '#94a3b8', textDecoration: 'none' }}>Privacidad</a>
+          {' · '}
+          <a href="/cookies" style={{ color: '#94a3b8', textDecoration: 'none' }}>Cookies</a>
+        </div>
       </div>
     </>
   )
