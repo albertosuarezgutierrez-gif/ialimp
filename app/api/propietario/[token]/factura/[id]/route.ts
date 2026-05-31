@@ -39,7 +39,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
            f.base_imponible::float, f.iva_porcentaje::float,
            f.iva_importe::float, f.total::float,
            f.dest_razon_social, f.dest_nif, f.dest_direccion,
-           e.nombre AS empresa_nombre, e.email AS empresa_email
+           e.nombre AS empresa_nombre, e.email AS empresa_email,
+           e.razon_social AS empresa_razon_social, e.nif AS empresa_nif,
+           e.direccion_fiscal AS empresa_direccion, e.iban AS empresa_iban,
+           e.telefono AS empresa_telefono
     FROM facturas_clientes f
     JOIN empresas e ON e.id = f.empresa_id
     WHERE f.id = ${id}::uuid
@@ -128,8 +131,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
     <div class="parties">
       <div>
         <div class="label">Emisor</div>
-        <div class="strong">${esc(f.empresa_nombre)}</div>
+        <div class="strong">${esc(f.empresa_razon_social || f.empresa_nombre)}</div>
+        ${f.empresa_nif ? `<div class="muted">NIF: ${esc(f.empresa_nif)}</div>` : ''}
+        ${f.empresa_direccion ? `<div class="muted">${esc(f.empresa_direccion)}</div>` : ''}
         ${f.empresa_email ? `<div class="muted">${esc(f.empresa_email)}</div>` : ''}
+        ${f.empresa_telefono ? `<div class="muted">Tel: ${esc(f.empresa_telefono)}</div>` : ''}
+        ${f.empresa_iban ? `<div class="muted">IBAN: ${esc(f.empresa_iban)}</div>` : ''}
       </div>
       <div>
         <div class="label">Cliente</div>
