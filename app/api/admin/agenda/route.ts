@@ -19,6 +19,9 @@ export async function GET(req: Request) {
         cs.limpiadora_id::text,
         cs.propiedad_id::text,
         cs.num_huespedes,
+        cs.origen,
+        cs.tipo_servicio,
+        cs.hora_inicio::text AS hora_inicio,
         l.nombre AS limpiadora_nombre
       FROM cleaning_sessions cs
       LEFT JOIN limpiadoras l ON l.id = cs.limpiadora_id
