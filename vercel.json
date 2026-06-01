@@ -46,6 +46,10 @@
     {
       "path": "/api/cron/procesar-documentos",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/admin/contabilidad/generar-recurrentes",
+      "schedule": "0 6 * * *"
     }
   ]
 }

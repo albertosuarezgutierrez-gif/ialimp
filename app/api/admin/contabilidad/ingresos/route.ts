@@ -3,10 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
 
-// GET /api/admin/contabilidad/apuntes?year=2026
-// Lista los apuntes contables (gastos) de la empresa: tanto escaneados como
-// añadidos a mano. Se usa para mostrar/gestionar los movimientos en la pestaña
-// "Apuntes" de /admin/contabilidad.
+// GET /api/admin/contabilidad/ingresos?year=2026
+// Lista los ingresos manuales de la empresa (otros ingresos no facturados).
+// Se usa en la pestaña "Ingresos" de /admin/contabilidad.
 export async function GET(req: Request) {
   try {
     const empresa_id = await requireEmpresaId()
@@ -15,32 +14,28 @@ export async function GET(req: Request) {
 
     const rows = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT
-        dc.id::text,
-        dc.tipo_doc,
-        dc.proveedor,
-        dc.fecha_doc::text   AS fecha,
-        dc.numero_doc,
-        dc.categoria,
-        dc.descripcion,
-        dc.base_imponible::float,
-        dc.porcentaje_iva::float,
-        dc.cuota_iva::float,
-        dc.total::float,
-        dc.pagado,
-        dc.notas,
-        dc.documento_url,
-        dc.recurrente_origen::text,
-        dc.propiedad_id::text,
+        im.id::text,
+        im.concepto,
+        im.categoria,
+        im.fecha::text          AS fecha,
+        im.base_imponible::float,
+        im.porcentaje_iva::float,
+        im.cuota_iva::float,
+        im.total::float,
+        im.cobrado,
+        im.fecha_cobro::text,
+        im.notas,
+        im.documento_url,
+        im.recurrente_origen::text,
+        im.propiedad_id::text,
         p.nombre AS propiedad_nombre,
-        dc.created_at::text
-      FROM documentos_contables dc
-      LEFT JOIN propiedades p ON p.id = dc.propiedad_id
-      WHERE dc.empresa_id = ${empresa_id}::uuid
-        AND dc.activo = true
-        AND COALESCE(dc.ambito, 'empresa') = 'empresa'
-        AND dc.tipo_doc NOT IN ('pendiente', 'error')
-        AND EXTRACT(YEAR FROM dc.fecha_doc) = ${year}
-      ORDER BY dc.fecha_doc DESC, dc.created_at DESC
+        im.created_at::text
+      FROM ingresos_manuales im
+      LEFT JOIN propiedades p ON p.id = im.propiedad_id
+      WHERE im.empresa_id = ${empresa_id}::uuid
+        AND im.activo = true
+        AND EXTRACT(YEAR FROM im.fecha) = ${year}
+      ORDER BY im.fecha DESC, im.created_at DESC
       LIMIT 300
     `)
 
@@ -50,17 +45,17 @@ export async function GET(req: Request) {
   }
 }
 
-// POST /api/admin/contabilidad/apuntes
-// Crea un apunte contable manual (gasto de la empresa) en documentos_contables.
-// Alimenta directamente las pestañas Resultado, IVA, Tesorería y Rentabilidad.
+// POST /api/admin/contabilidad/ingresos
+// Crea un ingreso manual en ingresos_manuales. Alimenta directamente las
+// pestañas Resultado, IVA y Tesorería (vía la vista v_contab_ingresos).
 export async function POST(req: Request) {
   try {
     const empresa_id = await requireEmpresaId()
     const body = await req.json()
     const {
-      proveedor, concepto, fecha, categoria,
+      concepto, fecha, categoria,
       base_imponible, porcentaje_iva, cuota_iva, total,
-      numero_doc, pagado, notas, propiedad_id,
+      cobrado, notas, propiedad_id,
     } = body
 
     const base = Number(base_imponible)
@@ -68,8 +63,8 @@ export async function POST(req: Request) {
     if (!Number.isFinite(base) || base <= 0) {
       return NextResponse.json({ error: 'La base imponible debe ser mayor que 0' }, { status: 400 })
     }
-    if (!proveedor && !concepto) {
-      return NextResponse.json({ error: 'Indica un proveedor o un concepto' }, { status: 400 })
+    if (!concepto) {
+      return NextResponse.json({ error: 'Indica un concepto' }, { status: 400 })
     }
 
     // Cálculo de IVA y total (se respeta lo que llegue, si no se calcula)
@@ -78,28 +73,22 @@ export async function POST(req: Request) {
     const tot   = total != null && total !== '' ? Number(total) : Math.round((base + cuota) * 100) / 100
 
     const rows = await prisma.$queryRaw<any[]>(Prisma.sql`
-      INSERT INTO documentos_contables (
-        empresa_id, propiedad_id, tipo_doc, ambito, activo,
-        proveedor, fecha_doc, numero_doc, categoria, descripcion,
+      INSERT INTO ingresos_manuales (
+        empresa_id, propiedad_id, concepto, categoria, fecha,
         base_imponible, porcentaje_iva, cuota_iva, total,
-        pagado, fecha_pago, notas
+        cobrado, fecha_cobro, notas
       ) VALUES (
         ${empresa_id}::uuid,
         ${propiedad_id || null}::uuid,
-        'manual',
-        'empresa',
-        true,
-        ${proveedor || null},
-        ${fecha}::date,
-        ${numero_doc || null},
+        ${concepto},
         ${categoria || 'otros'},
-        ${concepto || proveedor || 'Apunte manual'},
+        ${fecha}::date,
         ${base},
         ${pct},
         ${cuota},
         ${tot},
-        ${pagado === true},
-        ${pagado === true ? fecha : null}::date,
+        ${cobrado === true},
+        ${cobrado === true ? fecha : null}::date,
         ${notas || null}
       )
       RETURNING id::text

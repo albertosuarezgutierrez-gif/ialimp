@@ -30,6 +30,15 @@ export async function POST(req: Request) {
         WHERE id = ${id}::uuid
           AND empresa_id = ${empresa_id}::uuid
       `)
+    } else if (tipo === 'ingreso_manual') {
+      // Marcar ingreso manual como cobrado / pendiente
+      await prisma.$executeRaw(Prisma.sql`
+        UPDATE ingresos_manuales
+        SET cobrado = ${pagado === true},
+            fecha_cobro = ${pagado ? Prisma.sql`CURRENT_DATE` : Prisma.sql`NULL`}
+        WHERE id = ${id}::uuid
+          AND empresa_id = ${empresa_id}::uuid
+      `)
     }
 
     return NextResponse.json({ ok: true })
