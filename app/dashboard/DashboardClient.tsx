@@ -50,6 +50,14 @@ export default function DashboardClient({
   const [asignando,    setAsignando]    = useState(false)
   const [resAsign,     setResAsign]     = useState<{asignadas:number;fallidas:number;detalle:any[]}|null>(null)
   const [verDetAsign,  setVerDetAsign]  = useState(false)
+  const [sheet,        setSheet]        = useState<any|null>(null)   // sesión en reasignación
+  const [busyId,       setBusyId]       = useState<string|null>(null)
+  const [toast,        setToast]        = useState<{msg:string;tipo:'ok'|'warn'|'error'}|null>(null)
+
+  function showToast(msg: string, tipo: 'ok'|'warn'|'error' = 'ok') {
+    setToast({ msg, tipo })
+    setTimeout(() => setToast(null), 3500)
+  }
 
   const pendientes  = sesiones.filter(s => !s.started_at)
   const enCurso     = sesiones.filter(s => s.started_at && !s.completed_at)
@@ -110,9 +118,42 @@ export default function DashboardClient({
 
   async function eliminarSesion(id: string) {
     if (!confirm('¿Eliminar esta limpieza?')) return
-    const res = await fetch('/api/admin/sesiones/' + id, { method: 'DELETE' })
-    if (res.ok) setSesiones(s => s.filter(x => x.id !== id))
-    else { const d = await res.json(); alert(d.error || 'Error') }
+    const prev = sesiones
+    setSesiones(s => s.filter(x => x.id !== id))   // optimista
+    try {
+      const res = await fetch('/api/admin/sesiones/' + id, { method: 'DELETE', credentials: 'include' })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setSesiones(prev)
+        showToast(d.error || 'No se pudo eliminar', 'error')
+        return
+      }
+      showToast('Limpieza eliminada', 'ok')
+    } catch { setSesiones(prev); showToast('Error de red', 'error') }
+  }
+
+  // Reasignar limpiadora desde Inicio — update optimista, sin recarga
+  async function reasignar(sessionId: string, limpiadoraId: string) {
+    const prev = sesiones
+    const limp = limpiadoras.find((l: any) => l.id === limpiadoraId)
+    setSesiones(ss => ss.map(s => s.id === sessionId
+      ? { ...s, limpiadora_id: limpiadoraId || null, limpiadora_nombre: limp ? limp.nombre : null }
+      : s))
+    setSheet(null)
+    setBusyId(sessionId)
+    try {
+      const r = await fetch('/api/admin/sesiones/' + sessionId, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limpiadora_id: limpiadoraId || null }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { setSesiones(prev); showToast(d.error || 'No se pudo reasignar', 'error'); return }
+      if (limpiadoraId) showToast('Reasignada a ' + (limp?.nombre || ''), 'ok')
+      else showToast('Limpiadora quitada · el auto-asignador (16:00) podría reasignarla', 'warn')
+    } catch { setSesiones(prev); showToast('Error de red', 'error') }
+    finally { setBusyId(null) }
   }
 
   async function logout() {
@@ -459,6 +500,48 @@ export default function DashboardClient({
           padding: 3px 8px; border-radius: 20px;
           font-size: 11px; font-weight: 600;
         }
+        .ses-chip-btn {
+          border: 1px solid transparent; cursor: pointer; font-family: inherit;
+          transition: filter .12s ease;
+        }
+        .ses-chip-btn:hover { filter: brightness(.96); }
+        .ses-chip-btn:disabled { opacity: .6; cursor: default; }
+
+        /* ── Bottom-sheet de asignación ── */
+        .sheet-backdrop {
+          position: fixed; inset: 0; background: rgba(15,23,42,.45);
+          z-index: 100; display: flex; align-items: flex-end; justify-content: center;
+        }
+        .sheet {
+          background: #fff; width: 100%; max-width: 480px;
+          border-radius: 18px 18px 0 0; padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+          box-shadow: 0 -8px 30px rgba(0,0,0,.22); max-height: 72vh; overflow: auto;
+          animation: sheetUp .18s ease;
+        }
+        @keyframes sheetUp { from { transform: translateY(24px); opacity: .5 } to { transform: none; opacity: 1 } }
+        .sheet-handle { width: 40px; height: 4px; border-radius: 4px; background: #cbd5e1; margin: 0 auto 12px; }
+        .sheet-list { display: flex; flex-direction: column; gap: 4px; }
+        .sheet-item {
+          display: flex; align-items: center; justify-content: space-between; gap: 8px;
+          width: 100%; text-align: left; background: #f8fafc; border: 1px solid #e2e8f0;
+          border-radius: 10px; padding: 11px 12px; font-size: 14px; font-weight: 600;
+          color: #1e293b; cursor: pointer; font-family: inherit;
+        }
+        .sheet-item:hover { background: #eef2ff; }
+        .sheet-item:disabled { opacity: .6; cursor: default; }
+        .sheet-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+        .sheet-check { color: #16a34a; font-weight: 800; }
+
+        /* ── Toast ── */
+        .toast {
+          position: fixed; bottom: 78px; left: 50%; transform: translateX(-50%);
+          z-index: 120; padding: 11px 16px; border-radius: 10px;
+          font-size: 13px; font-weight: 700; color: #fff; text-align: center;
+          max-width: 88%; box-shadow: 0 8px 24px rgba(0,0,0,.2);
+        }
+        .toast-ok { background: #16a34a; }
+        .toast-warn { background: #d97706; }
+        .toast-error { background: #dc2626; }
 
         /* ── PMS card ── */
         .pms-card {
@@ -780,16 +863,26 @@ export default function DashboardClient({
                       <div className="ses-row">
                         <div className="ses-icon" style={{ background: color + '18' }}>{icon}</div>
                         <div style={{ flex:1, minWidth:0 }}>
-                          <div className="ses-title">{s.property_name}</div>
+                          <div className="ses-title">{s.property_name || '— Sin piso —'}</div>
                           {s.cliente_nombre && (
                             <div className="ses-sub">👥 {s.cliente_nombre}</div>
                           )}
                           <div className="ses-chips">
-                            {s.limpiadora_nombre && (
+                            {!s.completed_at ? (
+                              <button
+                                className="ses-chip ses-chip-btn"
+                                onClick={() => setSheet(s)}
+                                disabled={busyId === s.id}
+                                style={s.limpiadora_nombre
+                                  ? { background:'#f1f5f9', color:'#334155' }
+                                  : { background:'#fff7ed', color:'#c2410c', borderColor:'#fdba74', borderStyle:'dashed' }}>
+                                {s.limpiadora_nombre ? `👤 ${s.limpiadora_nombre}` : '➕ Asignar'}
+                              </button>
+                            ) : s.limpiadora_nombre ? (
                               <span className="ses-chip" style={{ background:'#f1f5f9', color:'#334155' }}>
                                 👤 {s.limpiadora_nombre}
                               </span>
-                            )}
+                            ) : null}
                             {s.hora_inicio && (
                               <span className="ses-chip" style={{ background:'#eef2ff', color:'#4f46e5' }}>
                                 🕐 {typeof s.hora_inicio === 'string' ? s.hora_inicio.slice(0,5) : s.hora_inicio}
@@ -888,6 +981,33 @@ export default function DashboardClient({
           onClose={() => setShowNueva(false)}
         />
       )}
+
+      {/* Bottom-sheet: elegir limpiadora */}
+      {sheet && (
+        <div className="sheet-backdrop" onClick={() => setSheet(null)}>
+          <div className="sheet" onClick={e => e.stopPropagation()}>
+            <div className="sheet-handle" />
+            <div style={{ fontWeight:800, fontSize:15, color:'#0f172a' }}>Asignar limpiadora</div>
+            <div style={{ fontSize:12, color:'#64748b', marginBottom:12 }}>{sheet.property_name || '— Sin piso —'}</div>
+            <div className="sheet-list">
+              <button className="sheet-item" disabled={busyId === sheet.id}
+                onClick={() => reasignar(sheet.id, '')} style={{ color:'#c2410c' }}>
+                <span>✕ Sin asignar</span>
+                {!sheet.limpiadora_id && <span className="sheet-check">✓</span>}
+              </button>
+              {limpiadoras.filter((l: any) => l.activa !== false).map((l: any) => (
+                <button key={l.id} className="sheet-item" disabled={busyId === sheet.id}
+                  onClick={() => reasignar(sheet.id, l.id)}>
+                  <span><span className="sheet-dot" style={{ background: l.color || '#6366f1' }} />{l.nombre}</span>
+                  {sheet.limpiadora_id === l.id && <span className="sheet-check">✓</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && <div className={'toast toast-' + toast.tipo}>{toast.msg}</div>}
     </>
   )
 }
