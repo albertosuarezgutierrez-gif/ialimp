@@ -26,7 +26,7 @@ export async function GET(_req: NextRequest) {
   return NextResponse.json({
     desde: 'CURRENT_DATE',
     dias: dias.map((d) => ({
-      fecha: d.session_date,
+      fecha: d.session_date instanceof Date ? d.session_date.toISOString().split('T')[0] : String(d.session_date).split('T')[0],
       limpiezas: d.limpiezas,
       horas_estimadas: Math.round((d.minutos / 60) * 10) / 10,
       sin_asignar: d.sin_asignar,
