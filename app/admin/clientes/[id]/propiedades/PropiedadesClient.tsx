@@ -1,5 +1,6 @@
 'use client'
 import CaracteristicasApartamento from '@/components/CaracteristicasApartamento'
+import ProtocoloModal from '@/components/ProtocoloModal'
 import { useState, useRef } from 'react'
 
 const TIPO_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
@@ -67,6 +68,7 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
   const [props, setProps]         = useState<any[]>(propiedadesIniciales)
   const [showModal, setShowModal] = useState(false)
   const [editando, setEditando]   = useState<any>(null)
+  const [protocoloProp, setProtocoloProp] = useState<any>(null)
   const [form, setForm]           = useState({ ...EMPTY })
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState('')
@@ -317,6 +319,10 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                     className="flex-1 text-xs border border-indigo-200 text-indigo-600 rounded-lg py-1.5 hover:bg-indigo-50">
                     Editar
                   </button>
+                  <button onClick={() => setProtocoloProp(p)}
+                    className="flex-1 text-xs border border-indigo-200 text-indigo-600 rounded-lg py-1.5 hover:bg-indigo-50">
+                    📋 Protocolo
+                  </button>
                   {p.activa && (
                     <button onClick={() => desactivar(p)}
                       className="text-xs border border-gray-200 text-gray-400 rounded-lg px-3 py-1.5">⊘</button>
@@ -327,6 +333,11 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
           )
         })}
       </div>
+
+      {/* Modal de protocolo */}
+      {protocoloProp && (
+        <ProtocoloModal propiedad={protocoloProp} onClose={() => setProtocoloProp(null)} />
+      )}
 
       {/* Modal */}
       {showModal && (
