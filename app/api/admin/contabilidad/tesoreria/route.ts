@@ -7,36 +7,40 @@ export async function GET(req: Request) {
   try {
     const empresa_id = await requireEmpresaId()
 
-    // Movimientos recientes (ingresos y gastos reales)
+    // Movimientos de caja realizados (cobros + pagos)
     const movimientos = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT
-        id,
-        fecha,
-        concepto,
-        importe,
-        tipo,
-        descripcion
+        ref_id::text AS id,
+        COALESCE(fecha_mov, fecha)::text AS fecha,
+        CASE WHEN flujo = 'cobro' THEN 'Cobro cliente'
+             WHEN origen = 'limpiadora' THEN 'Pago limpiadora'
+             ELSE 'Pago proveedor' END AS concepto,
+        importe::float AS importe,
+        CASE WHEN flujo = 'cobro' THEN 'ingreso' ELSE 'gasto' END AS tipo,
+        origen AS descripcion
       FROM v_contab_tesoreria
       WHERE empresa_id = ${empresa_id}::uuid
-      ORDER BY fecha DESC
+        AND realizado = true
+      ORDER BY COALESCE(fecha_mov, fecha) DESC
       LIMIT 100
     `)
 
-    // Facturas/cobros pendientes
+    // Facturas emitidas pendientes de cobro
     const pendientes = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT
-        im.id,
-        im.periodo AS fecha,
-        CONCAT('Factura ', im.periodo, ' — ', c.nombre) AS concepto,
-        im.total_facturado AS importe,
-        c.nombre AS cliente_nombre,
+        f.id::text,
+        f.fecha_emision::text AS fecha,
+        CONCAT('Factura ', f.numero_factura, ' — ', COALESCE(c.nombre, f.dest_razon_social)) AS concepto,
+        f.total::float AS importe,
+        COALESCE(c.nombre, f.dest_razon_social) AS cliente_nombre,
         'factura' AS origen
-      FROM informes_mensuales im
-      JOIN clientes c ON c.id = im.cliente_id
-      WHERE im.empresa_id = ${empresa_id}::uuid
-        AND (im.cobrado IS NULL OR im.cobrado = false)
-        AND im.total_facturado > 0
-      ORDER BY im.periodo DESC
+      FROM facturas_clientes f
+      LEFT JOIN clientes c ON c.id = f.cliente_id
+      WHERE f.empresa_id = ${empresa_id}::uuid
+        AND f.estado NOT IN ('borrador', 'anulada')
+        AND f.fecha_cobro IS NULL
+        AND f.total > 0
+      ORDER BY f.fecha_emision DESC
       LIMIT 50
     `)
 

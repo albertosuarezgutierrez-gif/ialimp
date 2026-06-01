@@ -9,17 +9,18 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const year = parseInt(searchParams.get('year') || String(new Date().getFullYear()))
 
+    // v_contab_iva agrega por trimestre (no por mes)
     const rows = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT
-        TO_CHAR(mes, 'YYYY-MM') AS mes,
-        TO_CHAR(mes, 'Mon YYYY') AS mes_label,
+        ('T' || trimestre || ' ' || anio) AS mes,
+        ('Trimestre ' || trimestre || ' · ' || anio) AS mes_label,
         iva_repercutido AS repercutido,
         iva_soportado   AS soportado,
-        (iva_repercutido - iva_soportado) AS liquidar
+        a_liquidar      AS liquidar
       FROM v_contab_iva
       WHERE empresa_id = ${empresa_id}::uuid
-        AND EXTRACT(YEAR FROM mes) = ${year}
-      ORDER BY mes
+        AND anio = ${year}
+      ORDER BY trimestre
     `)
 
     return NextResponse.json({ rows })
