@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { randomBytes } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
@@ -14,9 +15,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const { email: emailOverride } = await req.json().catch(() => ({}))
 
     // 1. Cargar cliente (scope empresa). Si no tiene access_token, generarlo.
+    //    El token se genera en Node (no con gen_random_bytes/pgcrypto, que no está
+    //    disponible en esta BD) y el COALESCE evita pisar uno ya existente.
+    const nuevoToken = randomBytes(24).toString('hex')
     const filas = await prisma.$queryRaw<any[]>(Prisma.sql`
       UPDATE clientes SET
-        access_token = COALESCE(access_token, encode(gen_random_bytes(24), 'hex')),
+        access_token = COALESCE(access_token, ${nuevoToken}),
         notif_activa = true,
         updated_at   = now()
       WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
@@ -25,11 +29,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!filas.length) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 })
     const c = filas[0]
 
-    // Email del contacto principal como respaldo
+    // Email de un contacto como respaldo (pagador o principal)
     const contactoPrincipal = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT email FROM cliente_contactos
       WHERE cliente_id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid AND email IS NOT NULL AND email <> ''
-      ORDER BY principal DESC, nombre NULLS LAST
+      ORDER BY es_pagador DESC, principal DESC, nombre NULLS LAST
       LIMIT 1
     `)
 
