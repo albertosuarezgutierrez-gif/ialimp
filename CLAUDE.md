@@ -22,6 +22,12 @@ Next.js `^15.5` · React 19 · Prisma `^5.22` · **JWT (jose + bcryptjs, SIN Nex
 - Build: `prisma generate && next build` · Install: `npm install --legacy-peer-deps`.
 - Commits/PR: prefijo **`fix:`** o **`feat:`**. Vercel ignora los que empiezan por `chore|trigger|rebuild`.
 
+## Despliegue y producción (OJO — cliente en vivo)
+- **Producción = `ialimp.vercel.app` = rama `main`.** Vanessa (Sique Brilla) la usa en directo: **cualquier merge a `main` se ve al instante**. No mergear sin que el cambio esté validado (preview verde).
+- **Flujo:** desarrollar en rama `feat:`/`fix:` → PR (en borrador) → Vercel genera **preview** propia de la rama (misma BD de producción: lo que escribas en la preview se guarda de verdad) → validar ahí → mergear a `main` para publicar.
+- **Controlar qué está "Ready" en producción = panel de Vercel** (`vercel.com/.../ialimp`, filtro *Production*): muestra el deploy *Current* en vivo y los *rollback candidates* para volver atrás en 1 clic. GitHub/PR = el *qué cambió*; Vercel = el *qué está publicado*. (Conviene activar avisos de deploy a Slack/email en Settings → Notifications.)
+- Cada PR mergeado a `main` = un deploy de producción. Solo `main` despliega a producción.
+
 ## Multi-tenant (CRÍTICO — frontera de seguridad)
 - **Scoping por `empresa_id` en TODA query y route.** Nunca consultes ni asignes datos sin filtrar por empresa. Una fuga entre empresas es un fallo grave de RGPD.
 - Middleware: 401 a `/api/*` no público sin cookie `ialimp_session`. Eximidos: `/api/auth`, `/api/pms`, `/api/leads`, `/api/propietario`, `/api/cotizador`, `/api/catastro`, `/l`, `/api/l`.
