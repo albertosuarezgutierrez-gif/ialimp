@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import PisosLimpiadora from './PisosLimpiadora'
 
 const C = {
   primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff', bg: '#f1f5f9',
@@ -236,10 +237,11 @@ function TabEquipoRRHH() {
 // ─── TAB LIMPIADORAS ─────────────────────────────────────────────
 function TabLimpiadoras() {
   const [limpiadoras, setLimpiadoras] = useState<any[]>([])
-  const [loading, setLoading]         = useState(true)
-  const [showForm, setShowForm]       = useState(false)
-  const [form, setForm]               = useState({ nombre: '', telefono: '', pin: '', color: '#6366f1' })
-  const [saving, setSaving]           = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ nombre: '', telefono: '', pin: '', color: '#6366f1' })
+  const [saving, setSaving] = useState(false)
+  const [expandedPisos, setExpandedPisos] = useState<string|null>(null)
 
   useEffect(() => { cargar() }, [])
   async function cargar() {
@@ -297,18 +299,35 @@ function TabLimpiadoras() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {limpiadoras.map((l: any) => (
-          <div key={l.id} style={{ background: C.white, borderRadius: 12, border: `1px solid ${C.border}`, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, borderLeft: `4px solid ${l.color || C.brand}` }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: l.color || C.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.white, fontWeight: 800 }}>
-              {l.nombre?.[0]?.toUpperCase() || '?'}
+          <div key={l.id} style={{ background: C.white, borderRadius: 12, border: `1px solid ${C.border}`, overflow: 'hidden', borderLeft: `4px solid ${l.color || C.brand}` }}>
+            <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: l.color || C.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.white, fontWeight: 800 }}>
+                {l.nombre?.[0]?.toUpperCase() || '?'}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{l.nombre}</div>
+                {l.telefono && <div style={{ fontSize: 12, color: C.muted }}>📞 {l.telefono}</div>}
+              </div>
+              <button
+                onClick={() => setExpandedPisos(expandedPisos === l.id ? null : l.id)}
+                style={{ fontSize: 12, color: expandedPisos === l.id ? C.primary : C.brand, padding: '5px 10px', border: `1px solid ${C.border}`, borderRadius: 8, background: expandedPisos === l.id ? C.light : C.white, cursor: 'pointer', fontWeight: 700 }}>
+                🏠 Pisos {expandedPisos === l.id ? '▲' : '▼'}
+              </button>
+              <a href={`/admin/usuarios`} style={{ fontSize: 12, color: C.brand, textDecoration: 'none', padding: '5px 10px', border: `1px solid ${C.border}`, borderRadius: 8 }}>
+                Ver acceso
+              </a>
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{l.nombre}</div>
-              {l.telefono && <div style={{ fontSize: 12, color: C.muted }}>📞 {l.telefono}</div>}
-            </div>
-            <a href={`/admin/usuarios`} style={{ fontSize: 12, color: C.brand, textDecoration: 'none', padding: '5px 10px', border: `1px solid ${C.border}`, borderRadius: 8 }}>
-              Ver acceso
-            </a>
+            {expandedPisos === l.id && (
+              <div style={{ borderTop: `1px solid ${C.border}`, padding: '16px 18px' }}>
+                <PisosLimpiadora limpiadoraId={l.id} />
+              </div>
+            )}
           </div>
+        ))}
+      </div>
+    </div>
+  )
+}/div>
         ))}
       </div>
     </div>
