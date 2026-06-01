@@ -16,6 +16,7 @@ const TIMEOUTS = { connectionTimeout: 10_000, greetingTimeout: 10_000, socketTim
 // Devuelve null si no hay credenciales → la ruta marca el correo como no enviado.
 export function getTransporter() {
   if (process.env.RESEND_API_KEY) {
+    console.info('[mailer] proveedor: Resend (smtp.resend.com)')
     return nodemailer.createTransport({
       host: 'smtp.resend.com',
       port: 465,
@@ -27,6 +28,7 @@ export function getTransporter() {
   if (process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
     const host = process.env.SMTP_HOST || 'smtp.ionos.es'
     const port = Number(process.env.SMTP_PORT || 465)
+    console.info(`[mailer] proveedor: SMTP (${host}:${port})`)
     return nodemailer.createTransport({
       host,
       port,
@@ -36,11 +38,13 @@ export function getTransporter() {
     })
   }
   if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+    console.info('[mailer] proveedor: Gmail')
     return nodemailer.createTransport({
       service: 'gmail',
       auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
       ...TIMEOUTS,
     })
   }
+  console.warn('[mailer] sin proveedor de email configurado (falta RESEND_API_KEY / SMTP_* / GMAIL_*)')
   return null
 }
