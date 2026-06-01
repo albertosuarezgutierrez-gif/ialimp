@@ -30,6 +30,7 @@ const NAV = [
   { href:'/admin/materiales',    icon:'📦', label:'Materiales'    },
   { href:'/admin/configuracion', icon:'⚙️', label:'Configuración' },
   { href:'/admin/contabilidad',  icon:'📊', label:'Contabilidad'  },
+  { href:'/admin/asistente',    icon:'💬', label:'Asistente'     },
 ]
 
 export default function DashboardClient({
