@@ -246,11 +246,6 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
                     className="flex-1 text-xs border border-indigo-200 rounded-lg py-1.5 text-indigo-600 hover:bg-indigo-50 transition">
                     Editar
                   </button>
-                  <button onClick={() => enviarAcceso(c)} disabled={enviandoAcceso === c.id}
-                    title="Enviar al cliente el acceso a su intranet por email"
-                    className="flex-1 text-xs border border-indigo-200 rounded-lg py-1.5 text-indigo-600 hover:bg-indigo-50 transition disabled:opacity-50">
-                    {enviandoAcceso === c.id ? 'Enviando…' : '✉️ Acceso'}
-                  </button>
                   {c.tipo === 'apartamentos_turisticos' && (
                     <a href={'/admin/clientes/' + c.id + '/propiedades'}
                       className="flex-1 text-xs bg-indigo-600 text-white rounded-lg py-1.5 text-center hover:bg-indigo-700 transition">
