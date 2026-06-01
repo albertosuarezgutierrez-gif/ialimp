@@ -50,16 +50,18 @@ export default function OperacionesPage() {
   const intColor = (i: string) => (i === 'fuerte' ? C.bad : i === 'normal' ? C.brand : C.ok);
 
   return (
-    <div style={{ fontFamily: FONT, color: C.text, background: C.bg, minHeight: '100vh', padding: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-        <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Operaciones de hoy</h1>
+    <div style={{ fontFamily: FONT, color: C.text, background: C.bg, minHeight: '100vh' }}>
+      <header style={{ background: C.indigo, padding: '18px 24px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <a href="/dashboard" style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, textDecoration: 'none' }}>← Dashboard</a>
+        <h1 style={{ flex: 1, color: '#fff', fontWeight: 900, fontSize: 22, margin: 0 }}>Operaciones de hoy</h1>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={cargar} disabled={loading} style={btnGhost}>{loading ? 'Cargando…' : 'Actualizar'}</button>
           <button onClick={asignar} disabled={running} style={btn}>{running ? 'Asignando…' : 'Asignar ahora'}</button>
         </div>
-      </div>
+      </header>
 
-      {msg && <div style={{ ...card, marginTop: 12, borderColor: C.brand, color: C.indigo }}>{msg}</div>}
+      <div style={{ padding: 20 }}>
+      {msg && <div style={{ ...card, borderColor: C.brand, color: C.indigo }}>{msg}</div>}
 
       {/* Tarjetas de estado */}
       <div style={row}>
@@ -102,6 +104,7 @@ export default function OperacionesPage() {
       <Lista titulo="Ausencias de hoy" items={ops?.ausencias_hoy?.items} render={(x: any) => (
         <>{x.nombre} · {x.motivo || 'ausente'} · hasta {x.fecha_fin}</>
       )} />
+      </div>
     </div>
   );
 }

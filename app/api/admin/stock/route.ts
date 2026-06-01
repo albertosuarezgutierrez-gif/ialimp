@@ -8,10 +8,12 @@ export async function GET(req: Request) {
   try {
     const empresa_id = await requireEmpresaId()
     const productos = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT *, (stock_actual <= stock_minimo) AS alerta_stock
-      FROM productos_stock
-      WHERE empresa_id = ${empresa_id}::uuid AND activo = true
-      ORDER BY categoria, nombre
+      SELECT s.*, (s.stock_actual <= s.stock_minimo) AS alerta_stock,
+        pr.nombre AS proveedor_nombre, pr.telefono AS proveedor_tel
+      FROM productos_stock s
+      LEFT JOIN proveedores pr ON pr.id = s.proveedor_id
+      WHERE s.empresa_id = ${empresa_id}::uuid AND s.activo = true
+      ORDER BY s.categoria, s.nombre
     `)
     return NextResponse.json(serialize({ productos }))
   } catch (e: any) {
@@ -22,10 +24,10 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const empresa_id = await requireEmpresaId()
-    const { nombre, categoria, unidad, stock_actual, stock_minimo, precio_unitario } = await req.json()
+    const { nombre, categoria, unidad, stock_actual, stock_minimo, precio_unitario, proveedor_id } = await req.json()
     const result = await prisma.$queryRaw<any[]>(Prisma.sql`
-      INSERT INTO productos_stock (empresa_id, nombre, categoria, unidad, stock_actual, stock_minimo, precio_unitario)
-      VALUES (${empresa_id}::uuid, ${nombre}, ${categoria||'limpieza'}, ${unidad||'unidad'}, ${Number(stock_actual||0)}, ${Number(stock_minimo||0)}, ${precio_unitario ? Number(precio_unitario) : null})
+      INSERT INTO productos_stock (empresa_id, nombre, categoria, unidad, stock_actual, stock_minimo, precio_unitario, proveedor_id)
+      VALUES (${empresa_id}::uuid, ${nombre}, ${categoria||'limpieza'}, ${unidad||'unidad'}, ${Number(stock_actual||0)}, ${Number(stock_minimo||0)}, ${precio_unitario ? Number(precio_unitario) : null}, ${proveedor_id || null}::uuid)
       RETURNING *
     `)
     return NextResponse.json({ ok: true, producto: result[0] }, { status: 201 })
@@ -46,7 +48,8 @@ export async function PUT(req: Request) {
         unidad          = ${b.unidad || 'unidad'},
         stock_actual    = ${Number(b.stock_actual ?? 0)},
         stock_minimo    = ${Number(b.stock_minimo ?? 0)},
-        precio_unitario = ${b.precio_unitario ? Number(b.precio_unitario) : null}
+        precio_unitario = ${b.precio_unitario ? Number(b.precio_unitario) : null},
+        proveedor_id    = ${b.proveedor_id || null}::uuid
       WHERE id = ${b.id}::uuid
         AND empresa_id = ${empresa_id}::uuid
     `)

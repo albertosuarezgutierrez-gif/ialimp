@@ -495,7 +495,7 @@ function NuevoApunteModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
   )
 }
 
-function TabApuntes() {
+function TabApuntes({ refresh = 0 }: { refresh?: number }) {
   const [gastos, setGastos] = useState<any[]>([])
   const [ingresos, setIngresos] = useState<any[]>([])
   const [recurrentes, setRecurrentes] = useState<any[]>([])
@@ -515,7 +515,7 @@ function TabApuntes() {
     setLoading(false)
   }, [year])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load() }, [load, refresh])
 
   async function borrar(row: any) {
     if (!confirm('¿Eliminar este apunte?')) return
@@ -662,6 +662,8 @@ const TABS = [
 export default function ContabilidadPage() {
   const [activeTab, setActiveTab] = useState(0)
   const [exporting, setExporting] = useState(false)
+  const [showApunte, setShowApunte] = useState(false)
+  const [apunteRefresh, setApunteRefresh] = useState(0)
 
   async function exportExcel() {
     setExporting(true)
@@ -689,10 +691,16 @@ export default function ContabilidadPage() {
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
           <h1 style={{ color: '#fff', fontWeight: 800, fontSize: 22, margin: 0 }}>Contabilidad</h1>
-          <button onClick={exportExcel} disabled={exporting}
-            style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 9, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: exporting ? 0.6 : 1 }}>
-            {exporting ? 'Exportando...' : '⬇️ Excel'}
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setShowApunte(true)}
+              style={{ background: '#fff', color: '#4f46e5', border: 'none', borderRadius: 9, padding: '8px 16px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+              ➕ Apunte
+            </button>
+            <button onClick={exportExcel} disabled={exporting}
+              style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 9, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: exporting ? 0.6 : 1 }}>
+              {exporting ? 'Exportando...' : '⬇️ Excel'}
+            </button>
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 0, overflowX: 'auto', scrollbarWidth: 'none', marginTop: 12 }}>
           {TABS.map((t, i) => (
@@ -709,11 +717,18 @@ export default function ContabilidadPage() {
       </header>
       <div style={{ padding: '20px 24px', maxWidth: 960, margin: '0 auto' }}>
         {activeTab === 0 && <TabResultado />}
-        {activeTab === 1 && <TabApuntes />}
+        {activeTab === 1 && <TabApuntes refresh={apunteRefresh} />}
         {activeTab === 2 && <TabIva />}
         {activeTab === 3 && <TabTesoreria />}
         {activeTab === 4 && <TabRentabilidad />}
       </div>
+
+      {showApunte && (
+        <NuevoApunteModal
+          onClose={() => setShowApunte(false)}
+          onSaved={() => { setShowApunte(false); setActiveTab(1); setApunteRefresh(n => n + 1) }}
+        />
+      )}
     </div>
   )
 }
