@@ -237,14 +237,17 @@ export async function GET() {
     // equilibrado posible. "Cuenta y sigue": las elegidas quedan con esa carga y
     // siguen siendo candidatas para apartamentos en el pase 2 (su carga ya sube,
     // así que el scoring las deprioriza de forma natural pero no las excluye).
-    const hotelPorFecha = new Map<string, any[]>()
+    // Agrupar por empresa_id|fecha (el cron procesa TODAS las empresas; no
+    // mezclar hoteles de empresas distintas en el mismo día).
+    const hotelPorGrupo = new Map<string, any[]>()
     for (const s of hotelSesiones) {
-      const f = fechaDe(s)
-      if (!hotelPorFecha.has(f)) hotelPorFecha.set(f, [])
-      hotelPorFecha.get(f)!.push(s)
+      const k = `${s.empresa_id}|${fechaDe(s)}`
+      if (!hotelPorGrupo.has(k)) hotelPorGrupo.set(k, [])
+      hotelPorGrupo.get(k)!.push(s)
     }
 
-    for (const [fecha, grupo] of hotelPorFecha) {
+    for (const [clave, grupo] of hotelPorGrupo) {
+      const fecha = clave.split('|')[1]
       const empresaId = grupo[0].empresa_id
       const candidatas = await getCandidatas(empresaId, fecha, diaSemanaISO(fecha), '')
       if (!candidatas.length) {
