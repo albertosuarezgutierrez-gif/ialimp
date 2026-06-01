@@ -457,6 +457,18 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
                   </div>
                 )}
 
+                {/* Acceso a la intranet del cliente */}
+                <div className="bg-indigo-50 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-indigo-700 mb-2">🔑 Acceso a su intranet</p>
+                  <p className="text-xs text-indigo-400 mb-2">
+                    Envía al cliente por email el enlace a su zona privada (estado de limpiezas, fotos, facturas).
+                  </p>
+                  <button onClick={() => enviarAcceso(detalle.cliente)} disabled={enviandoAcceso === detalle.cliente?.id}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-50">
+                    {enviandoAcceso === detalle.cliente?.id ? 'Enviando…' : '✉️ Enviar acceso a la intranet'}
+                  </button>
+                </div>
+
                 <div className="flex gap-3 pt-2">
                   <button onClick={() => { setDetalle(null); abrirEditar(detalle.cliente) }}
                     className="flex-1 border border-indigo-200 text-indigo-600 py-2.5 rounded-xl text-sm font-medium">
