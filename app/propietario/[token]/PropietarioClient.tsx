@@ -8,6 +8,7 @@ import ChecklistPropietario from '@/components/ChecklistPropietario'
 import ContabilidadTab from '@/components/ContabilidadTab'
 import AccesoPropiedad from '@/components/AccesoPropiedad'
 import EscanerDocumento from '@/components/EscanerDocumento'
+import MisGastos from './MisGastos'
 
 const C = {
   primary:'#4f46e5', brand:'#6366f1', light:'#eef2ff',
@@ -817,7 +818,12 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
           </div>
         )}
 
-        {tab==='finanzas' && <ContabilidadTab token={token} />}
+        {tab==='finanzas' && (
+          <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+            <ContabilidadTab token={token} />
+            <MisGastos token={token} />
+          </div>
+        )}
 
         {tab==='docs' && (
           <div>
