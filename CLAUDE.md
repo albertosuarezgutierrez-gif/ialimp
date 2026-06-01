@@ -32,14 +32,14 @@ Next.js `^15.5` · React 19 · Prisma `^5.22` · **JWT (jose + bcryptjs, SIN Nex
 - Verdes/rojos = solo estado (ok/error).
 
 ## Base de datos (Supabase `wswbehlcuxqxyinousql`, COMPARTIDA con SIVRA)
-- `$queryRaw` **SIEMPRE** con `Prisma.sql` (nunca interpolar strings).
+- `$queryRaw` **SIEMPRE** con `Prisma.sql` (nunca interpolar strings). Los **casts van en el SQL** (`${v}::uuid`, `${v}::date`), **nunca concatenados al valor del parámetro** (`${v + '::uuid'}` manda el texto `"…::uuid"` y rompe con `42804 COALESCE types text and uuid cannot be matched`).
 - `schema.prisma` solo declara `empresas` y `pms_connections`; el resto de tablas (`limpiadoras`, `cleaning_sessions`, `clientes`, `propiedades`, `facturas_*`, etc.) se gestionan por **SQL crudo**.
 - `cliente` = entidad facturable (`tipo_persona` ∈ particular/autonomo/empresa); datos fiscales en `clientes`. `cliente_contactos`: N por cliente, `principal` exclusivo. Las columnas jsonb `telefonos`/`emails` fueron ELIMINADAS.
 - `facturas_clientes` congela el destinatario (`dest_*`) para VeriFactu; `iva_importe` / `total` / `lineas.importe` son **GENERATED**.
 - Coste de limpieza en contabilidad = **facturas emitidas** (`factura_lineas.propiedad_id`), NO `cleaning_sessions` (evita doble conteo).
 - Solo los 4 pisos de Alberto sincronizan Smoobu; externos = alta manual (`origen='manual'`, `external_reservation_id` UNIQUE, `limpiadora_id` NULL).
 - Storage: buckets `cleaning-photos` (TTL 5 días), `propuestas-leads`, `cvs-rrhh`.
-- **Deuda conocida:** `cleaning_sessions.property_id` convive en 2 formatos (slug `prop_*` y UUID) para los mismos pisos → al consultar, normaliza con `COALESCE(NULLIF(propiedad_id,''), property_id)`.
+- **Deuda conocida:** `cleaning_sessions.property_id` (text legacy) convive con `propiedad_id` (uuid) en 2 formatos (slug `prop_*` y UUID) para los mismos pisos → al consultar, normaliza con `COALESCE(NULLIF(propiedad_id::text,''), property_id::text)` (**ambos a `::text`**: si no, COALESCE peta con `42804` text vs uuid).
 
 ## IA (solo NVIDIA NIM, free tier)
 - Todo vía `lib/ai-client.ts`. `aiComplete()` = llama-3.3-70b · `aiExtractInvoice()` = llama-3.2-90b-vision.
@@ -52,6 +52,8 @@ Customer `127993947`, header `Api-Key` (no Bearer). READ: reservations/messages/
 ## Asignación de limpiezas
 - Disponibilidad por turnos (`limpiadora_disponibilidad` + `turno`: mañana 08-14 / tarde 14-20 / completo 08-20). **Sin disponibilidad marcada → NO se asigna.**
 - Auto-asignación real: `GET /api/admin/auto-assign`, solo toca sesiones de hoy+mañana con `limpiadora_id` NULL (lo ya asignado no se mueve). Crons 5:30 y 16:00 (hora España). El scoring actual prioriza `conoce_propiedad` y desempata por carga (pendiente de mejora).
+- **Asignación manual:** `PATCH /api/admin/sesiones/[id]` con `{ limpiadora_id }` (uuid = asignar/reasignar · `null`/'' = desasignar). Scope `empresa_id`; **bloquea si `completed_at`** (409). `DELETE /api/admin/sesiones/[id]` solo `origen='manual'` y sin empezar/completar (las de Smoobu las recrearía `pms/sync`).
+- **UI de reasignación:** en **Inicio** (`/dashboard`) el chip de la limpiadora es tocable → bottom-sheet (update optimista, sin recarga); en **Agenda** (`/admin/agenda`) panel "Asignar limpiadora por día" (hoy/mañana). Ambas usan el PATCH de arriba; al desasignar, avisar de que el cron de las 16:00 puede reasignar.
 
 ## Regla del manual
 Todo cambio de UI o de funcionalidad va **también** a `public/manual.html` + re-deploy.
