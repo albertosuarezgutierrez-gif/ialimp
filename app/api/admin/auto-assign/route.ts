@@ -123,6 +123,7 @@ export async function GET() {
           l.empresa_id,
           ld.hora_inicio,
           ld.hora_fin,
+          ld.horas_max,
           COALESCE(carga.total_min, 0)::int AS horas_asignadas_min,
           CASE
             WHEN ${propiedadId} != '' AND ${propiedadId} = ANY(l.propiedades::text[]) THEN true
@@ -153,10 +154,11 @@ export async function GET() {
               AND ${fecha}::date BETWEEN a.fecha_inicio AND a.fecha_fin
               AND a.aprobada = true
           )
-        ORDER BY
-          conoce_propiedad DESC,          -- 1. conoce la propiedad
-          horas_asignadas_min ASC         -- 2. menor carga
-        LIMIT 5
+        -- Ordenamos por menor carga (el scoring v2 fino se hace en JS); el LIMIT
+        -- solo acota cuántas candidatas traemos, no decide. Antes era 5 y dejaba
+        -- fuera a limpiadoras de baja carga cuando muchas "conocían" el piso.
+        ORDER BY horas_asignadas_min ASC, conoce_propiedad DESC, l.nombre ASC
+        LIMIT 25
       `)
 
       if (!candidatas.length) {
@@ -170,11 +172,31 @@ export async function GET() {
         continue
       }
 
-      // Scoring final con pesos
+      // ── Scoring v2 ────────────────────────────────────────────────────────
+      // Carga CONTINUA (no el bucket que se saturaba a 4 h) + tope real por
+      // horas_max. Pesos en "horas equivalentes" para que sean legibles:
+      //  · conoce_propiedad vale ~1,5 h de carga → es un bonus, no algo absoluto:
+      //    si una que conoce el piso ya va >1,5 h más cargada que otra que no lo
+      //    conoce, gana la menos cargada (reparto más justo).
+      //  · cada hora de carga PROYECTADA (incluida esta sesión) resta 1 punto.
+      //  · pasarse de horas_max resta un castigo grande: solo se elige a alguien
+      //    por encima del tope si TODAS están por encima (nunca dejamos la sesión
+      //    sin asignar por el tope; sin disponibilidad sí seguiría sin asignar).
+      const CONOCE_BONUS   = 1.5   // horas equivalentes
+      const OVERCAP_CASTIGO = 100  // domina sobre todo lo demás
+      const estMin = Number(sesion.tiempo_estimado) || 120
+
       const mejorCandidataScore = candidatas.map(c => {
-        const scoreConoce    = c.conoce_propiedad ? 3 : 0
-        const scoreCarga     = Math.max(0, 2 - Math.floor(c.horas_asignadas_min / 120)) // -1 por cada 2h de carga
-        return { ...c, score: scoreConoce + scoreCarga }
+        const cargaMin    = Number(c.horas_asignadas_min) || 0
+        const proyectadoMin = cargaMin + estMin
+        // horas_max null/0 = sin tope explícito → no se castiga
+        const topeMin     = c.horas_max ? Number(c.horas_max) * 60 : null
+        const superaTope  = topeMin != null && proyectadoMin > topeMin
+        const score =
+          (c.conoce_propiedad ? CONOCE_BONUS : 0)
+          - proyectadoMin / 60
+          - (superaTope ? OVERCAP_CASTIGO : 0)
+        return { ...c, score, superaTope }
       }).sort((a, b) => b.score - a.score)[0]
 
       // Generar justificación IA
