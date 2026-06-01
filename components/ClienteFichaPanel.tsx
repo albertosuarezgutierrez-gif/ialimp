@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { validarNifCif, validarIban } from '@/lib/fiscal'
 
 const C = {
   primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff',
@@ -22,7 +23,7 @@ const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: 
 const cardStyle: React.CSSProperties = { background: 'white', borderRadius: 14, border: `1px solid ${C.border}`, padding: '14px 16px' }
 const sectionTitle: React.CSSProperties = { fontSize: 12, fontWeight: 800, color: C.primary, marginBottom: 12 }
 
-interface Contacto { id: string; nombre: string|null; cargo: string|null; telefono: string|null; email: string|null; principal: boolean; notas: string|null }
+interface Contacto { id: string; nombre: string|null; cargo: string|null; telefono: string|null; email: string|null; principal: boolean; es_pagador: boolean; notas: string|null }
 
 export default function ClienteFichaPanel({ clienteId, cliente, contactosInicial }: {
   clienteId: string; cliente: any; contactosInicial: Contacto[]
@@ -49,6 +50,24 @@ export default function ClienteFichaPanel({ clienteId, cliente, contactosInicial
 
   const esEmpresa = form.tipo_persona === 'empresa'
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }))
+
+  // Contacto del que se copian los datos fiscales (autónomo/particular que es a la vez contacto):
+  // primero el marcado como pagador, luego el principal, luego el primero.
+  const contactoFiscal = contactos.find(c => c.es_pagador) || contactos.find(c => c.principal) || contactos[0]
+
+  function copiarDeContacto() {
+    if (!contactoFiscal) return
+    setForm(f => ({
+      ...f,
+      razon_social: contactoFiscal.nombre || f.razon_social,
+      email_facturacion: contactoFiscal.email || f.email_facturacion,
+    }))
+  }
+
+  // Validaciones "blandas" (avisan, no bloquean el guardado)
+  const nifVal = validarNifCif(form.nif)
+  const ibanVal = validarIban(form.iban)
+  const avisoStyle: React.CSSProperties = { fontSize: 11, color: '#dc2626', marginTop: 4 }
 
   async function guardarCliente() {
     setSavingCliente(true)
@@ -119,6 +138,7 @@ export default function ClienteFichaPanel({ clienteId, cliente, contactosInicial
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
                   {ct.nombre || '(sin nombre)'}
                   {ct.principal && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: C.primary, background: C.light, padding: '2px 6px', borderRadius: 6 }}>Principal</span>}
+                  {ct.es_pagador && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#047857', background: '#d1fae5', padding: '2px 6px', borderRadius: 6 }}>Pagador</span>}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => setModal(ct)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13 }}>✏️</button>
@@ -135,57 +155,82 @@ export default function ClienteFichaPanel({ clienteId, cliente, contactosInicial
 
       {/* ── Facturación ── */}
       <div style={cardStyle}>
-        <div style={sectionTitle}>🧾 Facturación</div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: C.text, cursor: 'pointer', marginBottom: form.facturacion_igual_contacto ? 0 : 12 }}>
-          <input type="checkbox" checked={form.facturacion_igual_contacto}
-            onChange={e => set('facturacion_igual_contacto', e.target.checked)} />
-          Los datos de facturación coinciden con el contacto principal
-        </label>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <div style={sectionTitle as any}>🧾 Facturación</div>
+          {!esEmpresa && contactoFiscal && (
+            <button type="button" onClick={copiarDeContacto}
+              style={{ background: C.light, color: C.primary, border: `1px solid ${C.border}`, borderRadius: 8, padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+              ⤵ Copiar del contacto
+            </button>
+          )}
+        </div>
 
-        {!form.facturacion_igual_contacto && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div>
-              <label style={labelStyle}>{esEmpresa ? 'Razón social' : 'Nombre fiscal'}</label>
-              <input style={inputStyle} value={form.razon_social} onChange={e => set('razon_social', e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>{esEmpresa ? 'CIF' : 'NIF / DNI'}</label>
-              <input style={inputStyle} value={form.nif} onChange={e => set('nif', e.target.value)} />
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ flex: 2 }}>
-                <label style={labelStyle}>Vía</label>
-                <input style={inputStyle} value={form.via_fiscal} onChange={e => set('via_fiscal', e.target.value)} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>Número</label>
-                <input style={inputStyle} value={form.numero_fiscal} onChange={e => set('numero_fiscal', e.target.value)} />
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>C.P.</label>
-                <input style={inputStyle} value={form.cp_fiscal} onChange={e => set('cp_fiscal', e.target.value)} />
-              </div>
-              <div style={{ flex: 2 }}>
-                <label style={labelStyle}>Municipio</label>
-                <input style={inputStyle} value={form.municipio_fiscal} onChange={e => set('municipio_fiscal', e.target.value)} />
-              </div>
-            </div>
-            <div>
-              <label style={labelStyle}>Provincia</label>
-              <input style={inputStyle} value={form.provincia_fiscal} onChange={e => set('provincia_fiscal', e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>Email de facturación</label>
-              <input style={inputStyle} value={form.email_facturacion} onChange={e => set('email_facturacion', e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>IBAN</label>
-              <input style={inputStyle} value={form.iban} onChange={e => set('iban', e.target.value)} />
-            </div>
+        <div style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>
+          {esEmpresa
+            ? 'Se factura a la empresa. Sus datos fiscales son los de abajo; los contactos son las personas con las que tratas.'
+            : 'La persona es quien factura: aquí van su nombre fiscal y NIF/DNI. Puedes rellenarlos desde el contacto con «Copiar del contacto».'}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div>
+            <label style={labelStyle}>{esEmpresa ? 'Razón social' : 'Nombre fiscal'}</label>
+            <input style={inputStyle} value={form.razon_social} onChange={e => set('razon_social', e.target.value)}
+              placeholder={esEmpresa ? 'Inversiones García S.L.' : form.nombre || 'Nombre y apellidos'} />
           </div>
-        )}
+          <div>
+            <label style={labelStyle}>{esEmpresa ? 'CIF' : 'NIF / DNI'}</label>
+            <input style={inputStyle} value={form.nif} onChange={e => set('nif', e.target.value)}
+              placeholder={esEmpresa ? 'B12345678' : '12345678Z'} />
+            {form.nif && !nifVal.ok && <div style={avisoStyle}>⚠ {nifVal.motivo}</div>}
+          </div>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: C.text, cursor: 'pointer', marginTop: 2 }}>
+            <input type="checkbox" checked={form.facturacion_igual_contacto}
+              onChange={e => set('facturacion_igual_contacto', e.target.checked)} />
+            El domicilio fiscal es el mismo que la dirección del cliente
+          </label>
+
+          {!form.facturacion_igual_contacto && (
+            <>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 2 }}>
+                  <label style={labelStyle}>Vía</label>
+                  <input style={inputStyle} value={form.via_fiscal} onChange={e => set('via_fiscal', e.target.value)} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={labelStyle}>Número</label>
+                  <input style={inputStyle} value={form.numero_fiscal} onChange={e => set('numero_fiscal', e.target.value)} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={labelStyle}>C.P.</label>
+                  <input style={inputStyle} value={form.cp_fiscal} onChange={e => set('cp_fiscal', e.target.value)} />
+                </div>
+                <div style={{ flex: 2 }}>
+                  <label style={labelStyle}>Municipio</label>
+                  <input style={inputStyle} value={form.municipio_fiscal} onChange={e => set('municipio_fiscal', e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Provincia</label>
+                <input style={inputStyle} value={form.provincia_fiscal} onChange={e => set('provincia_fiscal', e.target.value)} />
+              </div>
+            </>
+          )}
+
+          <div>
+            <label style={labelStyle}>Email de facturación</label>
+            <input style={inputStyle} value={form.email_facturacion} onChange={e => set('email_facturacion', e.target.value)}
+              placeholder="Donde llegan las facturas" />
+          </div>
+          <div>
+            <label style={labelStyle}>IBAN</label>
+            <input style={inputStyle} value={form.iban} onChange={e => set('iban', e.target.value)}
+              placeholder="ES00 0000 0000 0000 0000 0000" />
+            {form.iban && !ibanVal.ok && <div style={avisoStyle}>⚠ {ibanVal.motivo}</div>}
+          </div>
+        </div>
       </div>
 
       <button onClick={guardarCliente} disabled={savingCliente}
@@ -208,6 +253,7 @@ function ContactoModal({ clienteId, contacto, onClose, onSaved }: {
     nombre: contacto?.nombre || '', cargo: contacto?.cargo || '',
     telefono: contacto?.telefono || '', email: contacto?.email || '',
     notas: contacto?.notas || '', principal: contacto?.principal || false,
+    es_pagador: contacto?.es_pagador || false,
   })
   const [saving, setSaving] = useState(false)
   const set = (k: string, v: any) => setF(p => ({ ...p, [k]: v }))
@@ -237,6 +283,10 @@ function ContactoModal({ clienteId, contacto, onClose, onSaved }: {
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: C.text, cursor: 'pointer' }}>
             <input type="checkbox" checked={f.principal} onChange={e => set('principal', e.target.checked)} />
             Contacto principal
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: C.text, cursor: 'pointer' }}>
+            <input type="checkbox" checked={f.es_pagador} onChange={e => set('es_pagador', e.target.checked)} />
+            Es el pagador / persona fiscal
           </label>
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>

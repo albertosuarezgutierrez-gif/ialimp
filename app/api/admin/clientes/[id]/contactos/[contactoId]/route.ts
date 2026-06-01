@@ -11,7 +11,7 @@ export async function PATCH(
   try {
     const empresa_id = await requireEmpresaId()
     const { id, contactoId } = await params
-    const { nombre, cargo, telefono, email, notas, principal } = await req.json()
+    const { nombre, cargo, telefono, email, notas, principal, es_pagador } = await req.json()
 
     // El contacto debe pertenecer a este cliente y empresa
     const chk = await prisma.$queryRaw<any[]>(Prisma.sql`
@@ -28,6 +28,13 @@ export async function PATCH(
         WHERE cliente_id = ${id}::uuid AND id <> ${contactoId}::uuid
       `)
     }
+    // Marcar pagador desmarca a los demás del mismo cliente
+    if (es_pagador === true) {
+      await prisma.$executeRaw(Prisma.sql`
+        UPDATE cliente_contactos SET es_pagador = false, updated_at = now()
+        WHERE cliente_id = ${id}::uuid AND id <> ${contactoId}::uuid
+      `)
+    }
 
     const rows = await prisma.$queryRaw<any[]>(Prisma.sql`
       UPDATE cliente_contactos SET
@@ -37,6 +44,7 @@ export async function PATCH(
         email    = COALESCE(${email    ?? null}, email),
         notas    = COALESCE(${notas    ?? null}, notas),
         principal= COALESCE(${typeof principal === 'boolean' ? principal : null}, principal),
+        es_pagador = COALESCE(${typeof es_pagador === 'boolean' ? es_pagador : null}, es_pagador),
         updated_at = now()
       WHERE id = ${contactoId}::uuid
       RETURNING *
