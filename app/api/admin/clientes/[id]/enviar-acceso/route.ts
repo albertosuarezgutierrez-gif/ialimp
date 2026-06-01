@@ -29,11 +29,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!filas.length) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 })
     const c = filas[0]
 
-    // Email del contacto principal como respaldo
+    // Email de un contacto como respaldo (pagador o principal)
     const contactoPrincipal = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT email FROM cliente_contactos
       WHERE cliente_id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid AND email IS NOT NULL AND email <> ''
-      ORDER BY principal DESC, nombre NULLS LAST
+      ORDER BY es_pagador DESC, principal DESC, nombre NULLS LAST
       LIMIT 1
     `)
 

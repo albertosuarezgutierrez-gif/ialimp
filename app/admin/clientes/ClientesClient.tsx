@@ -1,38 +1,15 @@
 'use client'
-import { useState, useMemo, useEffect } from 'react'
-
-// Tipos por defecto — fallback si catálogos aún no cargaron
-const TIPOS_DEFAULT = [
-  { id: 'apartamentos_turisticos', label: 'Pisos turísticos', emoji: '🏨', icon: '🏨', color: '#6366f1', activo: true },
-  { id: 'particular',              label: 'Casa particular',  emoji: '🏡', icon: '🏡', color: '#ec4899', activo: true },
-  { id: 'comunidad',               label: 'Comunidad',        emoji: '🏢', icon: '🏢', color: '#0ea5e9', activo: true },
-  { id: 'final_obra',              label: 'Final de obra',    emoji: '🏗️', icon: '🏗️', color: '#f59e0b', activo: true },
-  { id: 'oficinas',                label: 'Oficinas',         emoji: '💼', icon: '💼', color: '#10b981', activo: true },
-  { id: 'otro',                    label: 'Otro',             emoji: '📋', icon: '📋', color: '#64748b', activo: true },
-]
-
-
+import { useState, useMemo } from 'react'
 
 const EMPTY_FORM = {
-  nombre: '', tipo: 'apartamentos_turisticos',
+  nombre: '',
   contacto_nombre: '', contacto_tel: '', contacto_email: '',
   direccion: '', notas: ''
 }
 
 export default function ClientesClient({ clientesIniciales }: { clientesIniciales: any[] }) {
   const [clientes, setClientes]     = useState<any[]>(clientesIniciales)
-  const [tiposCliente, setTiposCliente] = useState<any[]>(TIPOS_DEFAULT)
-
-  useEffect(() => {
-    fetch('/api/admin/catalogos')
-      .then(r => r.json())
-      .then(d => {
-        const tipos = d.catalogos?.tipos_cliente?.filter((t: any) => t.activo !== false)
-        if (tipos?.length) setTiposCliente(tipos.map((t: any) => ({ ...t, icon: t.emoji || t.icon || '📋' })))
-      }).catch(() => {})
-  }, [])
   const [search, setSearch]         = useState('')
-  const [filtroTipo, setFiltroTipo] = useState('')
   const [showModal, setShowModal]   = useState(false)
   const [editando, setEditando]     = useState<any>(null)
   const [form, setForm]             = useState({ ...EMPTY_FORM })
@@ -45,9 +22,8 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
       c.nombre?.toLowerCase().includes(search.toLowerCase()) ||
       c.contacto_nombre?.toLowerCase().includes(search.toLowerCase()) ||
       c.direccion?.toLowerCase().includes(search.toLowerCase())
-    const matchTipo = !filtroTipo || c.tipo === filtroTipo
-    return matchSearch && matchTipo
-  }), [clientes, search, filtroTipo])
+    return matchSearch
+  }), [clientes, search])
 
   function abrirNuevo() {
     setEditando(null)
@@ -59,7 +35,7 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
   function abrirEditar(c: any) {
     setEditando(c)
     setForm({
-      nombre: c.nombre || '', tipo: c.tipo || 'apartamentos_turisticos',
+      nombre: c.nombre || '',
       contacto_nombre: c.contacto_nombre || '', contacto_tel: c.contacto_tel || '',
       contacto_email: c.contacto_email || '', direccion: c.direccion || '',
       notas: c.notas || ''
@@ -140,8 +116,6 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
     setClientes(cs => cs.map(x => x.id === c.id ? { ...x, activo: !c.activo } : x))
   }
 
-  const t = (tipo: string) => tiposCliente.find(tc => tc.id === tipo) || tiposCliente.find(tc => tc.id === 'otro') || { label: tipo, icon: '📋', color: '#64748b' }
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -158,25 +132,12 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
       </header>
 
       {/* Filtros */}
-      <div className="p-4 space-y-3">
+      <div className="p-4">
         <input
           value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Buscar por nombre, contacto, dirección…"
           className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
         />
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {['', ...tiposCliente.map(tc => tc.id)].map(tipo => (
-            <button key={tipo} onClick={() => setFiltroTipo(tipo)}
-              className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition"
-              style={{
-                borderColor: filtroTipo === tipo ? (tipo ? t(tipo).color : '#6366f1') : '#e5e7eb',
-                background:  filtroTipo === tipo ? (tipo ? t(tipo).color + '22' : '#eef2ff') : 'white',
-                color:       filtroTipo === tipo ? (tipo ? t(tipo).color : '#6366f1') : '#6b7280'
-              }}>
-              {tipo ? t(tipo).icon + ' ' + t(tipo).label : 'Todos'}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Lista */}
@@ -192,22 +153,20 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
         )}
 
         {filtered.map(c => {
-          const tipo = t(c.tipo)
           return (
             <div key={c.id}
               className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
-              style={{ borderLeft: '4px solid ' + tipo.color }}>
+              style={{ borderLeft: '4px solid #6366f1' }}>
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-lg">{tipo.icon}</span>
+                      <span className="text-lg">🏠</span>
                       <h3 className="font-bold text-gray-800 text-base truncate">{c.nombre}</h3>
                       {!c.activo && (
                         <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">inactivo</span>
                       )}
                     </div>
-                    <p className="text-xs mt-0.5 font-medium" style={{ color: tipo.color }}>{tipo.label}</p>
                     {c.contacto_nombre && (
                       <p className="text-sm text-gray-500 mt-1">👤 {c.contacto_nombre}</p>
                     )}
@@ -243,17 +202,20 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
                     className="w-full text-sm border border-gray-200 rounded-lg py-2 text-gray-700 font-medium hover:bg-gray-50 transition">
                     Ver detalle
                   </button>
+                  {/* Ficha completa: datos fiscales, contactos y facturación */}
+                  <a href={'/admin/clientes/' + c.id}
+                    className="block w-full text-center text-sm border border-indigo-200 bg-indigo-50 rounded-lg py-2 text-indigo-700 font-medium hover:bg-indigo-100 transition">
+                    🧾 Ficha y facturación
+                  </a>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => abrirEditar(c)}
                       className="flex-1 min-w-[90px] text-xs border border-indigo-200 rounded-lg py-1.5 text-indigo-600 hover:bg-indigo-50 transition">
                       Editar
                     </button>
-                    {c.tipo === 'apartamentos_turisticos' && (
-                      <a href={'/admin/clientes/' + c.id + '/propiedades'}
-                        className="flex-1 min-w-[110px] text-xs bg-indigo-600 text-white rounded-lg py-1.5 text-center hover:bg-indigo-700 transition">
-                        🏠 Propiedades
-                      </a>
-                    )}
+                    <a href={'/admin/clientes/' + c.id + '/propiedades'}
+                      className="flex-1 min-w-[110px] text-xs bg-indigo-600 text-white rounded-lg py-1.5 text-center hover:bg-indigo-700 transition">
+                      🏠 Propiedades
+                    </a>
                     <button onClick={() => toggleActivo(c)}
                       className="flex-shrink-0 text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-400 hover:bg-gray-50 transition">
                       {c.activo ? '⊘' : '✓'}
@@ -275,27 +237,6 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
             </div>
             <form onSubmit={guardar} className="p-5 space-y-4">
-
-              {/* Tipo */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de cliente</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {tiposCliente.map(val => (
-                    <button key={val.id} type="button"
-                      onClick={() => setForm(f => ({ ...f, tipo: val.id }))}
-                      className="p-2.5 rounded-xl border-2 text-left transition text-sm"
-                      style={{
-                        borderColor: form.tipo === val.id ? val.color : '#e5e7eb',
-                        background:  form.tipo === val.id ? val.color + '15' : 'white'
-                      }}>
-                      <span className="mr-1.5">{val.icon}</span>
-                      <span style={{ color: form.tipo === val.id ? val.color : '#374151', fontWeight: form.tipo === val.id ? 600 : 400 }}>
-                        {val.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
 
               {/* Nombre */}
               <div>
@@ -368,7 +309,7 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
             <div className="p-5 border-b border-gray-100 flex items-center justify-between">
               <h2 className="font-bold text-gray-800 truncate pr-4">
-                {t(detalle.cliente?.tipo || '').icon} {detalle.cliente?.nombre}
+                🏠 {detalle.cliente?.nombre}
               </h2>
               <button onClick={() => setDetalle(null)} className="text-gray-400 hover:text-gray-600 text-xl flex-shrink-0">✕</button>
             </div>

@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
 import { aiComplete } from '@/lib/ai-client'
 import { getTransporter, MAIL_FROM } from '@/lib/mailer'
+import { emailFacturacionCliente } from '@/lib/facturacion'
 
 export async function POST(req: Request) {
   try {
@@ -153,14 +154,15 @@ ${quejas_data.length > 0 ? `
         total_facturado = EXCLUDED.total_facturado
     `)
 
-    // Enviar email si solicitado
+    // Enviar email si solicitado (al email de facturación; con fallback a contactos/notif)
     let email_enviado = false
     const t = getTransporter()
-    if (enviar_email && c.notif_email && t) {
+    const destinatario = await emailFacturacionCliente(empresa_id, c)
+    if (enviar_email && destinatario && t) {
       try {
         await t.sendMail({
           from: `"${e.nombre}" <${MAIL_FROM}>`,
-          to: c.notif_email,
+          to: destinatario,
           subject: `Informe de servicio ${mes} — ${e.nombre}`,
           html
         })
