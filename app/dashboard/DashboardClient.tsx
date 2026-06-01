@@ -24,7 +24,7 @@ const TIPO_ICON: Record<string,string> = {
 
 const NAV = [
   { href:'/dashboard',           icon:'🏠', label:'Inicio'        },
-  { href:'/admin',               icon:'🗓️', label:'Operaciones'   },
+  { href:'/admin/operaciones',   icon:'🗓️', label:'Operaciones'   },
   { href:'/admin/equipo',        icon:'👥', label:'Equipo'        },
   { href:'/admin/negocio',       icon:'💼', label:'Negocio'       },
   { href:'/admin/materiales',    icon:'📦', label:'Materiales'    },
