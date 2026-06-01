@@ -26,7 +26,19 @@ export default function AgendaPage() {
   const [limp, setLimp]       = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Gestión manual por día (asignar / reasignar / desasignar / cancelar)
+  const [gestDate, setGestDate] = useState(isoDate(new Date()))
+  const [gestSes, setGestSes]   = useState<any[]>([])
+  const [busyId, setBusyId]     = useState<string | null>(null)
+  const [toast, setToast]       = useState<{ msg: string; tipo: 'ok' | 'warn' | 'error' } | null>(null)
+
   useEffect(() => { cargar() }, [semana])
+  useEffect(() => { cargarGest() }, [gestDate])
+
+  function showToast(msg: string, tipo: 'ok' | 'warn' | 'error' = 'ok') {
+    setToast({ msg, tipo })
+    setTimeout(() => setToast(null), 4500)
+  }
 
   async function cargar() {
     setLoading(true)
@@ -35,14 +47,56 @@ export default function AgendaPage() {
       return isoDate(d)
     })
     const [r1, r2] = await Promise.all([
-      fetch('/api/admin/agenda?desde=' + dias[0] + '&hasta=' + dias[6]),
-      fetch('/api/admin/limpiadoras/usuarios')
+      fetch('/api/admin/agenda?desde=' + dias[0] + '&hasta=' + dias[6], { credentials: 'include' }),
+      fetch('/api/admin/limpiadoras/usuarios', { credentials: 'include' })
     ])
     const d1 = await r1.json()
     const d2 = await r2.json()
     setSes(d1.sesiones || [])
     setLimp(d2.limpiadoras || [])
     setLoading(false)
+  }
+
+  async function cargarGest() {
+    try {
+      const r = await fetch('/api/admin/agenda?desde=' + gestDate + '&hasta=' + gestDate, { credentials: 'include' })
+      const d = await r.json()
+      if (!r.ok) { showToast(d.error || 'No se pudieron cargar las sesiones', 'error'); return }
+      setGestSes(d.sesiones || [])
+    } catch { showToast('Error de red al cargar', 'error') }
+  }
+
+  async function asignar(id: string, limpiadoraId: string) {
+    setBusyId(id)
+    try {
+      const r = await fetch('/api/admin/sesiones/' + id, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limpiadora_id: limpiadoraId || null }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { showToast(d.error || 'No se pudo guardar', 'error'); return }
+      if (!limpiadoraId)
+        showToast('Limpiadora quitada. Aviso: el auto-asignador (16:00) puede reasignarla automáticamente si la dejas sin asignar.', 'warn')
+      else
+        showToast('Asignación guardada', 'ok')
+      await Promise.all([cargarGest(), cargar()])
+    } catch { showToast('Error de red', 'error') }
+    finally { setBusyId(null) }
+  }
+
+  async function cancelar(id: string) {
+    if (!confirm('¿Eliminar esta limpieza manual? Esta acción no se puede deshacer.')) return
+    setBusyId(id)
+    try {
+      const r = await fetch('/api/admin/sesiones/' + id, { method: 'DELETE', credentials: 'include' })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { showToast(d.error || 'No se pudo eliminar', 'error'); return }
+      showToast('Limpieza eliminada', 'ok')
+      await Promise.all([cargarGest(), cargar()])
+    } catch { showToast('Error de red', 'error') }
+    finally { setBusyId(null) }
   }
 
   const dias = Array.from({length: 7}, (_, i) => {
@@ -55,6 +109,13 @@ export default function AgendaPage() {
 
   const total_sem = sesiones.length
   const completadas_sem = sesiones.filter(s => s.completed_at).length
+
+  const pill = (active: boolean): React.CSSProperties => ({
+    padding: '6px 12px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+    border: `1px solid ${active ? C.primary : C.border}`,
+    background: active ? C.primary : 'white',
+    color: active ? 'white' : C.text,
+  })
 
   return (
     <div style={{ minHeight:'100vh', background: C.bg, fontFamily:"'Nunito',-apple-system,sans-serif" }}>
@@ -170,7 +231,84 @@ export default function AgendaPage() {
             </div>
           ))}
         </div>
+
+        {/* ── Gestión manual por día (asignar / reasignar / desasignar / cancelar) ── */}
+        <div style={{ background:'white', border:`1px solid ${C.border}`, borderRadius:12, padding:16, marginTop:20 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:12 }}>
+            <h2 style={{ fontSize:16, fontWeight:800, color: C.text, margin:0 }}>Asignar limpiadora por día</h2>
+            <div style={{ flex:1 }} />
+            <button onClick={() => setGestDate(isoDate(new Date()))} style={pill(gestDate === isoDate(new Date()))}>Hoy</button>
+            <button onClick={() => setGestDate(isoDate(new Date(Date.now() + 86400000)))} style={pill(gestDate === isoDate(new Date(Date.now() + 86400000)))}>Mañana</button>
+            <input type="date" value={gestDate} onChange={e => setGestDate(e.target.value)}
+              style={{ padding:'6px 10px', borderRadius:8, border:`1px solid ${C.border}`, fontFamily:'inherit', fontSize:14 }} />
+          </div>
+
+          {gestSes.length === 0 ? (
+            <div style={{ textAlign:'center', padding:24, color: C.muted, fontSize:14 }}>No hay limpiezas para este día.</div>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              {gestSes.map((s: any) => {
+                const completada = !!s.completed_at
+                const manual = s.origen === 'manual'
+                const puedeCancelar = manual && !s.started_at && !completada
+                return (
+                  <div key={s.id} style={{
+                    display:'flex', alignItems:'center', gap:10, flexWrap:'wrap',
+                    padding:'10px 12px', borderRadius:10,
+                    background: completada ? C.okBg : C.bg, border:`1px solid ${C.border}`,
+                  }}>
+                    <div style={{ flex:'1 1 200px', minWidth:0 }}>
+                      <div style={{ fontSize:14, fontWeight:700, color: C.text }}>{s.property_name || 'Sin nombre'}</div>
+                      <div style={{ fontSize:12, color: C.muted }}>
+                        {(s.hora_checkout || s.hora_inicio)?.slice(0,5) || 'sin hora'}
+                        {manual ? ' · manual' : ' · Smoobu'}
+                        {completada ? ' · ✅ completada' : s.started_at ? ' · 🔄 en curso' : ''}
+                      </div>
+                    </div>
+
+                    {completada ? (
+                      <span style={{ fontSize:13, color: C.ok, fontWeight:700 }}>{s.limpiadora_nombre || '—'}</span>
+                    ) : (
+                      <select value={s.limpiadora_id || ''} disabled={busyId === s.id}
+                        onChange={e => asignar(s.id, e.target.value)}
+                        style={{
+                          padding:'6px 10px', borderRadius:8, border:`1px solid ${C.border}`,
+                          fontFamily:'inherit', fontSize:13, background:'white', minWidth:160,
+                          color: s.limpiadora_id ? C.text : C.warn,
+                        }}>
+                        <option value="">— Sin asignar —</option>
+                        {limp.map((l: any) => (<option key={l.id} value={l.id}>{l.nombre}</option>))}
+                      </select>
+                    )}
+
+                    {puedeCancelar && (
+                      <button onClick={() => cancelar(s.id)} disabled={busyId === s.id}
+                        style={{ padding:'6px 10px', borderRadius:8, border:'1px solid #fecaca', background:'#fef2f2', color:'#dc2626', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+                        Eliminar
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          <p style={{ fontSize:11, color: C.muted, marginTop:10 }}>
+            Reasigna o quita la limpiadora aunque la limpieza sea de hoy (mientras no esté completada). «Eliminar» solo aparece en limpiezas manuales que no han empezado.
+          </p>
+        </div>
       </div>
+
+      {toast && (
+        <div style={{
+          position:'fixed', bottom:20, left:'50%', transform:'translateX(-50%)', zIndex:50,
+          maxWidth:380, padding:'12px 16px', borderRadius:10, fontSize:13, fontWeight:600, color:'white',
+          boxShadow:'0 8px 24px rgba(0,0,0,0.18)', textAlign:'center',
+          background: toast.tipo === 'error' ? '#dc2626' : toast.tipo === 'warn' ? '#d97706' : '#16a34a',
+        }}>
+          {toast.msg}
+        </div>
+      )}
     </div>
   )
 }
