@@ -19,27 +19,28 @@ export async function GET(req: Request) {
     // Resultado anual
     const resultado = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT
-        TO_CHAR(mes, 'Mon YYYY') AS Mes,
+        TO_CHAR(make_date(anio, mes, 1), 'Mon YYYY') AS Mes,
         ingresos_base AS Ingresos,
         gastos_base AS Gastos,
         (ingresos_base - gastos_base) AS Beneficio
-      FROM v_contab_resultado
+      FROM v_contab_pyg
       WHERE empresa_id = ${empresa_id}::uuid
-        AND EXTRACT(YEAR FROM mes) = ${year}
-      ORDER BY mes
+        AND anio = ${year}
+      ORDER BY anio, mes
     `)
 
-    // IVA anual
+    // IVA anual (v_contab_iva agrega por trimestre, no por mes)
     const iva = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT
-        TO_CHAR(mes, 'Mon YYYY') AS Mes,
+        anio AS "Año",
+        trimestre AS "Trimestre",
         iva_repercutido AS "IVA repercutido",
         iva_soportado AS "IVA soportado",
-        (iva_repercutido - iva_soportado) AS "A liquidar"
+        a_liquidar AS "A liquidar"
       FROM v_contab_iva
       WHERE empresa_id = ${empresa_id}::uuid
-        AND EXTRACT(YEAR FROM mes) = ${year}
-      ORDER BY mes
+        AND anio = ${year}
+      ORDER BY trimestre
     `)
 
     // Crear workbook

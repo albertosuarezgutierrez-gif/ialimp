@@ -292,9 +292,203 @@ function TabRentabilidad() {
   )
 }
 
+// ─── TAB APUNTES (alta manual de gastos) ─────────────────────────
+const CATEGORIAS_APUNTE: { key: string; label: string }[] = [
+  { key: 'suministros', label: '⚡ Suministros' },
+  { key: 'limpieza',    label: '🧹 Limpieza' },
+  { key: 'lavanderia',  label: '👕 Lavandería' },
+  { key: 'reparacion',  label: '🔧 Reparación' },
+  { key: 'menaje',      label: '🛋️ Menaje' },
+  { key: 'gestion',     label: '📋 Gestoría' },
+  { key: 'plataforma',  label: '💻 Plataformas' },
+  { key: 'seguro',      label: '🛡️ Seguro' },
+  { key: 'impuesto',    label: '📑 Impuestos' },
+  { key: 'marketing',   label: '📣 Marketing' },
+  { key: 'otros',       label: '📦 Otros' },
+]
+
+function NuevoApunteModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = useState({
+    proveedor: '', concepto: '', fecha: new Date().toISOString().split('T')[0],
+    categoria: 'otros', base_imponible: '', porcentaje_iva: '21',
+    numero_doc: '', pagado: false, notas: '',
+  })
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
+  const set = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }))
+
+  const base  = Number(form.base_imponible) || 0
+  const pct   = Number(form.porcentaje_iva) || 0
+  const cuota = Math.round(base * pct) / 100
+  const total = Math.round((base + cuota) * 100) / 100
+
+  async function guardar() {
+    if (!form.base_imponible || base <= 0) { setErr('La base imponible debe ser mayor que 0'); return }
+    if (!form.proveedor && !form.concepto) { setErr('Indica proveedor o concepto'); return }
+    setSaving(true); setErr('')
+    const r = await fetch('/api/admin/contabilidad/apuntes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...form, base_imponible: base, porcentaje_iva: pct }),
+    })
+    const d = await r.json()
+    if (r.ok && (d.ok || d.id)) { onSaved() }
+    else { setErr(d.error || 'Error al guardar'); setSaving(false) }
+  }
+
+  const inp: any = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 14, fontFamily: 'inherit', color: '#1e1b4b', boxSizing: 'border-box' }
+  const lab: any = { fontSize: 11, fontWeight: 700, color: '#6b7280', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '.05em' }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 460, maxHeight: '92vh', overflowY: 'auto' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
+          <div style={{ fontWeight: 800, fontSize: 17, color: '#1e1b4b' }}>➕ Nuevo apunte de gasto</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, color: '#6b7280', cursor: 'pointer' }}>✕</button>
+        </div>
+        <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={lab}>Proveedor</label>
+            <input value={form.proveedor} onChange={e => set('proveedor', e.target.value)} placeholder="Ej: Endesa, Mapfre, Gestoría…" style={inp} />
+          </div>
+          <div>
+            <label style={lab}>Concepto</label>
+            <input value={form.concepto} onChange={e => set('concepto', e.target.value)} placeholder="Ej: Luz mayo, Cuota mensual…" style={inp} />
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <label style={lab}>Fecha *</label>
+              <input type="date" value={form.fecha} onChange={e => set('fecha', e.target.value)} style={inp} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={lab}>Nº factura</label>
+              <input value={form.numero_doc} onChange={e => set('numero_doc', e.target.value)} placeholder="Opcional" style={inp} />
+            </div>
+          </div>
+          <div>
+            <label style={lab}>Categoría</label>
+            <select value={form.categoria} onChange={e => set('categoria', e.target.value)} style={inp}>
+              {CATEGORIAS_APUNTE.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ flex: 2 }}>
+              <label style={lab}>Base imponible € *</label>
+              <input type="number" step="0.01" value={form.base_imponible} onChange={e => set('base_imponible', e.target.value)} placeholder="0,00"
+                style={{ ...inp, fontSize: 18, fontWeight: 800, color: '#4f46e5' }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={lab}>% IVA</label>
+              <input type="number" step="1" value={form.porcentaje_iva} onChange={e => set('porcentaje_iva', e.target.value)} style={inp} />
+            </div>
+          </div>
+          <div style={{ background: '#eef2ff', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#1e1b4b' }}>
+            <span>IVA: <b>{fmtEur(cuota)}</b></span>
+            <span>Total: <b>{fmtEur(total)}</b></span>
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#1e1b4b', cursor: 'pointer' }}>
+            <input type="checkbox" checked={form.pagado} onChange={e => set('pagado', e.target.checked)} style={{ width: 18, height: 18 }} />
+            Ya pagado (cuenta en Tesorería)
+          </label>
+          <div>
+            <label style={lab}>Notas</label>
+            <textarea value={form.notas} onChange={e => set('notas', e.target.value)} rows={2} placeholder="Observaciones…"
+              style={{ ...inp, resize: 'none' }} />
+          </div>
+          {err && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#dc2626' }}>{err}</div>}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
+            <button onClick={guardar} disabled={saving}
+              style={{ flex: 2, padding: 12, borderRadius: 10, border: 'none', background: '#4f46e5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: saving ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: saving ? 0.6 : 1 }}>
+              {saving ? 'Guardando…' : '💾 Guardar apunte'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TabApuntes() {
+  const [rows, setRows] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [year, setYear] = useState(new Date().getFullYear())
+  const [showModal, setShowModal] = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    const r = await fetch(`/api/admin/contabilidad/apuntes?year=${year}`)
+    const d = await r.json()
+    setRows(d.rows || [])
+    setLoading(false)
+  }, [year])
+
+  useEffect(() => { load() }, [load])
+
+  async function borrar(id: string) {
+    if (!confirm('¿Eliminar este apunte contable?')) return
+    setDeleting(id)
+    await fetch(`/api/admin/contabilidad/apuntes/${id}`, { method: 'DELETE' })
+    setDeleting(null)
+    load()
+  }
+
+  const cat = (k: string) => CATEGORIAS_APUNTE.find(c => c.key === k)?.label || '📦 Otros'
+  const total = rows.reduce((a, r) => a + Number(r.base_imponible || 0), 0)
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+        <button onClick={() => setYear(y => y - 1)} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '6px 14px', background: '#fff', cursor: 'pointer' }}>‹</button>
+        <span style={{ fontWeight: 700, fontSize: 15 }}>{year}</span>
+        <button onClick={() => setYear(y => y + 1)} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '6px 14px', background: '#fff', cursor: 'pointer' }}>›</button>
+        <button onClick={() => setShowModal(true)}
+          style={{ marginLeft: 'auto', border: 'none', borderRadius: 9, padding: '9px 16px', background: '#4f46e5', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+          ➕ Nuevo apunte
+        </button>
+      </div>
+
+      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '14px 20px', marginBottom: 16, textAlign: 'center' }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#dc2626' }}>{fmtEur(total)}</div>
+        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>Total gastos registrados · {rows.length} apuntes</div>
+      </div>
+
+      {loading ? <Spinner /> : (
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
+          {rows.length === 0 && <div style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>Sin apuntes en {year}. Pulsa «➕ Nuevo apunte» para añadir uno.</div>}
+          {rows.map((r: any) => (
+            <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 16px', borderBottom: '1px solid #f3f4f6', gap: 10 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, color: '#1e1b4b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {r.descripcion || r.proveedor || '—'}
+                </div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>
+                  {r.fecha} · {cat(r.categoria)}{r.proveedor && r.descripcion ? ` · ${r.proveedor}` : ''}
+                  {r.tipo_doc === 'manual' ? '' : ' · 📷 escaneado'}
+                  {r.pagado ? ' · ✅ pagado' : ' · ⏳ pendiente'}
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                <span style={{ fontWeight: 700, fontSize: 14, color: '#dc2626' }}>{fmtEur(r.total ?? r.base_imponible)}</span>
+                {r.tipo_doc === 'manual' && (
+                  <button onClick={() => borrar(r.id)} disabled={deleting === r.id} title="Eliminar"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: '#9ca3af', opacity: deleting === r.id ? 0.4 : 1 }}>🗑️</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showModal && <NuevoApunteModal onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); load() }} />}
+    </div>
+  )
+}
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────
 const TABS = [
   { key: 'resultado',    label: '📊 Resultado' },
+  { key: 'apuntes',      label: '📒 Apuntes' },
   { key: 'iva',          label: '🧾 IVA' },
   { key: 'tesoreria',   label: '💰 Tesorería' },
   { key: 'rentabilidad', label: '📈 Rentabilidad' },
@@ -350,9 +544,10 @@ export default function ContabilidadPage() {
       </header>
       <div style={{ padding: '20px 24px', maxWidth: 960, margin: '0 auto' }}>
         {activeTab === 0 && <TabResultado />}
-        {activeTab === 1 && <TabIva />}
-        {activeTab === 2 && <TabTesoreria />}
-        {activeTab === 3 && <TabRentabilidad />}
+        {activeTab === 1 && <TabApuntes />}
+        {activeTab === 2 && <TabIva />}
+        {activeTab === 3 && <TabTesoreria />}
+        {activeTab === 4 && <TabRentabilidad />}
       </div>
     </div>
   )
