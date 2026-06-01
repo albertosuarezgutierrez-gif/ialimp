@@ -62,6 +62,29 @@ function TabClientes() {
   const [editando, setEditando]     = useState<any>(null)
   const [form, setForm]             = useState({ nombre: '', tipo: 'apartamentos_turisticos', contacto_nombre: '', contacto_tel: '', contacto_email: '', direccion: '', notas: '' })
   const [saving, setSaving]         = useState(false)
+  const [enviandoAcceso, setEnviandoAcceso] = useState<string | null>(null)
+
+  async function enviarAcceso(c: any) {
+    const destino = prompt(
+      `Enviar a ${c.nombre} un email con el enlace de acceso a su intranet.\n\nEmail destinatario:`,
+      c.notif_email || c.contacto_email || ''
+    )
+    if (destino === null) return
+    setEnviandoAcceso(c.id)
+    try {
+      const res = await fetch('/api/admin/clientes/' + c.id + '/enviar-acceso', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: destino.trim() || undefined })
+      })
+      const data = await res.json()
+      if (!res.ok) { alert(data.error || 'No se pudo enviar'); return }
+      alert('✅ Acceso enviado a ' + data.destinatario)
+    } catch {
+      alert('Error de red al enviar el acceso')
+    } finally {
+      setEnviandoAcceso(null)
+    }
+  }
 
   useEffect(() => { cargar() }, [])
   async function cargar() {
@@ -133,6 +156,11 @@ function TabClientes() {
                 <button onClick={() => { setEditando(c); setForm({ nombre: c.nombre||'', tipo: c.tipo||'', contacto_nombre: c.contacto_nombre||'', contacto_tel: c.contacto_tel||'', contacto_email: c.contacto_email||'', direccion: c.direccion||'', notas: c.notas||'' }); setShowModal(true) }}
                   style={{ padding: '5px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.bg, fontSize: 12, cursor: 'pointer', color: C.text }}>
                   Editar
+                </button>
+                <button onClick={() => enviarAcceso(c)} disabled={enviandoAcceso === c.id}
+                  title="Enviar al cliente el acceso a su intranet por email"
+                  style={{ padding: '5px 12px', borderRadius: 8, border: `1px solid ${C.primary}`, background: C.primary, fontSize: 12, cursor: 'pointer', color: C.white, fontWeight: 600, whiteSpace: 'nowrap', opacity: enviandoAcceso === c.id ? 0.5 : 1 }}>
+                  {enviandoAcceso === c.id ? 'Enviando…' : '✉️ Acceso'}
                 </button>
               </div>
             </div>

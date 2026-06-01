@@ -99,6 +99,32 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
     }
   }
 
+  const [enviandoAcceso, setEnviandoAcceso] = useState<string | null>(null)
+
+  async function enviarAcceso(c: any) {
+    const emailConocido = c.notif_email || c.contacto_email || ''
+    const destino = prompt(
+      `Enviar a ${c.nombre} un email con el enlace de acceso a su intranet.\n\nEmail destinatario:`,
+      emailConocido
+    )
+    if (destino === null) return
+    setEnviandoAcceso(c.id)
+    try {
+      const res = await fetch('/api/admin/clientes/' + c.id + '/enviar-acceso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: destino.trim() || undefined })
+      })
+      const data = await res.json()
+      if (!res.ok) { alert(data.error || 'No se pudo enviar'); return }
+      alert('✅ Acceso enviado a ' + data.destinatario)
+    } catch {
+      alert('Error de red al enviar el acceso')
+    } finally {
+      setEnviandoAcceso(null)
+    }
+  }
+
   async function toggleActivo(c: any) {
     if (c.activo) {
       if (!confirm('¿Desactivar cliente ' + c.nombre + '?')) return
@@ -211,25 +237,28 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
                 </div>
 
                 {/* Acciones */}
-                <div className="flex gap-2 mt-3">
+                <div className="mt-3 space-y-2">
+                  {/* Ver detalle: siempre fijo, a ancho completo */}
                   <button onClick={() => verDetalle(c)}
-                    className="flex-1 text-xs border border-gray-200 rounded-lg py-1.5 text-gray-600 hover:bg-gray-50 transition">
+                    className="w-full text-sm border border-gray-200 rounded-lg py-2 text-gray-700 font-medium hover:bg-gray-50 transition">
                     Ver detalle
                   </button>
-                  <button onClick={() => abrirEditar(c)}
-                    className="flex-1 text-xs border border-indigo-200 rounded-lg py-1.5 text-indigo-600 hover:bg-indigo-50 transition">
-                    Editar
-                  </button>
-                  {c.tipo === 'apartamentos_turisticos' && (
-                    <a href={'/admin/clientes/' + c.id + '/propiedades'}
-                      className="flex-1 text-xs bg-indigo-600 text-white rounded-lg py-1.5 text-center hover:bg-indigo-700 transition">
-                      🏠 Propiedades
-                    </a>
-                  )}
-                  <button onClick={() => toggleActivo(c)}
-                    className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-400 hover:bg-gray-50 transition">
-                    {c.activo ? '⊘' : '✓'}
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => abrirEditar(c)}
+                      className="flex-1 min-w-[90px] text-xs border border-indigo-200 rounded-lg py-1.5 text-indigo-600 hover:bg-indigo-50 transition">
+                      Editar
+                    </button>
+                    {c.tipo === 'apartamentos_turisticos' && (
+                      <a href={'/admin/clientes/' + c.id + '/propiedades'}
+                        className="flex-1 min-w-[110px] text-xs bg-indigo-600 text-white rounded-lg py-1.5 text-center hover:bg-indigo-700 transition">
+                        🏠 Propiedades
+                      </a>
+                    )}
+                    <button onClick={() => toggleActivo(c)}
+                      className="flex-shrink-0 text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-400 hover:bg-gray-50 transition">
+                      {c.activo ? '⊘' : '✓'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -425,6 +454,18 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
                     </div>
                   </div>
                 )}
+
+                {/* Acceso a la intranet del cliente */}
+                <div className="bg-indigo-50 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-indigo-700 mb-2">🔑 Acceso a su intranet</p>
+                  <p className="text-xs text-indigo-400 mb-2">
+                    Envía al cliente por email el enlace a su zona privada (estado de limpiezas, fotos, facturas).
+                  </p>
+                  <button onClick={() => enviarAcceso(detalle.cliente)} disabled={enviandoAcceso === detalle.cliente?.id}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-50">
+                    {enviandoAcceso === detalle.cliente?.id ? 'Enviando…' : '✉️ Enviar acceso a la intranet'}
+                  </button>
+                </div>
 
                 <div className="flex gap-3 pt-2">
                   <button onClick={() => { setDetalle(null); abrirEditar(detalle.cliente) }}
