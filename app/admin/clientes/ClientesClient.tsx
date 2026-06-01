@@ -237,25 +237,28 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
                 </div>
 
                 {/* Acciones */}
-                <div className="flex gap-2 mt-3">
+                <div className="mt-3 space-y-2">
+                  {/* Ver detalle: siempre fijo, a ancho completo */}
                   <button onClick={() => verDetalle(c)}
-                    className="flex-1 text-xs border border-gray-200 rounded-lg py-1.5 text-gray-600 hover:bg-gray-50 transition">
+                    className="w-full text-sm border border-gray-200 rounded-lg py-2 text-gray-700 font-medium hover:bg-gray-50 transition">
                     Ver detalle
                   </button>
-                  <button onClick={() => abrirEditar(c)}
-                    className="flex-1 text-xs border border-indigo-200 rounded-lg py-1.5 text-indigo-600 hover:bg-indigo-50 transition">
-                    Editar
-                  </button>
-                  {c.tipo === 'apartamentos_turisticos' && (
-                    <a href={'/admin/clientes/' + c.id + '/propiedades'}
-                      className="flex-1 text-xs bg-indigo-600 text-white rounded-lg py-1.5 text-center hover:bg-indigo-700 transition">
-                      🏠 Propiedades
-                    </a>
-                  )}
-                  <button onClick={() => toggleActivo(c)}
-                    className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-400 hover:bg-gray-50 transition">
-                    {c.activo ? '⊘' : '✓'}
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => abrirEditar(c)}
+                      className="flex-1 min-w-[90px] text-xs border border-indigo-200 rounded-lg py-1.5 text-indigo-600 hover:bg-indigo-50 transition">
+                      Editar
+                    </button>
+                    {c.tipo === 'apartamentos_turisticos' && (
+                      <a href={'/admin/clientes/' + c.id + '/propiedades'}
+                        className="flex-1 min-w-[110px] text-xs bg-indigo-600 text-white rounded-lg py-1.5 text-center hover:bg-indigo-700 transition">
+                        🏠 Propiedades
+                      </a>
+                    )}
+                    <button onClick={() => toggleActivo(c)}
+                      className="flex-shrink-0 text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-400 hover:bg-gray-50 transition">
+                      {c.activo ? '⊘' : '✓'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
