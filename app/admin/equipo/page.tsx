@@ -327,11 +327,6 @@ function TabLimpiadoras() {
       </div>
     </div>
   )
-}/div>
-        ))}
-      </div>
-    </div>
-  )
 }
 
 // ─── TAB DISPONIBILIDAD ──────────────────────────────────────────
