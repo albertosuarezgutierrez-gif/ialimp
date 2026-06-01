@@ -3,6 +3,10 @@ import nodemailer from 'nodemailer'
 // Remitente único de toda la app (display = nombre de empresa en cada ruta).
 export const MAIL_FROM = process.env.MAIL_FROM || 'hola@ialimp.es'
 
+// Timeouts (ms) para fallar rápido si el SMTP no responde: si no, la función
+// serverless de Vercel se quedaría colgada hasta su propio timeout.
+const TIMEOUTS = { connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 15_000 }
+
 // Construye el transporter de correo desde variables de entorno.
 // 1) SMTP genérico (IONOS u otro): SMTP_USER + SMTP_PASSWORD
 //    (host/puerto por defecto = IONOS España: smtp.ionos.es:465 SSL).
@@ -17,12 +21,14 @@ export function getTransporter() {
       port,
       secure: port === 465, // 465 = SSL; 587 = STARTTLS
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
+      ...TIMEOUTS,
     })
   }
   if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
     return nodemailer.createTransport({
       service: 'gmail',
       auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
+      ...TIMEOUTS,
     })
   }
   return null
