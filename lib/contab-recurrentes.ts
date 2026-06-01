@@ -11,6 +11,7 @@ export async function generarRecurrentes(soloId?: string) {
   const intervalo = Prisma.sql`
     CASE r.periodicidad
       WHEN 'trimestral' THEN interval '3 months'
+      WHEN 'semestral'  THEN interval '6 months'
       WHEN 'anual'      THEN interval '1 year'
       ELSE interval '1 month'
     END`
