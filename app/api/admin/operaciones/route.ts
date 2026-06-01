@@ -5,6 +5,13 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireEmpresaId } from '@/lib/tenant';
 
+// Serializa fechas de Postgres (que llegan como objetos Date) a string YYYY-MM-DD
+function fser(v: any): string | null {
+  if (!v) return null;
+  if (v instanceof Date) return v.toISOString().split('T')[0];
+  return String(v).split('T')[0];
+}
+
 export async function GET(_req: NextRequest) {
   const e = await requireEmpresaId();
   if (!e) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
@@ -54,15 +61,27 @@ export async function GET(_req: NextRequest) {
     SELECT COUNT(*)::int AS n FROM alertas WHERE empresa_id = ${e}::uuid AND leida = false`);
 
   return NextResponse.json({
-    sin_asignar: { total: sinAsignar.length, items: sinAsignar },
-    ventana_ajustada: { total: ventanaAjustada.length, items: ventanaAjustada },
+    sin_asignar: {
+      total: sinAsignar.length,
+      items: sinAsignar.map((x: any) => ({ ...x, session_date: fser(x.session_date) })),
+    },
+    ventana_ajustada: {
+      total: ventanaAjustada.length,
+      items: ventanaAjustada.map((x: any) => ({ ...x, session_date: fser(x.session_date) })),
+    },
     cobros_vencidos: {
       total: cobrosVencidos.length,
       importe: cobrosVencidos.reduce((a, r) => a + (Number(r.importe) || 0), 0),
-      items: cobrosVencidos,
+      items: cobrosVencidos.map((x: any) => ({ ...x, fecha_vencimiento: fser(x.fecha_vencimiento) })),
     },
-    gastos_por_vencer: { total: gastosPorVencer.length, items: gastosPorVencer },
-    ausencias_hoy: { total: ausenciasHoy.length, items: ausenciasHoy },
+    gastos_por_vencer: {
+      total: gastosPorVencer.length,
+      items: gastosPorVencer.map((x: any) => ({ ...x, fecha_proximo_cargo: fser(x.fecha_proximo_cargo) })),
+    },
+    ausencias_hoy: {
+      total: ausenciasHoy.length,
+      items: ausenciasHoy.map((x: any) => ({ ...x, fecha_fin: fser(x.fecha_fin) })),
+    },
     stock_alertas: stock[0]?.n || 0,
     alertas_sin_leer: alertas[0]?.n || 0,
   });
