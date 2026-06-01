@@ -873,10 +873,12 @@ export default function DashboardClient({
                                 className="ses-chip ses-chip-btn"
                                 onClick={() => setSheet(s)}
                                 disabled={busyId === s.id}
+                                title="Tocar para cambiar la limpiadora"
                                 style={s.limpiadora_nombre
-                                  ? { background:'#f1f5f9', color:'#334155' }
+                                  ? { background:'#eef2ff', color:'#4f46e5', borderColor:'#c7d2fe' }
                                   : { background:'#fff7ed', color:'#c2410c', borderColor:'#fdba74', borderStyle:'dashed' }}>
                                 {s.limpiadora_nombre ? `👤 ${s.limpiadora_nombre}` : '➕ Asignar'}
+                                <span style={{ marginLeft:3, opacity:.7, fontSize:9 }}>▾</span>
                               </button>
                             ) : s.limpiadora_nombre ? (
                               <span className="ses-chip" style={{ background:'#f1f5f9', color:'#334155' }}>
