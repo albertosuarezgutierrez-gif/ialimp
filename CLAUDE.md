@@ -66,6 +66,15 @@ Customer `127993947`, header `Api-Key` (no Bearer). READ: reservations/messages/
 - **Asignación manual:** `PATCH /api/admin/sesiones/[id]` con `{ limpiadora_id }` (uuid = asignar/reasignar · `null`/'' = desasignar). Scope `empresa_id`; **bloquea si `completed_at`** (409). `DELETE /api/admin/sesiones/[id]` solo `origen='manual'` y sin empezar/completar (las de Smoobu las recrearía `pms/sync`).
 - **UI de reasignación:** en **Inicio** (`/dashboard`) el chip de la limpiadora es tocable → bottom-sheet (update optimista, sin recarga); en **Agenda** (`/admin/agenda`) panel "Asignar limpiadora por día" (hoy/mañana). Ambas usan el PATCH de arriba; al desasignar, avisar de que el cron de las 16:00 puede reasignar.
 
+## Definición de "terminado" (checklist al cerrar CUALQUIER trabajo)
+Antes de dar por hecho un trabajo, actualiza **TODO lo que el cambio toque, en el mismo PR**:
+- [ ] **`public/manual.html`** si cambió UI o funcionalidad (ver «Regla del manual»).
+- [ ] **`CLAUDE.md`** si cambió una convención, regla de datos, arquitectura o se añadió tabla/vista/bucket/cron (ver «Cómo mantener este archivo»).
+- [ ] **Migraciones**: el `.sql` commiteado en `prisma/migrations/` **y** aplicado en Supabase (la BD se gestiona por SQL crudo; el repo es la fuente de verdad).
+- [ ] **`vercel.json`** si se añadió/cambió un cron.
+- [ ] **Verificado**: build OK y prueba end-to-end (preview o Supabase MCP). Limpia los datos de prueba (BD de producción en vivo).
+No dejes ninguno para "luego": si el trabajo está terminado, la documentación y la config también lo están.
+
 ## Regla del manual
 Todo cambio de UI o de funcionalidad va **también** a `public/manual.html` + re-deploy.
 
