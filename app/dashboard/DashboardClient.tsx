@@ -29,6 +29,7 @@ const NAV = [
   { href:'/admin/negocio',       icon:'💼', label:'Negocio'       },
   { href:'/admin/materiales',    icon:'📦', label:'Materiales'    },
   { href:'/admin/configuracion', icon:'⚙️', label:'Configuración' },
+  { href:'/admin/contabilidad',  icon:'📊', label:'Contabilidad'  },
 ]
 
 export default function DashboardClient({
