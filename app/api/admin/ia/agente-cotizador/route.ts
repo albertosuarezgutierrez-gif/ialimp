@@ -289,7 +289,7 @@ No menciones competidores. No uses exclamaciones. Responde SOLO con el texto de 
           auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD }
         })
         await t.sendMail({
-          from: `"${empresa.nombre}" <${process.env.GMAIL_USER}>`,
+          from: `"${empresa.nombre}" <${process.env.MAIL_FROM || 'hola@ialimp.es'}>`,
           to: lead.email,
           subject: `Su propuesta de limpieza profesional — ${empresa.nombre}`,
           html,

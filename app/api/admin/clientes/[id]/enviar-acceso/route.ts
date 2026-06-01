@@ -60,7 +60,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD }
         })
         await transporter.sendMail({
-          from:    `"${empresaNombre}" <${process.env.GMAIL_USER}>`,
+          from:    `"${empresaNombre}" <${process.env.MAIL_FROM || 'hola@ialimp.es'}>`,
           to:      destinatario,
           subject: asunto,
           html: `

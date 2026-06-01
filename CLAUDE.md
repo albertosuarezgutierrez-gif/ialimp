@@ -17,6 +17,7 @@ Este repo es **solo IALIMP** (limpieza). No confundir con:
 ## Stack
 Next.js `^15.5` · React 19 · Prisma `^5.22` · **JWT (jose + bcryptjs, SIN NextAuth)** · next-intl · zod · date-fns · recharts · nodemailer · pdf-parse · web-push.
 - Cookie de sesión: `ialimp_session`. (NextAuth es exclusivo de SIVRA; aquí NO se usa.)
+- **Email saliente:** nodemailer con SMTP de Gmail (`auth: GMAIL_USER` / `GMAIL_APP_PASSWORD`). El **remitente** (`from`) es **siempre `hola@ialimp.es`** vía `process.env.MAIL_FROM || 'hola@ialimp.es'` (display = nombre de la empresa). Para que Gmail no reescriba ese `from`, `hola@ialimp.es` debe ser el propio `GMAIL_USER` (Workspace) o un alias verificado «Enviar como». Rutas que mandan correo: `clientes/[id]/enviar-acceso`, `sesiones/[id]/completar`, `informes/generar`, `ia/agente-cotizador`.
 - `next.config.ts`: `ignoreBuildErrors` + `ignoreDuringBuilds` = `true`. **OJO:** esto ignora errores de TypeScript y de lint, pero **NO** los errores de sintaxis reales (un JSX mal cerrado sí rompe el build).
 - Build: `prisma generate && next build` · Install: `npm install --legacy-peer-deps`.
 - Commits/PR: prefijo **`fix:`** o **`feat:`**. Vercel ignora los que empiezan por `chore|trigger|rebuild`.

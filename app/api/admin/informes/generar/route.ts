@@ -162,7 +162,7 @@ ${quejas_data.length > 0 ? `
           auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD }
         })
         await t.sendMail({
-          from: `"${e.nombre}" <${process.env.GMAIL_USER}>`,
+          from: `"${e.nombre}" <${process.env.MAIL_FROM || 'hola@ialimp.es'}>`,
           to: c.notif_email,
           subject: `Informe de servicio ${mes} — ${e.nombre}`,
           html

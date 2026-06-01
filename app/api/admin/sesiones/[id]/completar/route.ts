@@ -58,7 +58,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         })
 
         await transporter.sendMail({
-          from:    `"${d.empresa_nombre}" <${process.env.GMAIL_USER}>`,
+          from:    `"${d.empresa_nombre}" <${process.env.MAIL_FROM || 'hola@ialimp.es'}>`,
           to:      d.notif_email,
           subject: `✅ ${propNombre} está listo — ${hora}`,
           html: `
