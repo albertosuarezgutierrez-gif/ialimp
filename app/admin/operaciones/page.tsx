@@ -38,12 +38,12 @@ export default function OperacionesPage() {
   const asignar = async () => {
     setRunning(true); setMsg('');
     try {
-      const r = await fetch('/api/admin/auto-assign-v2').then((x) => x.json());
-      const tot = (r?.resumen || []).reduce((a: number, x: any) => a + (x.asignadas || 0), 0);
+      const r = await fetch('/api/admin/auto-assign').then((x) => x.json());
+      const tot = r?.asignadas ?? 0;
       setMsg(`Asignación ejecutada: ${tot} limpiezas asignadas.`);
       await cargar();
     } catch {
-      setMsg('No se pudo ejecutar la asignación (¿subiste auto-assign-v2?).');
+      setMsg('No se pudo ejecutar la asignación.');
     } finally { setRunning(false); }
   };
 
