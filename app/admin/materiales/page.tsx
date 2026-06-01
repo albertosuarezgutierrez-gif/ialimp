@@ -231,7 +231,7 @@ function TabStock() {
       {/* Modal Añadir/Editar */}
       {modal!==null && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:16}}>
-          <div style={{background:C.white,borderRadius:16,width:'100%',maxWidth:420,padding:24,boxShadow:'0 20px 60px rgba(0,0,0,.15)'}}>
+          <div style={{background:C.white,borderRadius:16,width:'100%',maxWidth:420,padding:24,boxShadow:'0 20px 60px rgba(0,0,0,.15)',maxHeight:'90vh',overflowY:'auto'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
               <div style={{fontWeight:800,fontSize:17,color:C.text}}>{modal?.id ? 'Editar artículo' : 'Nuevo artículo'}</div>
               <button onClick={()=>setModal(null)} style={{background:'none',border:'none',fontSize:22,color:C.muted,cursor:'pointer'}}>×</button>
@@ -422,7 +422,7 @@ function TabLenceria() {
 
       {modal!==null&&(
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:16}}>
-          <div style={{background:C.white,borderRadius:16,width:'100%',maxWidth:420,padding:24}}>
+          <div style={{background:C.white,borderRadius:16,width:'100%',maxWidth:420,padding:24,maxHeight:'90vh',overflowY:'auto'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
               <div style={{fontWeight:800,fontSize:17,color:C.text}}>{modal?.id?'Editar lencería':'Nueva lencería'}</div>
               <button onClick={()=>setModal(null)} style={{background:'none',border:'none',fontSize:22,color:C.muted,cursor:'pointer'}}>×</button>
@@ -588,7 +588,7 @@ function TabProveedores() {
       {/* Modal Proveedor */}
       {modal!==null&&(
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:16}}>
-          <div style={{background:C.white,borderRadius:16,width:'100%',maxWidth:420,padding:24}}>
+          <div style={{background:C.white,borderRadius:16,width:'100%',maxWidth:420,padding:24,maxHeight:'90vh',overflowY:'auto'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
               <div style={{fontWeight:800,fontSize:17,color:C.text}}>{modal?.id?'Editar proveedor':'Nuevo proveedor'}</div>
               <button onClick={()=>setModal(null)} style={{background:'none',border:'none',fontSize:22,color:C.muted,cursor:'pointer'}}>×</button>
@@ -616,7 +616,7 @@ function TabProveedores() {
       {/* Modal Producto */}
       {modalProd!==null&&(
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:16}}>
-          <div style={{background:C.white,borderRadius:16,width:'100%',maxWidth:420,padding:24}}>
+          <div style={{background:C.white,borderRadius:16,width:'100%',maxWidth:420,padding:24,maxHeight:'90vh',overflowY:'auto'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
               <div style={{fontWeight:800,fontSize:17,color:C.text}}>{modalProd?.id?'Editar producto':'Nuevo producto'}</div>
               <button onClick={()=>setModalProd(null)} style={{background:'none',border:'none',fontSize:22,color:C.muted,cursor:'pointer'}}>×</button>
