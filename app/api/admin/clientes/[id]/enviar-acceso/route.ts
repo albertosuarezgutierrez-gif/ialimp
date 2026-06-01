@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
-import nodemailer from 'nodemailer'
+import { getTransporter, MAIL_FROM } from '@/lib/mailer'
 
 // POST /api/admin/clientes/[id]/enviar-acceso
 // Envía al cliente un email con el enlace a su intranet (portal del propietario).
@@ -53,14 +53,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     // 3. Enviar email
     let enviado = false
     let errorMsg: string | null = null
-    if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+    const transporter = getTransporter()
+    if (transporter) {
       try {
-        const transporter = nodemailer.createTransport({
-          service: 'gmail',
-          auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD }
-        })
         await transporter.sendMail({
-          from:    `"${empresaNombre}" <${process.env.MAIL_FROM || 'hola@ialimp.es'}>`,
+          from:    `"${empresaNombre}" <${MAIL_FROM}>`,
           to:      destinatario,
           subject: asunto,
           html: `
@@ -94,7 +91,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         console.error('Email acceso intranet error:', err.message)
       }
     } else {
-      errorMsg = 'Email no configurado (GMAIL_USER / GMAIL_APP_PASSWORD)'
+      errorMsg = 'Email no configurado (faltan credenciales SMTP)'
     }
 
     // 4. Registrar en notificaciones
