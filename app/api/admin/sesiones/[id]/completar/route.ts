@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
-import nodemailer from 'nodemailer'
+import { getTransporter, MAIL_FROM } from '@/lib/mailer'
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -50,15 +50,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     // 3. Enviar email
     let emailEnviado = false
-    if (d.notif_email && process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+    const transporter = getTransporter()
+    if (d.notif_email && transporter) {
       try {
-        const transporter = nodemailer.createTransport({
-          service: 'gmail',
-          auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD }
-        })
-
         await transporter.sendMail({
-          from:    `"${d.empresa_nombre}" <${process.env.MAIL_FROM || 'hola@ialimp.es'}>`,
+          from:    `"${d.empresa_nombre}" <${MAIL_FROM}>`,
           to:      d.notif_email,
           subject: `✅ ${propNombre} está listo — ${hora}`,
           html: `

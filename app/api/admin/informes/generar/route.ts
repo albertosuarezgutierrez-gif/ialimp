@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
 import { aiComplete } from '@/lib/ai-client'
-import nodemailer from 'nodemailer'
+import { getTransporter, MAIL_FROM } from '@/lib/mailer'
 
 export async function POST(req: Request) {
   try {
@@ -155,14 +155,11 @@ ${quejas_data.length > 0 ? `
 
     // Enviar email si solicitado
     let email_enviado = false
-    if (enviar_email && c.notif_email && process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+    const t = getTransporter()
+    if (enviar_email && c.notif_email && t) {
       try {
-        const t = nodemailer.createTransport({
-          service: 'gmail',
-          auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD }
-        })
         await t.sendMail({
-          from: `"${e.nombre}" <${process.env.MAIL_FROM || 'hola@ialimp.es'}>`,
+          from: `"${e.nombre}" <${MAIL_FROM}>`,
           to: c.notif_email,
           subject: `Informe de servicio ${mes} — ${e.nombre}`,
           html

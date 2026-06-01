@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { aiComplete } from '@/lib/ai-client'
+import { getTransporter, MAIL_FROM } from '@/lib/mailer'
 
 const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -281,15 +282,11 @@ No menciones competidores. No uses exclamaciones. Responde SOLO con el texto de 
 
     // ── Enviar email si hay credenciales y email del lead ─────────────
     let email_enviado = false
-    if (lead.email && process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+    const t = getTransporter()
+    if (lead.email && t) {
       try {
-        const nodemailer = (await import('nodemailer')).default
-        const t = nodemailer.createTransport({
-          service: 'gmail',
-          auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD }
-        })
         await t.sendMail({
-          from: `"${empresa.nombre}" <${process.env.MAIL_FROM || 'hola@ialimp.es'}>`,
+          from: `"${empresa.nombre}" <${MAIL_FROM}>`,
           to: lead.email,
           subject: `Su propuesta de limpieza profesional — ${empresa.nombre}`,
           html,
