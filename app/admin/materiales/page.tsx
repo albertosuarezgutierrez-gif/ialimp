@@ -14,8 +14,7 @@ const PROPS = [
   { id: 'prop_luxury_busto',    name: 'Luxury Busto',    color: '#9333ea', short: 'LB' },
   { id: 'prop_busto_reform',    name: 'Busto Reform',    color: '#ea580c', short: 'BR' },
 ]
-const TIPO_LENCERIA = ['sabana_bajera','sabana_encimera','funda_almohada','toalla_bano','toalla_mano','alfombrin','colcha','almohada','nórdico','otro']
-const CAT_PROVEEDOR = ['general','limpieza','lenceria','lavanderia','mantenimiento','quimicos']
+const CAT_PROVEEDOR =['general','limpieza','lenceria','lavanderia','mantenimiento','quimicos']
 const CAT_PRODUCTO  = ['limpieza','lenceria','amenities','consumible','herramienta']
 const CAT_STOCK     = ['limpieza','lenceria','consumible','amenities','herramienta']
 const UNIDADES      = ['unidad','kg','litro','rollo','pack','caja','par','ml','gr']
@@ -98,24 +97,26 @@ export default function MaterialesPage() {
 // ─── TAB STOCK ────────────────────────────────────────────────────
 function TabStock() {
   const [items, setItems]     = useState<any[]>([])
+  const [provs, setProvs]     = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')
   const [catFil, setCatFil]   = useState('all')
   const [modal, setModal]     = useState<any>(null)   // null | {} nuevo | {id,...} editar
   const [saving, setSaving]   = useState(false)
-  const [form, setForm]       = useState<any>({nombre:'',categoria:'limpieza',unidad:'unidad',stock_actual:'',stock_minimo:'',precio_unitario:''})
+  const [form, setForm]       = useState<any>({nombre:'',categoria:'limpieza',unidad:'unidad',stock_actual:'',stock_minimo:'',precio_unitario:'',proveedor_id:''})
 
   const load = useCallback(async () => {
     setLoading(true)
-    const r = await fetch('/api/admin/stock')
-    const d = await r.json()
+    const [r, rp] = await Promise.all([fetch('/api/admin/stock'), fetch('/api/admin/proveedores')])
+    const d = await r.json(); const dp = await rp.json()
     setItems(d.productos || [])
+    setProvs(dp.proveedores || [])
     setLoading(false)
   }, [])
   useEffect(() => { load() }, [load])
 
   const openNew = () => {
-    setForm({nombre:'',categoria:'limpieza',unidad:'unidad',stock_actual:'',stock_minimo:'',precio_unitario:''})
+    setForm({nombre:'',categoria:'limpieza',unidad:'unidad',stock_actual:'',stock_minimo:'',precio_unitario:'',proveedor_id:''})
     setModal({})
   }
   const openEdit = (item: any) => {
@@ -136,6 +137,7 @@ function TabStock() {
         unidad: form.unidad, stock_actual: Number(form.stock_actual||0),
         stock_minimo: Number(form.stock_minimo||0),
         precio_unitario: form.precio_unitario ? Number(form.precio_unitario) : null,
+        proveedor_id: form.proveedor_id || null,
       })
     })
     setSaving(false); setModal(null); load()
@@ -203,6 +205,10 @@ function TabStock() {
                   {item.categoria} · {item.unidad}
                   {item.precio_unitario ? ` · ${Number(item.precio_unitario).toFixed(2)} €` : ''}
                 </div>
+                <div style={{fontSize:11,color:item.proveedor_nombre?C.brand:C.muted,marginTop:2}}>
+                  🏪 {item.proveedor_nombre || 'Sin proveedor'}
+                  {item.proveedor_tel ? ` · ${item.proveedor_tel}` : ''}
+                </div>
               </div>
               <div style={{textAlign:'right',flexShrink:0}}>
                 <div style={{fontWeight:800,fontSize:16,color:bajo?C.red:C.text}}>{item.stock_actual}</div>
@@ -248,6 +254,11 @@ function TabStock() {
                   style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:13,fontFamily:'inherit',outline:'none'}}/>
                 <input type="number" placeholder="Precio/ud €" value={form.precio_unitario||''} onChange={e=>setForm((p:any)=>({...p,precio_unitario:e.target.value}))} step="0.01"
                   style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:13,fontFamily:'inherit',outline:'none',gridColumn:'1/-1'}}/>
+                <select value={form.proveedor_id||''} onChange={e=>setForm((p:any)=>({...p,proveedor_id:e.target.value}))}
+                  style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:13,background:C.white,fontFamily:'inherit',gridColumn:'1/-1'}}>
+                  <option value="">🏪 Sin proveedor</option>
+                  {provs.map((p:any)=><option key={p.id} value={p.id}>{p.nombre}</option>)}
+                </select>
               </div>
             </div>
             <div style={{display:'flex',gap:8,marginTop:16}}>
@@ -262,107 +273,143 @@ function TabStock() {
 }
 
 // ─── TAB LENCERÍA ─────────────────────────────────────────────────
+const ESTADOS_LEN: Record<string,{label:string;color:string;bg:string}> = {
+  limpio:        { label:'Limpio',        color:'#16a34a', bg:'#f0fdf4' },
+  en_uso:        { label:'En uso',        color:'#6366f1', bg:'#eef2ff' },
+  sucio:         { label:'Sucio',         color:'#d97706', bg:'#fffbeb' },
+  en_lavanderia: { label:'En lavandería', color:'#7c3aed', bg:'#faf5ff' },
+  baja:          { label:'Baja',          color:'#64748b', bg:'#f1f5f9' },
+}
+
 function TabLenceria() {
   const [items, setItems]     = useState<any[]>([])
+  const [props, setProps]     = useState<any[]>([])
+  const [provs, setProvs]     = useState<any[]>([])
+  const [tipos, setTipos]     = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selProp, setSelProp] = useState('all')
   const [modal, setModal]     = useState<any>(null)
   const [saving, setSaving]   = useState(false)
-  const [form, setForm]       = useState<any>({property_id:PROPS[0].id,tipo:'sabana_bajera',talla:'matrimonio',cantidad_total:'',cantidad_disponible:'',coste_unidad:''})
+  const [form, setForm]       = useState<any>({propiedad_id:'',tipo:'',cantidad:'',estado:'limpio',proveedor_id:'',notas:''})
 
   const load = useCallback(async () => {
     setLoading(true)
-    const r = await fetch('/api/admin/lenceria')
-    const d = await r.json()
-    setItems(d.items || [])
+    const [rI,rP,rV,rC] = await Promise.all([
+      fetch('/api/admin/lenceria'),
+      fetch('/api/admin/propiedades'),
+      fetch('/api/admin/proveedores'),
+      fetch('/api/admin/catalogos'),
+    ])
+    const dI=await rI.json(), dP=await rP.json(), dV=await rV.json(), dC=await rC.json()
+    setItems(dI.items||[])
+    setProps(dP.propiedades||[])
+    setProvs(dV.proveedores||[])
+    setTipos(dC.catalogos?.tipos_lenceria?.filter((t:any)=>t.activo!==false)||[])
     setLoading(false)
   }, [])
   useEffect(() => { load() }, [load])
 
-  const filtered = selProp==='all' ? items : items.filter(i=>i.property_id===selProp)
+  const tipoLabel = (id:string) => tipos.find((t:any)=>t.id===id)?.label || (id||'').replace(/_/g,' ')
+  const tipoEmoji = (id:string) => tipos.find((t:any)=>t.id===id)?.emoji || '🛏️'
 
   const openNew = () => {
-    setForm({property_id:PROPS[0].id,tipo:'sabana_bajera',talla:'matrimonio',cantidad_total:'',cantidad_disponible:'',coste_unidad:''})
+    setForm({propiedad_id:'',tipo:tipos[0]?.id||'',cantidad:'',estado:'limpio',proveedor_id:'',notas:''})
     setModal({})
   }
-  const openEdit = (item: any) => {
-    setForm({...item,cantidad_total:item.cantidad_total??'',cantidad_disponible:item.cantidad_disponible??'',coste_unidad:item.coste_unidad??''})
+  const openEdit = (item:any) => {
+    setForm({propiedad_id:item.propiedad_id||'',tipo:item.tipo,cantidad:item.cantidad??'',estado:item.estado||'limpio',proveedor_id:item.proveedor_id||'',notas:item.notas||''})
     setModal(item)
   }
 
   const save = async () => {
+    if(!form.tipo || !form.cantidad) return
     setSaving(true)
     await fetch('/api/admin/lenceria', {
       method: modal?.id ? 'PUT' : 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({...form, cantidad_total:+form.cantidad_total, cantidad_disponible:+form.cantidad_disponible, coste_unidad:+form.coste_unidad||null})
+      body: JSON.stringify({
+        ...(modal?.id?{id:modal.id}:{}),
+        tipo:form.tipo, cantidad:Number(form.cantidad||0),
+        propiedad_id:form.propiedad_id||null, proveedor_id:form.proveedor_id||null,
+        estado:form.estado||'limpio', notas:form.notas||null,
+      })
     })
     setSaving(false); setModal(null); load()
   }
 
-  const del = async (item: any) => {
-    if (!confirm(`¿Eliminar ${item.tipo.replace(/_/g,' ')} (${pBy(item.property_id)?.short})?`)) return
+  const del = async (item:any) => {
+    if (!confirm(`¿Eliminar ${tipoLabel(item.tipo)}?`)) return
     await fetch('/api/admin/lenceria', {method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:item.id})})
     load()
   }
 
-  const updateStock = async (item: any, field: string, val: number) => {
-    await fetch('/api/admin/lenceria', {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...item,[field]:val})})
+  const cambiarEstado = async (item:any, estado:string) => {
+    await fetch('/api/admin/lenceria/'+item.id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado})})
     load()
   }
 
   if (loading) return <Spinner />
-  const totalPiezas  = filtered.reduce((a,i)=>a+(i.cantidad_total||0),0)
-  const disponibles  = filtered.reduce((a,i)=>a+(i.cantidad_disponible||0),0)
-  const enLavanderia = filtered.reduce((a,i)=>a+(i.cantidad_lavanderia||0),0)
+
+  const filtered = selProp==='all' ? items
+    : selProp==='none' ? items.filter(i=>!i.propiedad_id)
+    : items.filter(i=>i.propiedad_id===selProp)
+  const totalPiezas  = filtered.reduce((a,i)=>a+(i.cantidad||0),0)
+  const enLavanderia = filtered.filter(i=>i.estado==='en_lavanderia').reduce((a,i)=>a+(i.cantidad||0),0)
+  const sucias       = filtered.filter(i=>i.estado==='sucio').reduce((a,i)=>a+(i.cantidad||0),0)
+  const conProv      = filtered.filter(i=>i.proveedor_id).length
+
+  const groups = filtered.reduce((acc:any,i:any)=>{
+    const k = i.propiedad_nombre || 'General / sin asignar'
+    if(!acc[k])acc[k]=[]; acc[k].push(i); return acc
+  },{})
 
   return (
     <div>
       <div style={{display:'flex',gap:10,marginBottom:14,flexWrap:'wrap'}}>
         <StatCard value={totalPiezas} label="Total piezas" />
-        <StatCard value={disponibles} label="Disponibles" color={C.ok} />
-        <StatCard value={enLavanderia} label="En lavandería" color="#2563eb" />
-        <StatCard value={filtered.reduce((a,i)=>a+(i.cantidad_sucia||0),0)} label="Sucias" color={C.warn} />
+        <StatCard value={enLavanderia} label="En lavandería" color="#7c3aed" />
+        <StatCard value={sucias} label="Sucias" color={C.warn} />
+        <StatCard value={conProv} label="Con proveedor" color={C.brand} />
       </div>
-      <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap',alignItems:'center'}}>
-        <button onClick={()=>setSelProp('all')} style={{padding:'6px 14px',borderRadius:8,border:'1px solid #e5e7eb',background:selProp==='all'?C.primary:'#fff',color:selProp==='all'?'#fff':'#374151',fontSize:12,fontWeight:600,cursor:'pointer'}}>Todos</button>
-        {PROPS.map(p=>(
-          <button key={p.id} onClick={()=>setSelProp(p.id)}
-            style={{padding:'6px 14px',borderRadius:8,border:`1px solid ${p.color}`,background:selProp===p.id?p.color:'#fff',color:selProp===p.id?'#fff':p.color,fontSize:12,fontWeight:600,cursor:'pointer'}}>
-            {p.short}
-          </button>
-        ))}
+
+      <div style={{display:'flex',gap:8,marginBottom:14,flexWrap:'wrap',alignItems:'center'}}>
+        <select value={selProp} onChange={e=>setSelProp(e.target.value)}
+          style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'8px 10px',fontSize:12,background:C.white,fontFamily:'inherit'}}>
+          <option value="all">Todas las propiedades</option>
+          <option value="none">General / sin asignar</option>
+          {props.map((p:any)=><option key={p.id} value={p.id}>{p.nombre}</option>)}
+        </select>
         <div style={{marginLeft:'auto'}}>
           <Btn onClick={openNew}>+ Añadir</Btn>
         </div>
       </div>
 
-      {Object.entries(filtered.reduce((acc:any,i:any)=>{
-        const p=pBy(i.property_id)?.name||i.property_id
-        if(!acc[p])acc[p]=[]; acc[p].push(i); return acc
-      },{})).map(([propName,its]:any)=>(
+      {filtered.length===0 && <div style={{textAlign:'center',padding:'32px 16px',color:C.muted,fontSize:13}}>Sin lencería registrada</div>}
+
+      {Object.entries(groups).map(([propName,its]:any)=>(
         <div key={propName} style={{marginBottom:16}}>
           <div style={{fontWeight:700,fontSize:13,marginBottom:8,color:C.text}}>{propName}</div>
           {its.map((item:any)=>{
-            const bajoBajo = item.cantidad_disponible<2
+            const est = ESTADOS_LEN[item.estado] || ESTADOS_LEN.limpio
             return (
-              <div key={item.id} style={{background:bajoBajo?'#fff7ed':C.white,border:`1px solid ${bajoBajo?'#fed7aa':C.border}`,borderRadius:10,padding:'10px 14px',marginBottom:6}}>
+              <div key={item.id} style={{background:C.white,border:`1px solid ${C.border}`,borderLeft:`4px solid ${est.color}`,borderRadius:10,padding:'10px 14px',marginBottom:6}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:8}}>
-                  <div style={{flex:1}}>
-                    <span style={{fontWeight:600,fontSize:13}}>{item.tipo.replace(/_/g,' ')}</span>
-                    {item.talla&&<span style={{fontSize:11,color:C.muted,marginLeft:6}}>{item.talla}</span>}
-                    {bajoBajo&&<span style={{marginLeft:8,fontSize:11,fontWeight:700,color:C.red}}>⚠️ bajo</span>}
+                  <div style={{flex:1,minWidth:0}}>
+                    <div>
+                      <span style={{fontSize:16,marginRight:6}}>{tipoEmoji(item.tipo)}</span>
+                      <span style={{fontWeight:600,fontSize:13}}>{tipoLabel(item.tipo)}</span>
+                      <span style={{marginLeft:8,fontSize:11,fontWeight:700,color:est.color,background:est.bg,borderRadius:6,padding:'2px 7px'}}>{est.label}</span>
+                    </div>
+                    <div style={{fontSize:11,color:item.proveedor_nombre?C.brand:C.muted,marginTop:3}}>
+                      🏪 {item.proveedor_nombre || 'Sin proveedor'}{item.proveedor_tel?` · ${item.proveedor_tel}`:''}
+                    </div>
                   </div>
-                  <div style={{display:'flex',gap:10,fontSize:12,alignItems:'center',flexWrap:'wrap'}}>
-                    {[['Disp','cantidad_disponible'],['Lav','cantidad_lavanderia'],['Suc','cantidad_sucia']].map(([lbl,fld])=>(
-                      <div key={fld}>
-                        <span style={{color:C.muted}}>{lbl}: </span>
-                        <input type="number" value={item[fld]||0} min={0}
-                          onChange={e=>updateStock(item,fld,+e.target.value)}
-                          style={{width:46,border:`1px solid ${C.border}`,borderRadius:6,padding:'2px 5px',fontSize:12,textAlign:'center',fontFamily:'inherit'}}/>
-                      </div>
-                    ))}
-                    <div style={{color:C.muted,fontSize:11}}>/{item.cantidad_total}</div>
+                  <div style={{display:'flex',gap:8,alignItems:'center',flexShrink:0}}>
+                    <div style={{fontWeight:800,fontSize:18,color:est.color}}>{item.cantidad}</div>
+                    <select value={item.estado} onChange={e=>cambiarEstado(item,e.target.value)}
+                      style={{border:`1px solid ${C.border}`,borderRadius:7,padding:'3px 6px',fontSize:11,background:C.white,fontFamily:'inherit'}}>
+                      {Object.entries(ESTADOS_LEN).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+                    </select>
                     <button onClick={()=>openEdit(item)} style={{background:'none',border:`1px solid ${C.border}`,borderRadius:7,padding:'3px 8px',fontSize:11,cursor:'pointer'}}>✏️</button>
                     <button onClick={()=>del(item)} style={{background:'none',border:'none',color:C.red,cursor:'pointer',fontSize:16,padding:'0 2px'}}>×</button>
                   </div>
@@ -381,26 +428,33 @@ function TabLenceria() {
               <button onClick={()=>setModal(null)} style={{background:'none',border:'none',fontSize:22,color:C.muted,cursor:'pointer'}}>×</button>
             </div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
-              <select value={form.property_id} onChange={e=>setForm((p:any)=>({...p,property_id:e.target.value}))}
-                style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:12,background:C.white,fontFamily:'inherit'}}>
-                {PROPS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
               <select value={form.tipo} onChange={e=>setForm((p:any)=>({...p,tipo:e.target.value}))}
                 style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:12,background:C.white,fontFamily:'inherit'}}>
-                {TIPO_LENCERIA.map(t=><option key={t}>{t}</option>)}
+                {tipos.length===0 && <option value="">— sin tipos —</option>}
+                {tipos.map((t:any)=><option key={t.id} value={t.id}>{t.emoji?`${t.emoji} `:''}{t.label}</option>)}
               </select>
-              <input placeholder="Talla" value={form.talla||''} onChange={e=>setForm((p:any)=>({...p,talla:e.target.value}))}
+              <input type="number" placeholder="Cantidad *" value={form.cantidad||''} onChange={e=>setForm((p:any)=>({...p,cantidad:e.target.value}))}
                 style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:12,fontFamily:'inherit',outline:'none'}}/>
-              <input type="number" placeholder="Total piezas" value={form.cantidad_total||''} onChange={e=>setForm((p:any)=>({...p,cantidad_total:e.target.value}))}
-                style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:12,fontFamily:'inherit',outline:'none'}}/>
-              <input type="number" placeholder="Disponibles" value={form.cantidad_disponible||''} onChange={e=>setForm((p:any)=>({...p,cantidad_disponible:e.target.value}))}
-                style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:12,fontFamily:'inherit',outline:'none'}}/>
-              <input type="number" placeholder="Coste/ud €" value={form.coste_unidad||''} onChange={e=>setForm((p:any)=>({...p,coste_unidad:e.target.value}))} step="0.01"
-                style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:12,fontFamily:'inherit',outline:'none'}}/>
+              <select value={form.propiedad_id||''} onChange={e=>setForm((p:any)=>({...p,propiedad_id:e.target.value}))}
+                style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:12,background:C.white,fontFamily:'inherit'}}>
+                <option value="">— General / sin asignar —</option>
+                {props.map((p:any)=><option key={p.id} value={p.id}>{p.nombre}</option>)}
+              </select>
+              <select value={form.estado||'limpio'} onChange={e=>setForm((p:any)=>({...p,estado:e.target.value}))}
+                style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:12,background:C.white,fontFamily:'inherit'}}>
+                {Object.entries(ESTADOS_LEN).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+              </select>
+              <select value={form.proveedor_id||''} onChange={e=>setForm((p:any)=>({...p,proveedor_id:e.target.value}))}
+                style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:12,background:C.white,fontFamily:'inherit',gridColumn:'1/-1'}}>
+                <option value="">🏪 Sin proveedor</option>
+                {provs.map((p:any)=><option key={p.id} value={p.id}>{p.nombre}</option>)}
+              </select>
+              <input placeholder="Notas" value={form.notas||''} onChange={e=>setForm((p:any)=>({...p,notas:e.target.value}))}
+                style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:12,fontFamily:'inherit',outline:'none',gridColumn:'1/-1'}}/>
             </div>
             <div style={{display:'flex',gap:8}}>
               <Btn onClick={()=>setModal(null)} variant="secondary">Cancelar</Btn>
-              <Btn onClick={save} disabled={saving}>{saving?'Guardando…':modal?.id?'Actualizar':'Añadir'}</Btn>
+              <Btn onClick={save} disabled={saving||!form.tipo||!form.cantidad}>{saving?'Guardando…':modal?.id?'Actualizar':'Añadir'}</Btn>
             </div>
           </div>
         </div>
