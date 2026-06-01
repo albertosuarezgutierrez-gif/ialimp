@@ -5,16 +5,18 @@ import { requireEmpresaId } from '@/lib/tenant'
 
 // PATCH — editar sesión: asignar / reasignar / DESASIGNAR limpiadora y otros campos.
 // Scope obligatorio por empresa_id. No deja tocar una sesión ya completada.
+// Se actualiza SOLO el campo enviado (un UPDATE por campo): así una reasignación
+// solo toca limpiadora_id y nunca se ejecutan COALESCE que choquen de tipo
+// (p. ej. hora_inicio es TEXT, no time → un cast ::time rompía con 42804).
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const empresa_id = await requireEmpresaId()
     const { id } = await params
     const body = await req.json()
-    const { property_name, session_date, hora_inicio, tipo_servicio, notas } = body
 
     // Sesión actual (y comprobación de pertenencia a la empresa)
     const actual = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT id, completed_at, origen FROM cleaning_sessions
+      SELECT id, completed_at FROM cleaning_sessions
       WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
     `)
     if (!actual.length) return NextResponse.json({ error: 'Sesión no encontrada' }, { status: 404 })
@@ -29,31 +31,27 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       )
     }
 
-    // Resto de campos (solo los enviados; casts en el SQL, nunca en el parámetro)
-    await prisma.$executeRaw(Prisma.sql`
-      UPDATE cleaning_sessions SET
-        property_name = COALESCE(${property_name ?? null}, property_name),
-        session_date  = COALESCE(${session_date ?? null}::date, session_date),
-        hora_inicio   = COALESCE(${hora_inicio ?? null}::time, hora_inicio),
-        tipo_servicio = COALESCE(${tipo_servicio ?? null}, tipo_servicio),
-        notas         = COALESCE(${notas ?? null}, notas)
-      WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
-    `)
+    const scope = Prisma.sql`WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid`
 
-    // Limpiadora: asignar (uuid), o DESASIGNAR si llega null / '' / vacío
+    // Cada campo, solo si se envía (sin COALESCE → sin choques de tipo)
+    if (body.property_name !== undefined)
+      await prisma.$executeRaw(Prisma.sql`UPDATE cleaning_sessions SET property_name = ${body.property_name} ${scope}`)
+    if (body.session_date)
+      await prisma.$executeRaw(Prisma.sql`UPDATE cleaning_sessions SET session_date = ${body.session_date}::date ${scope}`)
+    if (body.hora_inicio !== undefined)
+      await prisma.$executeRaw(Prisma.sql`UPDATE cleaning_sessions SET hora_inicio = ${body.hora_inicio} ${scope}`)
+    if (body.tipo_servicio !== undefined)
+      await prisma.$executeRaw(Prisma.sql`UPDATE cleaning_sessions SET tipo_servicio = ${body.tipo_servicio} ${scope}`)
+    if (body.notas !== undefined)
+      await prisma.$executeRaw(Prisma.sql`UPDATE cleaning_sessions SET notas = ${body.notas} ${scope}`)
+
+    // Limpiadora: asignar (uuid) o DESASIGNAR si llega null / '' / vacío
     if (cambiaLimpiadora) {
       const lid = body.limpiadora_id
-      if (lid) {
-        await prisma.$executeRaw(Prisma.sql`
-          UPDATE cleaning_sessions SET limpiadora_id = ${lid}::uuid
-          WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
-        `)
-      } else {
-        await prisma.$executeRaw(Prisma.sql`
-          UPDATE cleaning_sessions SET limpiadora_id = NULL
-          WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
-        `)
-      }
+      if (lid)
+        await prisma.$executeRaw(Prisma.sql`UPDATE cleaning_sessions SET limpiadora_id = ${lid}::uuid ${scope}`)
+      else
+        await prisma.$executeRaw(Prisma.sql`UPDATE cleaning_sessions SET limpiadora_id = NULL ${scope}`)
     }
 
     const result = await prisma.$queryRaw<any[]>(Prisma.sql`
