@@ -239,7 +239,7 @@ function TabStock() {
             <div style={{display:'flex',flexDirection:'column',gap:10}}>
               <input placeholder="Nombre *" value={form.nombre||''} onChange={e=>setForm((p:any)=>({...p,nombre:e.target.value}))}
                 style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'10px 12px',fontSize:14,fontFamily:'inherit',outline:'none'}}/>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:8}}>
                 <select value={form.categoria||'limpieza'} onChange={e=>setForm((p:any)=>({...p,categoria:e.target.value}))}
                   style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:13,background:C.white,fontFamily:'inherit'}}>
                   {CAT_STOCK.map(c=><option key={c}>{c}</option>)}
@@ -427,7 +427,7 @@ function TabLenceria() {
               <div style={{fontWeight:800,fontSize:17,color:C.text}}>{modal?.id?'Editar lencería':'Nueva lencería'}</div>
               <button onClick={()=>setModal(null)} style={{background:'none',border:'none',fontSize:22,color:C.muted,cursor:'pointer'}}>×</button>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:8,marginBottom:12}}>
               <select value={form.tipo} onChange={e=>setForm((p:any)=>({...p,tipo:e.target.value}))}
                 style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:12,background:C.white,fontFamily:'inherit'}}>
                 {tipos.length===0 && <option value="">— sin tipos —</option>}
@@ -593,7 +593,7 @@ function TabProveedores() {
               <div style={{fontWeight:800,fontSize:17,color:C.text}}>{modal?.id?'Editar proveedor':'Nuevo proveedor'}</div>
               <button onClick={()=>setModal(null)} style={{background:'none',border:'none',fontSize:22,color:C.muted,cursor:'pointer'}}>×</button>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:8,marginBottom:10}}>
               {([['nombre','Nombre *'],['empresa','Empresa'],['telefono','Teléfono'],['email','Email'],['whatsapp','WhatsApp']] as [string,string][]).map(([k,l])=>(
                 <input key={k} placeholder={l} value={form[k]||''} onChange={e=>setForm((p:any)=>({...p,[k]:e.target.value}))}
                   style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:12,fontFamily:'inherit',outline:'none'}}/>
@@ -621,7 +621,7 @@ function TabProveedores() {
               <div style={{fontWeight:800,fontSize:17,color:C.text}}>{modalProd?.id?'Editar producto':'Nuevo producto'}</div>
               <button onClick={()=>setModalProd(null)} style={{background:'none',border:'none',fontSize:22,color:C.muted,cursor:'pointer'}}>×</button>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:8,marginBottom:10}}>
               <select value={formProd.proveedor_id||''} onChange={e=>setFormProd((p:any)=>({...p,proveedor_id:e.target.value}))}
                 style={{border:`1px solid ${C.border}`,borderRadius:9,padding:'9px 10px',fontSize:12,background:C.white,fontFamily:'inherit'}}>
                 <option value="">Sin proveedor</option>
@@ -746,7 +746,7 @@ function TabChecklists() {
               <div>
                 <input value={editData.description||''} onChange={e=>setEditData((p:any)=>({...p,description:e.target.value}))}
                   style={{width:'100%',border:`1px solid ${C.border}`,borderRadius:8,padding:'7px 10px',fontSize:14,marginBottom:8,boxSizing:'border-box' as const,fontFamily:'inherit',outline:'none'}}/>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:8,marginBottom:8}}>
                   <select value={editData.frequency||'per_change'} onChange={e=>setEditData((p:any)=>({...p,frequency:e.target.value}))}
                     style={{border:`1px solid ${C.border}`,borderRadius:8,padding:'6px 8px',fontSize:13,fontFamily:'inherit'}}>
                     {FREQ_OPTS.map(f=><option key={f.value} value={f.value}>{f.label}</option>)}
@@ -800,7 +800,7 @@ function TabChecklists() {
         <input value={newItem.description} onChange={e=>setNewItem(p=>({...p,description:e.target.value}))}
           placeholder="Descripción del ítem..."
           style={{width:'100%',border:`1px solid ${C.border}`,borderRadius:8,padding:'8px 10px',fontSize:14,marginBottom:8,boxSizing:'border-box' as const,fontFamily:'inherit',outline:'none'}}/>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:8,marginBottom:10}}>
           <select value={newItem.frequency} onChange={e=>setNewItem(p=>({...p,frequency:e.target.value}))}
             style={{border:`1px solid ${C.border}`,borderRadius:8,padding:'7px 10px',fontSize:13,fontFamily:'inherit'}}>
             {FREQ_OPTS.map(f=><option key={f.value} value={f.value}>{f.label}</option>)}
