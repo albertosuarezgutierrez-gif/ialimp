@@ -96,6 +96,14 @@ async function getCandidatas(
   propiedadId: string
 ): Promise<any[]> {
   return prisma.$queryRaw<any[]>(Prisma.sql`
+    WITH factores AS (
+      SELECT (e->>'id') AS tipo, COALESCE(NULLIF(e->>'factor','')::float8, 1) AS factor
+      FROM cotizador_config cc
+      CROSS JOIN LATERAL jsonb_array_elements(
+        CASE WHEN jsonb_typeof(cc.tipos_servicio_op) = 'array' THEN cc.tipos_servicio_op ELSE '[]'::jsonb END
+      ) e
+      WHERE cc.empresa_id = ${empresaId}::uuid
+    )
     SELECT
       l.id, l.nombre, l.color, l.propiedades, l.empresa_id,
       ld.hora_inicio, ld.hora_fin, ld.horas_max,
@@ -116,11 +124,13 @@ async function getCandidatas(
     ) ld ON ld.limpiadora_id = l.id
     LEFT JOIN (
       SELECT cs.limpiadora_id,
-             SUM(COALESCE(cs.tiempo_estimado, p.duracion_estimada_min, 120)) AS total_min
+             SUM(COALESCE(cs.tiempo_estimado, p.duracion_estimada_min, 120) * COALESCE(f.factor, 1)) AS total_min
       FROM cleaning_sessions cs
       LEFT JOIN propiedades p ON p.id = cs.propiedad_id
+      LEFT JOIN factores f ON f.tipo = cs.tipo_servicio
       WHERE cs.session_date = ${fecha}::date
         AND cs.limpiadora_id IS NOT NULL
+        AND cs.empresa_id = ${empresaId}::uuid
       GROUP BY cs.limpiadora_id
     ) carga ON carga.limpiadora_id = l.id
     WHERE l.activa = true
@@ -201,6 +211,17 @@ export async function GET() {
     // Sesiones de hoy y mañana sin limpiadora. Traemos el tipo de propiedad
     // (para separar el hotel), los minutos reales y si hay entrada el mismo día.
     const sinAsignar = await prisma.$queryRaw<any[]>(Prisma.sql`
+      WITH factores AS (
+        -- factor de tiempo editable por la dueña en Configuración › Catálogos
+        -- (tipos_servicio_op). Sin factor ⇒ 1. Una "Profunda" ×1,5 pesa más en
+        -- el reparto que una rotación normal del mismo piso.
+        SELECT cc.empresa_id, (e->>'id') AS tipo,
+               COALESCE(NULLIF(e->>'factor','')::float8, 1) AS factor
+        FROM cotizador_config cc
+        CROSS JOIN LATERAL jsonb_array_elements(
+          CASE WHEN jsonb_typeof(cc.tipos_servicio_op) = 'array' THEN cc.tipos_servicio_op ELSE '[]'::jsonb END
+        ) e
+      )
       SELECT
         cs.id, cs.empresa_id,
         -- property_id convive en 2 formatos (slug/UUID); ambos a text para
@@ -208,11 +229,12 @@ export async function GET() {
         COALESCE(NULLIF(cs.propiedad_id::text, ''), cs.property_id::text) AS propiedad_id,
         cs.property_name, cs.session_date, cs.hora_inicio, cs.hora_checkout,
         cs.tipo_servicio,
-        COALESCE(cs.tiempo_estimado, p.duracion_estimada_min, 120)::int AS est_min,
+        ROUND(COALESCE(cs.tiempo_estimado, p.duracion_estimada_min, 120) * COALESCE(f.factor, 1))::int AS est_min,
         (p.tipo = 'habitacion_hotel') AS es_hotel,
         (cs.hora_checkin_siguiente IS NOT NULL) AS tiene_entrada
       FROM cleaning_sessions cs
       LEFT JOIN propiedades p ON p.id = cs.propiedad_id
+      LEFT JOIN factores f ON f.empresa_id = cs.empresa_id AND f.tipo = cs.tipo_servicio
       WHERE cs.session_date IN (${hoy}::date, ${manana}::date)
         AND cs.limpiadora_id IS NULL
         AND cs.completed_at IS NULL

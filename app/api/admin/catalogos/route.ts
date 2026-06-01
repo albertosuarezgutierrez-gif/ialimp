@@ -13,13 +13,13 @@ type AllowedKey = typeof ALLOWED_KEYS[number]
 
 const DEFAULTS: Record<AllowedKey, any[]> = {
   tipos_servicio_op: [
-    { id: 'rotacion',      label: 'Rotación',     emoji: '🔄', desc: 'Entre huéspedes',    activo: true },
-    { id: 'profunda',      label: 'Profunda',      emoji: '🧽', desc: 'Limpieza a fondo',   activo: true },
-    { id: 'comunidad',     label: 'Comunidad',     emoji: '🏢', desc: 'Zonas comunes',      activo: true },
-    { id: 'obra',          label: 'Final obra',    emoji: '🏗️', desc: 'Post-construcción', activo: true },
-    { id: 'mantenimiento', label: 'Mantenimiento', emoji: '🔧', desc: 'Revisión y orden',  activo: true },
-    { id: 'particular',    label: 'Particular',    emoji: '🏡', desc: 'Casa o piso',        activo: true },
-    { id: 'oficina',       label: 'Oficina',       emoji: '💼', desc: 'Local o empresa',   activo: true },
+    { id: 'rotacion',      label: 'Rotación',     emoji: '🔄', desc: 'Entre huéspedes',    factor: 1,   activo: true },
+    { id: 'profunda',      label: 'Profunda',      emoji: '🧽', desc: 'Limpieza a fondo',   factor: 1.5, activo: true },
+    { id: 'comunidad',     label: 'Comunidad',     emoji: '🏢', desc: 'Zonas comunes',      factor: 1,   activo: true },
+    { id: 'obra',          label: 'Final obra',    emoji: '🏗️', desc: 'Post-construcción', factor: 2,   activo: true },
+    { id: 'mantenimiento', label: 'Mantenimiento', emoji: '🔧', desc: 'Revisión y orden',  factor: 1,   activo: true },
+    { id: 'particular',    label: 'Particular',    emoji: '🏡', desc: 'Casa o piso',        factor: 1,   activo: true },
+    { id: 'oficina',       label: 'Oficina',       emoji: '💼', desc: 'Local o empresa',   factor: 1,   activo: true },
   ],
   categorias_stock: [
     { id: 'limpieza',    label: 'Limpieza',    emoji: '🧴', activo: true },

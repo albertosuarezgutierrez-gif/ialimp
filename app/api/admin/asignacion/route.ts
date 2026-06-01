@@ -17,6 +17,15 @@ export async function GET(req: NextRequest) {
   const diaSemana = d.getDay() === 0 ? 7 : d.getDay()
 
   const candidatas: any[] = await prisma.$queryRaw(Prisma.sql`
+    WITH factores AS (
+      -- factor de tiempo editable (tipos_servicio_op): profunda pesa más, etc.
+      SELECT (e->>'id') AS tipo, COALESCE(NULLIF(e->>'factor','')::float8, 1) AS factor
+      FROM cotizador_config cc
+      CROSS JOIN LATERAL jsonb_array_elements(
+        CASE WHEN jsonb_typeof(cc.tipos_servicio_op) = 'array' THEN cc.tipos_servicio_op ELSE '[]'::jsonb END
+      ) e
+      WHERE cc.empresa_id = ${empresaId}::uuid
+    )
     SELECT
       l.id, l.nombre, l.color, l.propiedades,
       ld.hora_inicio, ld.hora_fin, ld.horas_max,
@@ -41,11 +50,13 @@ export async function GET(req: NextRequest) {
     ) ld ON ld.limpiadora_id = l.id
     LEFT JOIN (
       -- minutos reales: tiempo_estimado de la sesión → duración de la ficha del
-      -- piso → 120 por defecto (tiempo_estimado hoy suele venir NULL)
+      -- piso → 120 por defecto (tiempo_estimado hoy suele venir NULL), por el
+      -- factor de tiempo del tipo de servicio (profunda, obra…).
       SELECT cs.limpiadora_id,
-             SUM(COALESCE(cs.tiempo_estimado, p.duracion_estimada_min, 120)) AS total_min
+             SUM(COALESCE(cs.tiempo_estimado, p.duracion_estimada_min, 120) * COALESCE(f.factor, 1)) AS total_min
       FROM cleaning_sessions cs
       LEFT JOIN propiedades p ON p.id = cs.propiedad_id
+      LEFT JOIN factores f ON f.tipo = cs.tipo_servicio
       WHERE cs.session_date = ${fecha}::date
         AND cs.limpiadora_id IS NOT NULL
         AND cs.empresa_id = ${empresaId}::uuid

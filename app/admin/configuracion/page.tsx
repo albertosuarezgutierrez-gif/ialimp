@@ -14,7 +14,7 @@ const TABS_MAIN = [
 ]
 
 const SECCIONES = [
-  { key: 'tipos_servicio_op',    label: 'Tipos de servicio',       emoji: '🔄', desc: 'Tipos de limpieza que ofrece tu empresa', conEmoji: true,  conDesc: true  },
+  { key: 'tipos_servicio_op',    label: 'Tipos de servicio',       emoji: '🔄', desc: 'Tipos de limpieza que ofrece tu empresa', conEmoji: true,  conDesc: true, conFactor: true },
   { key: 'categorias_stock',     label: 'Categorías de stock',     emoji: '📦', desc: 'Cómo clasificas tus productos',           conEmoji: true,  conDesc: false },
   { key: 'unidades_stock',       label: 'Unidades de medida',      emoji: '📏', desc: 'Kg, litros, unidades…',                  conEmoji: false, conDesc: false },
   { key: 'tipos_lenceria',       label: 'Tipos de lencería',       emoji: '🛏️', desc: 'Sábanas, toallas y ropa de cama',        conEmoji: true,  conDesc: false },
@@ -25,7 +25,7 @@ const SECCIONES = [
   { key: 'tipos_expediente_rrhh',label: 'Tipos expediente RRHH',  emoji: '📋', desc: 'Categorías del historial del personal',  conEmoji: true,  conDesc: false },
 ]
 
-function ItemEditor({ item, conEmoji, conDesc, conColor, onChange, onDelete }: any) {
+function ItemEditor({ item, conEmoji, conDesc, conColor, conFactor, onChange, onDelete }: any) {
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', background: C.bg, borderRadius: 8, padding: '8px 10px', marginBottom: 6 }}>
       {conEmoji && (
@@ -41,6 +41,16 @@ function ItemEditor({ item, conEmoji, conDesc, conColor, onChange, onDelete }: a
       {conColor && (
         <input type="color" value={item.color || '#6366f1'} onChange={e => onChange({ ...item, color: e.target.value })}
           style={{ width: 32, height: 32, border: `1px solid ${C.border}`, borderRadius: 6, cursor: 'pointer', padding: 2 }} />
+      )}
+      {conFactor && (
+        <div title="Factor de tiempo: cuánto más (o menos) dura frente a la duración base del piso. 1 = igual, 1.5 = +50%, 2 = el doble. Afecta al reparto automático."
+          style={{ display: 'flex', alignItems: 'center', gap: 3, background: C.white, border: `1px solid ${C.border}`, borderRadius: 6, padding: '2px 6px' }}>
+          <span style={{ fontSize: 13, color: C.muted, fontWeight: 700 }}>×</span>
+          <input type="number" step="0.1" min="0.1"
+            value={item.factor ?? 1}
+            onChange={e => onChange({ ...item, factor: e.target.value === '' ? 1 : +e.target.value })}
+            style={{ width: 46, textAlign: 'center', border: 'none', fontSize: 13, fontFamily: 'inherit', background: 'transparent', color: C.text }} />
+        </div>
       )}
       <button onClick={() => onChange({ ...item, activo: !item.activo })}
         style={{ padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
@@ -83,6 +93,7 @@ function TabCatalogos() {
     if (sec.conEmoji) newItem.emoji = '📋'
     if (sec.conDesc)  newItem.desc  = ''
     if (sec.conColor) newItem.color = '#6366f1'
+    if ((sec as any).conFactor) newItem.factor = 1
     setData((d: any) => ({ ...d, [key]: [...(d[key] || []), newItem] }))
   }
 
@@ -114,7 +125,7 @@ function TabCatalogos() {
         </div>
         {(data[seccion] || []).map((item: any, idx: number) => (
           <ItemEditor key={item.id || idx} item={item}
-            conEmoji={sec.conEmoji} conDesc={sec.conDesc} conColor={sec.conColor}
+            conEmoji={sec.conEmoji} conDesc={sec.conDesc} conColor={sec.conColor} conFactor={(sec as any).conFactor}
             onChange={(updated: any) => setData((d: any) => { const arr = [...(d[seccion]||[])]; arr[idx] = updated; return { ...d, [seccion]: arr } })}
             onDelete={() => setData((d: any) => { const arr = [...(d[seccion]||[])]; arr.splice(idx, 1); return { ...d, [seccion]: arr } })} />
         ))}
