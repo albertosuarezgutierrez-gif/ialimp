@@ -40,12 +40,16 @@ export async function GET(req: NextRequest) {
       GROUP BY limpiadora_id
     ) ld ON ld.limpiadora_id = l.id
     LEFT JOIN (
-      SELECT limpiadora_id, SUM(COALESCE(tiempo_estimado, 120)) AS total_min
-      FROM cleaning_sessions
-      WHERE session_date = ${fecha}::date
-        AND limpiadora_id IS NOT NULL
-        AND empresa_id = ${empresaId}::uuid
-      GROUP BY limpiadora_id
+      -- minutos reales: tiempo_estimado de la sesión → duración de la ficha del
+      -- piso → 120 por defecto (tiempo_estimado hoy suele venir NULL)
+      SELECT cs.limpiadora_id,
+             SUM(COALESCE(cs.tiempo_estimado, p.duracion_estimada_min, 120)) AS total_min
+      FROM cleaning_sessions cs
+      LEFT JOIN propiedades p ON p.id = cs.propiedad_id
+      WHERE cs.session_date = ${fecha}::date
+        AND cs.limpiadora_id IS NOT NULL
+        AND cs.empresa_id = ${empresaId}::uuid
+      GROUP BY cs.limpiadora_id
     ) carga ON carga.limpiadora_id = l.id
     WHERE l.activa = true
       AND l.empresa_id = ${empresaId}::uuid

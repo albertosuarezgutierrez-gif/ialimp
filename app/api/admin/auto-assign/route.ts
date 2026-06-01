@@ -6,6 +6,10 @@ import { aiComplete } from '@/lib/ai-client'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
+// ─── Pesos del scoring v2/v3 (en "horas equivalentes", legibles) ─────────────
+const CONOCE_BONUS    = 1.5   // conoce el piso vale ~1,5 h de carga → bonus, no absoluto
+const OVERCAP_CASTIGO = 100   // pasarse de horas_max domina sobre todo lo demás
+
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 async function enviarPush(
@@ -75,180 +79,230 @@ Responde SOLO la frase, sin comillas.`
   }
 }
 
+// dia_semana ISO: 1=lunes … 7=domingo
+function diaSemanaISO(fecha: string): number {
+  const d = new Date(fecha + 'T12:00:00')
+  return d.getDay() === 0 ? 7 : d.getDay()
+}
+
+// Candidatas disponibles ese día (turno marcado, no ausentes) con su carga REAL
+// del día (minutos = tiempo_estimado de la sesión, o duración de la ficha del
+// piso, o 120 por defecto) y si conocen la propiedad. propiedadId='' → nadie la
+// "conoce" (se reparte solo por carga; útil para el hotel).
+async function getCandidatas(
+  empresaId: string,
+  fecha: string,
+  diaSemana: number,
+  propiedadId: string
+): Promise<any[]> {
+  return prisma.$queryRaw<any[]>(Prisma.sql`
+    SELECT
+      l.id, l.nombre, l.color, l.propiedades, l.empresa_id,
+      ld.hora_inicio, ld.hora_fin, ld.horas_max,
+      COALESCE(carga.total_min, 0)::int AS horas_asignadas_min,
+      CASE
+        WHEN ${propiedadId} != '' AND ${propiedadId} = ANY(l.propiedades::text[]) THEN true
+        ELSE false
+      END AS conoce_propiedad
+    FROM limpiadoras l
+    JOIN (
+      SELECT limpiadora_id,
+             MIN(hora_inicio) AS hora_inicio,
+             MAX(hora_fin)    AS hora_fin,
+             MAX(horas_max)   AS horas_max
+      FROM limpiadora_disponibilidad
+      WHERE dia_semana = ${diaSemana} AND activo = true
+      GROUP BY limpiadora_id
+    ) ld ON ld.limpiadora_id = l.id
+    LEFT JOIN (
+      SELECT cs.limpiadora_id,
+             SUM(COALESCE(cs.tiempo_estimado, p.duracion_estimada_min, 120)) AS total_min
+      FROM cleaning_sessions cs
+      LEFT JOIN propiedades p ON p.id = cs.propiedad_id
+      WHERE cs.session_date = ${fecha}::date
+        AND cs.limpiadora_id IS NOT NULL
+      GROUP BY cs.limpiadora_id
+    ) carga ON carga.limpiadora_id = l.id
+    WHERE l.activa = true
+      AND l.empresa_id = ${empresaId}::uuid
+      AND NOT EXISTS (
+        SELECT 1 FROM limpiadora_ausencias a
+        WHERE a.limpiadora_id = l.id
+          AND ${fecha}::date BETWEEN a.fecha_inicio AND a.fecha_fin
+          AND a.aprobada = true
+      )
+    ORDER BY horas_asignadas_min ASC, conoce_propiedad DESC, l.nombre ASC
+    LIMIT 25
+  `)
+}
+
+// Scoring v2: carga continua + tope por horas_max. Devuelve las candidatas con
+// su `score` y `superaTope`, de mayor a menor score.
+function puntuar(candidatas: any[], estMin: number) {
+  return candidatas.map(c => {
+    const cargaMin      = Number(c.horas_asignadas_min) || 0
+    const proyectadoMin = cargaMin + estMin
+    const topeMin       = c.horas_max ? Number(c.horas_max) * 60 : null  // null/0 = sin tope
+    const superaTope    = topeMin != null && proyectadoMin > topeMin
+    const score =
+      (c.conoce_propiedad ? CONOCE_BONUS : 0)
+      - proyectadoMin / 60
+      - (superaTope ? OVERCAP_CASTIGO : 0)
+    return { ...c, score, superaTope }
+  }).sort((a, b) => b.score - a.score)
+}
+
+// Escribe la asignación: cleaning_sessions + alerta + push. No lanza si algo
+// secundario (alerta/push) falla.
+async function asignarSesion(
+  sesion: any,
+  limpiadora: any,
+  justificacion: string,
+  fecha: string,
+  hoy: string
+) {
+  await prisma.$executeRaw(Prisma.sql`
+    UPDATE cleaning_sessions
+    SET limpiadora_id  = ${limpiadora.id}::uuid,
+        notas_internas = ${`[Auto-asignado] ${justificacion}`}
+    WHERE id = ${sesion.id}::uuid
+  `)
+  try {
+    await prisma.$executeRaw(Prisma.sql`
+      INSERT INTO alertas (empresa_id, tipo, titulo, descripcion, leida)
+      VALUES (
+        ${sesion.empresa_id}::uuid,
+        'asignacion_auto',
+        ${`Auto-asign: ${limpiadora.nombre} → ${sesion.property_name}`},
+        ${`${fecha} · ${justificacion}`},
+        false
+      )
+    `)
+  } catch (_) { /* alerta no crítica */ }
+
+  const horaTexto = sesion.hora_inicio
+    ? String(sesion.hora_inicio).slice(0, 5)
+    : (sesion.hora_checkout ? String(sesion.hora_checkout).slice(0, 5) : 'sin hora')
+  await enviarPush(
+    limpiadora.empresa_id,
+    limpiadora.id,
+    '🧹 Nueva sesión asignada',
+    `${sesion.property_name} · ${fecha === hoy ? 'Hoy' : 'Mañana'} ${horaTexto} · ${justificacion}`
+  )
+}
+
 // ─── Cron principal ────────────────────────────────────────────────────────
 
 export async function GET() {
   try {
-    const hoy = new Date().toISOString().split('T')[0]
+    const hoy    = new Date().toISOString().split('T')[0]
     const manana = new Date(Date.now() + 86400000).toISOString().split('T')[0]
 
-    // Sesiones de hoy y mañana sin limpiadora asignada
+    // Sesiones de hoy y mañana sin limpiadora. Traemos el tipo de propiedad
+    // (para separar el hotel), los minutos reales y si hay entrada el mismo día.
     const sinAsignar = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT
         cs.id, cs.empresa_id,
-        -- property_id convive en 2 formatos (slug/UUID); ambos a text para evitar
-        -- el choque de tipos en COALESCE (text vs uuid)
+        -- property_id convive en 2 formatos (slug/UUID); ambos a text para
+        -- evitar el choque de tipos en COALESCE (text vs uuid)
         COALESCE(NULLIF(cs.propiedad_id::text, ''), cs.property_id::text) AS propiedad_id,
-        cs.property_name,
-        cs.session_date, cs.hora_inicio, cs.tipo_servicio,
-        cs.tiempo_estimado
+        cs.property_name, cs.session_date, cs.hora_inicio, cs.hora_checkout,
+        cs.tipo_servicio,
+        COALESCE(cs.tiempo_estimado, p.duracion_estimada_min, 120)::int AS est_min,
+        (p.tipo = 'habitacion_hotel') AS es_hotel,
+        (cs.hora_checkin_siguiente IS NOT NULL) AS tiene_entrada
       FROM cleaning_sessions cs
+      LEFT JOIN propiedades p ON p.id = cs.propiedad_id
       WHERE cs.session_date IN (${hoy}::date, ${manana}::date)
         AND cs.limpiadora_id IS NULL
-      ORDER BY cs.session_date ASC, cs.hora_inicio ASC NULLS LAST
+        AND cs.completed_at IS NULL
+      ORDER BY cs.session_date ASC, cs.hora_checkout ASC NULLS LAST, cs.hora_inicio ASC NULLS LAST
     `)
 
     if (!sinAsignar.length) {
       return NextResponse.json({ ok: true, asignadas: 0, msg: 'Sin sesiones pendientes' })
     }
 
+    const fechaDe = (s: any) =>
+      s.session_date instanceof Date
+        ? s.session_date.toISOString().split('T')[0]
+        : String(s.session_date).split('T')[0]
+
     const resultados: any[] = []
+    const hotelSesiones = sinAsignar.filter(s => s.es_hotel)
+    const restoSesiones = sinAsignar.filter(s => !s.es_hotel)
 
-    for (const sesion of sinAsignar) {
-      const fecha = sesion.session_date instanceof Date
-        ? sesion.session_date.toISOString().split('T')[0]
-        : String(sesion.session_date).split('T')[0]
+    // ── PASE 1: HOTEL (lógica de Vanessa) ──────────────────────────────────
+    // ≤4 limpiezas → 1 persona; >4 → 2 personas. Se reparten los minutos lo más
+    // equilibrado posible. "Cuenta y sigue": las elegidas quedan con esa carga y
+    // siguen siendo candidatas para apartamentos en el pase 2 (su carga ya sube,
+    // así que el scoring las deprioriza de forma natural pero no las excluye).
+    const hotelPorFecha = new Map<string, any[]>()
+    for (const s of hotelSesiones) {
+      const f = fechaDe(s)
+      if (!hotelPorFecha.has(f)) hotelPorFecha.set(f, [])
+      hotelPorFecha.get(f)!.push(s)
+    }
 
-      const d = new Date(fecha + 'T12:00:00')
-      const diaSemana = d.getDay() === 0 ? 7 : d.getDay()
-      const propiedadId = sesion.propiedad_id || ''
-
-      // Obtener candidatas con scoring
-      const candidatas = await prisma.$queryRaw<any[]>(Prisma.sql`
-        SELECT
-          l.id,
-          l.nombre,
-          l.color,
-          l.propiedades,
-          l.empresa_id,
-          ld.hora_inicio,
-          ld.hora_fin,
-          ld.horas_max,
-          COALESCE(carga.total_min, 0)::int AS horas_asignadas_min,
-          CASE
-            WHEN ${propiedadId} != '' AND ${propiedadId} = ANY(l.propiedades::text[]) THEN true
-            ELSE false
-          END AS conoce_propiedad
-        FROM limpiadoras l
-        JOIN (
-          SELECT limpiadora_id,
-                 MIN(hora_inicio) AS hora_inicio,
-                 MAX(hora_fin)    AS hora_fin,
-                 MAX(horas_max)   AS horas_max
-          FROM limpiadora_disponibilidad
-          WHERE dia_semana = ${diaSemana} AND activo = true
-          GROUP BY limpiadora_id
-        ) ld ON ld.limpiadora_id = l.id
-        LEFT JOIN (
-          SELECT limpiadora_id, SUM(COALESCE(tiempo_estimado, 120)) AS total_min
-          FROM cleaning_sessions
-          WHERE session_date = ${fecha}::date
-            AND limpiadora_id IS NOT NULL
-          GROUP BY limpiadora_id
-        ) carga ON carga.limpiadora_id = l.id
-        WHERE l.activa = true
-          AND l.empresa_id = ${sesion.empresa_id}::uuid
-          AND NOT EXISTS (
-            SELECT 1 FROM limpiadora_ausencias a
-            WHERE a.limpiadora_id = l.id
-              AND ${fecha}::date BETWEEN a.fecha_inicio AND a.fecha_fin
-              AND a.aprobada = true
-          )
-        -- Ordenamos por menor carga (el scoring v2 fino se hace en JS); el LIMIT
-        -- solo acota cuántas candidatas traemos, no decide. Antes era 5 y dejaba
-        -- fuera a limpiadoras de baja carga cuando muchas "conocían" el piso.
-        ORDER BY horas_asignadas_min ASC, conoce_propiedad DESC, l.nombre ASC
-        LIMIT 25
-      `)
-
+    for (const [fecha, grupo] of hotelPorFecha) {
+      const empresaId = grupo[0].empresa_id
+      const candidatas = await getCandidatas(empresaId, fecha, diaSemanaISO(fecha), '')
       if (!candidatas.length) {
-        resultados.push({
-          sesion_id: sesion.id,
-          propiedad: sesion.property_name,
-          fecha,
-          asignada: false,
-          motivo: 'Sin limpiadoras disponibles'
-        })
+        for (const s of grupo) {
+          resultados.push({ sesion_id: s.id, propiedad: s.property_name, fecha, asignada: false, motivo: 'Sin limpiadoras disponibles' })
+        }
         continue
       }
 
-      // ── Scoring v2 ────────────────────────────────────────────────────────
-      // Carga CONTINUA (no el bucket que se saturaba a 4 h) + tope real por
-      // horas_max. Pesos en "horas equivalentes" para que sean legibles:
-      //  · conoce_propiedad vale ~1,5 h de carga → es un bonus, no algo absoluto:
-      //    si una que conoce el piso ya va >1,5 h más cargada que otra que no lo
-      //    conoce, gana la menos cargada (reparto más justo).
-      //  · cada hora de carga PROYECTADA (incluida esta sesión) resta 1 punto.
-      //  · pasarse de horas_max resta un castigo grande: solo se elige a alguien
-      //    por encima del tope si TODAS están por encima (nunca dejamos la sesión
-      //    sin asignar por el tope; sin disponibilidad sí seguiría sin asignar).
-      const CONOCE_BONUS   = 1.5   // horas equivalentes
-      const OVERCAP_CASTIGO = 100  // domina sobre todo lo demás
-      const estMin = Number(sesion.tiempo_estimado) || 120
+      const nPersonas = grupo.length <= 4 ? 1 : 2
+      const minutosTotales = grupo.reduce((acc, s) => acc + (Number(s.est_min) || 120), 0)
+      const elegidas = puntuar(candidatas, minutosTotales / nPersonas)
+        .slice(0, Math.min(nPersonas, candidatas.length))
+        .map(c => ({ ...c, cargaAcum: Number(c.horas_asignadas_min) || 0 }))
 
-      const mejorCandidataScore = candidatas.map(c => {
-        const cargaMin    = Number(c.horas_asignadas_min) || 0
-        const proyectadoMin = cargaMin + estMin
-        // horas_max null/0 = sin tope explícito → no se castiga
-        const topeMin     = c.horas_max ? Number(c.horas_max) * 60 : null
-        const superaTope  = topeMin != null && proyectadoMin > topeMin
-        const score =
-          (c.conoce_propiedad ? CONOCE_BONUS : 0)
-          - proyectadoMin / 60
-          - (superaTope ? OVERCAP_CASTIGO : 0)
-        return { ...c, score, superaTope }
-      }).sort((a, b) => b.score - a.score)[0]
+      // Reparto greedy: la habitación con más minutos a la elegida menos cargada
+      const ordenadas = [...grupo].sort((a, b) => (Number(b.est_min) || 0) - (Number(a.est_min) || 0))
+      const nombres = elegidas.map(e => e.nombre).join(' + ')
+      for (const s of ordenadas) {
+        const elegida = elegidas.sort((a, b) => a.cargaAcum - b.cargaAcum)[0]
+        const just = nPersonas > 1
+          ? `Hotel VAC (${grupo.length} hab, ${nombres})`
+          : `Hotel VAC (${grupo.length} hab)`
+        await asignarSesion(s, elegida, just, fecha, hoy)
+        elegida.cargaAcum += Number(s.est_min) || 120
+        resultados.push({ sesion_id: s.id, propiedad: s.property_name, fecha, asignada: true, limpiadora: elegida.nombre, hotel: true })
+      }
+    }
 
-      // Generar justificación IA
+    // ── PASE 2: APARTAMENTOS ───────────────────────────────────────────────
+    // Ya vienen ordenados por salida más temprana; reordenamos para procesar
+    // primero las que tienen entrada el mismo día (más críticas). Como cada
+    // asignación sube la carga de la elegida, las entradas se reparten solas
+    // entre limpiadoras distintas.
+    restoSesiones.sort((a, b) => (b.tiene_entrada ? 1 : 0) - (a.tiene_entrada ? 1 : 0))
+
+    for (const sesion of restoSesiones) {
+      const fecha = fechaDe(sesion)
+      const propiedadId = sesion.propiedad_id || ''
+      const candidatas = await getCandidatas(sesion.empresa_id, fecha, diaSemanaISO(fecha), propiedadId)
+
+      if (!candidatas.length) {
+        resultados.push({ sesion_id: sesion.id, propiedad: sesion.property_name, fecha, asignada: false, motivo: 'Sin limpiadoras disponibles' })
+        continue
+      }
+
+      const estMin = Number(sesion.est_min) || 120
+      const mejor = puntuar(candidatas, estMin)[0]
+
       const justificacion = await generarJustificacion(
-        mejorCandidataScore.nombre,
-        sesion.property_name,
-        sesion.hora_inicio,
-        mejorCandidataScore.conoce_propiedad,
-        mejorCandidataScore.horas_asignadas_min
+        mejor.nombre, sesion.property_name, sesion.hora_inicio,
+        mejor.conoce_propiedad, mejor.horas_asignadas_min
       )
-
-      // Asignar en BD
-      await prisma.$executeRaw(Prisma.sql`
-        UPDATE cleaning_sessions
-        SET
-          limpiadora_id   = ${mejorCandidataScore.id}::uuid,
-          notas_internas  = ${`[Auto-asignado] ${justificacion}`}
-        WHERE id = ${sesion.id}::uuid
-      `)
-
-      // Crear alerta de asignación
-      await prisma.$executeRaw(Prisma.sql`
-        INSERT INTO alertas (empresa_id, tipo, titulo, descripcion, leida)
-        VALUES (
-          ${sesion.empresa_id}::uuid,
-          'asignacion_auto',
-          ${`Auto-asign: ${mejorCandidataScore.nombre} → ${sesion.property_name}`},
-          ${`${fecha} · ${justificacion}`},
-          false
-        )
-      `)
-
-      // Push notification a la limpiadora asignada
-      const horaTexto = sesion.hora_inicio
-        ? String(sesion.hora_inicio).slice(0, 5)
-        : 'sin hora'
-
-      await enviarPush(
-        mejorCandidataScore.empresa_id,
-        mejorCandidataScore.id,
-        '🧹 Nueva sesión asignada',
-        `${sesion.property_name} · ${fecha === hoy ? 'Hoy' : 'Mañana'} ${horaTexto} · ${justificacion}`
-      )
+      await asignarSesion(sesion, mejor, justificacion, fecha, hoy)
 
       resultados.push({
-        sesion_id: sesion.id,
-        propiedad: sesion.property_name,
-        fecha,
-        asignada: true,
-        limpiadora: mejorCandidataScore.nombre,
-        score: mejorCandidataScore.score,
-        justificacion
+        sesion_id: sesion.id, propiedad: sesion.property_name, fecha,
+        asignada: true, limpiadora: mejor.nombre, score: Number(mejor.score.toFixed(2)), justificacion
       })
     }
 
@@ -259,6 +313,7 @@ export async function GET() {
       ok: true,
       fecha_ejecucion: new Date().toISOString(),
       sesiones_procesadas: sinAsignar.length,
+      hotel: hotelSesiones.length,
       asignadas,
       fallidas,
       detalle: resultados
