@@ -12,7 +12,7 @@ export async function GET(_req: NextRequest) {
   const dias = await prisma.$queryRaw<any[]>(Prisma.sql`
     SELECT session_date,
            COUNT(*)::int AS limpiezas,
-           COALESCE(SUM(duracion_estimada_min), 0)::int AS minutos,
+           SUM(COALESCE(duracion_estimada_min, 120))::int AS minutos,
            COUNT(*) FILTER (WHERE limpiadora_id IS NULL)::int AS sin_asignar,
            COUNT(*) FILTER (WHERE hora_checkin_siguiente IS NOT NULL)::int AS con_entrada
     FROM agenda_dia
