@@ -85,7 +85,11 @@ export async function GET() {
     // Sesiones de hoy y mañana sin limpiadora asignada
     const sinAsignar = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT
-        cs.id, cs.empresa_id, cs.propiedad_id, cs.property_name,
+        cs.id, cs.empresa_id,
+        -- property_id convive en 2 formatos (slug/UUID); ambos a text para evitar
+        -- el choque de tipos en COALESCE (text vs uuid)
+        COALESCE(NULLIF(cs.propiedad_id::text, ''), cs.property_id::text) AS propiedad_id,
+        cs.property_name,
         cs.session_date, cs.hora_inicio, cs.tipo_servicio,
         cs.tiempo_estimado
       FROM cleaning_sessions cs
