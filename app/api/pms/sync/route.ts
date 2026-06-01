@@ -58,7 +58,7 @@ const SMOOBU_MAP: Record<number, { uuid: string; name: string }> = {
   352943: { uuid: '04401cff-f7fd-42db-8efd-69ac36ebbd21', name: 'Luxury Busto'   },
   352418: { uuid: '9025302d-9475-4d89-9975-63570128b98d', name: 'Bustos Reforma' },
 }
-const VANESSA_ID = '04caa4dc-a34f-4cd5-af08-d73f5e732711'
+// (VANESSA_ID eliminado — sync nace sin asignar, ver const limp abajo)
 
 // ── Sync iCal de una propiedad ────────────────────────────────────────────────
 async function syncPropertyIcal(prop: any): Promise<{ synced: number; errors: string[] }> {
@@ -188,7 +188,8 @@ async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ sy
     // Reserva o modificacion -> alta/actualizacion (la salida se refresca via ON CONFLICT)
     try {
       const prop = propMap.get(propDef.uuid)
-      const limp = prop?.limpiadora_principal_id || VANESSA_ID
+      // ✅ Nace SIN asignar: scoring o Vanessa asigna a mano
+      const limp: string | null = null
       const num_huespedes = (b.adults || 0) + (b.children || 0)
 
       await prisma.$executeRawUnsafe(`
@@ -208,7 +209,7 @@ async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ sy
           '${external_id}',
           ${b['guest-name'] ? `'${String(b['guest-name']).replace(/'/g, "''")}'` : 'NULL'},
           ${num_huespedes}, 'rotacion', 'smoobu_api', '11:00',
-          '${limp}'::uuid
+          ${limp ? `'${limp}'::uuid` : 'NULL'}
         )
         ON CONFLICT (external_reservation_id)
         DO UPDATE SET
