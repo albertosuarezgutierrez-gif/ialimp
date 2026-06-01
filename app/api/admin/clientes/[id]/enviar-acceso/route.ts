@@ -1,0 +1,124 @@
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
+import { requireEmpresaId } from '@/lib/tenant'
+import nodemailer from 'nodemailer'
+
+// POST /api/admin/clientes/[id]/enviar-acceso
+// Envía al cliente un email con el enlace a su intranet (portal del propietario).
+// Body opcional: { email } para sobrescribir el destinatario.
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const empresa_id = await requireEmpresaId()
+    const { id } = await params
+    const { email: emailOverride } = await req.json().catch(() => ({}))
+
+    // 1. Cargar cliente (scope empresa). Si no tiene access_token, generarlo.
+    const filas = await prisma.$queryRaw<any[]>(Prisma.sql`
+      UPDATE clientes SET
+        access_token = COALESCE(access_token, encode(gen_random_bytes(24), 'hex')),
+        notif_activa = true,
+        updated_at   = now()
+      WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
+      RETURNING nombre, access_token, notif_email, contacto_email, email_facturacion
+    `)
+    if (!filas.length) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 })
+    const c = filas[0]
+
+    // Email del contacto principal como respaldo
+    const contactoPrincipal = await prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT email FROM cliente_contactos
+      WHERE cliente_id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid AND email IS NOT NULL AND email <> ''
+      ORDER BY principal DESC, nombre NULLS LAST
+      LIMIT 1
+    `)
+
+    const destinatario = (emailOverride || c.notif_email || c.contacto_email
+      || contactoPrincipal[0]?.email || c.email_facturacion || '').trim()
+
+    if (!destinatario) {
+      return NextResponse.json({ error: 'El cliente no tiene email. Añade un email de contacto primero.' }, { status: 400 })
+    }
+
+    // 2. Nombre de la empresa (para la marca del email)
+    const emp = await prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT nombre FROM empresas WHERE id = ${empresa_id}::uuid
+    `)
+    const empresaNombre = emp[0]?.nombre || 'IALIMP'
+
+    const urlPortal = `${process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app'}/propietario/${c.access_token}`
+    const nombreCorto = (c.nombre || '').split(' ')[0] || c.nombre || ''
+    const asunto = `Tu acceso a la intranet de ${empresaNombre}`
+
+    // 3. Enviar email
+    let enviado = false
+    let errorMsg: string | null = null
+    if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+      try {
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD }
+        })
+        await transporter.sendMail({
+          from:    `"${empresaNombre}" <${process.env.GMAIL_USER}>`,
+          to:      destinatario,
+          subject: asunto,
+          html: `
+            <div style="font-family:'Nunito',-apple-system,sans-serif;max-width:480px;margin:0 auto;background:#f8fafc;padding:24px;border-radius:12px;">
+              <div style="background:#4f46e5;color:white;padding:20px 24px;border-radius:10px;margin-bottom:20px;">
+                <h1 style="margin:0;font-size:20px;font-weight:800;">🔑 Tu acceso a la intranet</h1>
+                <p style="margin:6px 0 0;opacity:0.85;font-size:14px;">${empresaNombre}</p>
+              </div>
+              <p style="color:#475569;font-size:15px;line-height:1.6;">
+                Hola ${nombreCorto},<br><br>
+                Ya puedes acceder a tu intranet privada, donde podrás consultar en tiempo real
+                el estado de tus limpiezas, las fotos de cada servicio, tus facturas y documentos.
+              </p>
+              <a href="${urlPortal}" style="display:block;background:#4f46e5;color:white;text-align:center;padding:13px;border-radius:8px;text-decoration:none;font-weight:700;margin:18px 0;">
+                Entrar en mi intranet →
+              </a>
+              <p style="color:#94a3b8;font-size:12px;line-height:1.5;">
+                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+                <span style="color:#6366f1;word-break:break-all;">${urlPortal}</span>
+              </p>
+              <p style="color:#94a3b8;font-size:12px;text-align:center;margin-top:18px;border-top:1px solid #e2e8f0;padding-top:14px;">
+                Este enlace es personal: no lo compartas.<br>
+                ${empresaNombre} · Servicio de limpieza profesional
+              </p>
+            </div>
+          `
+        })
+        enviado = true
+      } catch (err: any) {
+        errorMsg = err.message
+        console.error('Email acceso intranet error:', err.message)
+      }
+    } else {
+      errorMsg = 'Email no configurado (GMAIL_USER / GMAIL_APP_PASSWORD)'
+    }
+
+    // 4. Registrar en notificaciones
+    await prisma.$executeRaw(Prisma.sql`
+      INSERT INTO notificaciones (empresa_id, cliente_id, tipo, canal, destinatario, asunto, estado, error_msg, enviado_at)
+      VALUES (
+        ${empresa_id}::uuid,
+        ${id}::uuid,
+        'acceso_intranet',
+        'email',
+        ${destinatario},
+        ${asunto},
+        ${enviado ? 'enviado' : 'error'},
+        ${errorMsg},
+        ${enviado ? new Date().toISOString() : null}
+      )
+    `)
+
+    if (!enviado) {
+      return NextResponse.json({ error: errorMsg || 'No se pudo enviar el email' }, { status: 500 })
+    }
+
+    return NextResponse.json({ ok: true, enviado: true, destinatario, url: urlPortal })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 })
+  }
+}

@@ -99,6 +99,32 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
     }
   }
 
+  const [enviandoAcceso, setEnviandoAcceso] = useState<string | null>(null)
+
+  async function enviarAcceso(c: any) {
+    const emailConocido = c.notif_email || c.contacto_email || ''
+    const destino = prompt(
+      `Enviar a ${c.nombre} un email con el enlace de acceso a su intranet.\n\nEmail destinatario:`,
+      emailConocido
+    )
+    if (destino === null) return
+    setEnviandoAcceso(c.id)
+    try {
+      const res = await fetch('/api/admin/clientes/' + c.id + '/enviar-acceso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: destino.trim() || undefined })
+      })
+      const data = await res.json()
+      if (!res.ok) { alert(data.error || 'No se pudo enviar'); return }
+      alert('✅ Acceso enviado a ' + data.destinatario)
+    } catch {
+      alert('Error de red al enviar el acceso')
+    } finally {
+      setEnviandoAcceso(null)
+    }
+  }
+
   async function toggleActivo(c: any) {
     if (c.activo) {
       if (!confirm('¿Desactivar cliente ' + c.nombre + '?')) return
@@ -219,6 +245,11 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
                   <button onClick={() => abrirEditar(c)}
                     className="flex-1 text-xs border border-indigo-200 rounded-lg py-1.5 text-indigo-600 hover:bg-indigo-50 transition">
                     Editar
+                  </button>
+                  <button onClick={() => enviarAcceso(c)} disabled={enviandoAcceso === c.id}
+                    title="Enviar al cliente el acceso a su intranet por email"
+                    className="flex-1 text-xs border border-indigo-200 rounded-lg py-1.5 text-indigo-600 hover:bg-indigo-50 transition disabled:opacity-50">
+                    {enviandoAcceso === c.id ? 'Enviando…' : '✉️ Acceso'}
                   </button>
                   {c.tipo === 'apartamentos_turisticos' && (
                     <a href={'/admin/clientes/' + c.id + '/propiedades'}
