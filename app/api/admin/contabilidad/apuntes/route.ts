@@ -28,6 +28,8 @@ export async function GET(req: Request) {
         dc.total::float,
         dc.pagado,
         dc.notas,
+        dc.documento_url,
+        dc.recurrente_origen::text,
         dc.propiedad_id::text,
         p.nombre AS propiedad_nombre,
         dc.created_at::text

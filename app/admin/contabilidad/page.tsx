@@ -307,15 +307,42 @@ const CATEGORIAS_APUNTE: { key: string; label: string }[] = [
   { key: 'otros',       label: '📦 Otros' },
 ]
 
+const CATEGORIAS_INGRESO: { key: string; label: string }[] = [
+  { key: 'comision',       label: '🤝 Comisión' },
+  { key: 'gestion',        label: '📋 Gestión' },
+  { key: 'extra_limpieza', label: '🧹 Extra de limpieza' },
+  { key: 'consumibles',    label: '🧴 Consumibles' },
+  { key: 'subvencion',     label: '🏛️ Subvención' },
+  { key: 'otros',          label: '📦 Otros' },
+]
+
+const PERIODICIDADES = [
+  { key: 'mensual',    label: 'Mensual' },
+  { key: 'trimestral', label: 'Trimestral' },
+  { key: 'anual',      label: 'Anual' },
+]
+
+// Modal unificado: crea un apunte contable y decides si es Gasto o Ingreso.
+// Soporta recurrencia (plantilla que se materializa cada periodo) y adjuntar
+// un justificante (PDF/imagen).
 function NuevoApunteModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [tipo, setTipo] = useState<'gasto' | 'ingreso'>('gasto')
   const [form, setForm] = useState({
     proveedor: '', concepto: '', fecha: new Date().toISOString().split('T')[0],
     categoria: 'otros', base_imponible: '', porcentaje_iva: '21',
-    numero_doc: '', pagado: false, notas: '',
+    numero_doc: '', liquidado: false, notas: '',
   })
+  const [recurrente, setRecurrente] = useState(false)
+  const [periodicidad, setPeriodicidad] = useState('mensual')
+  const [fechaFin, setFechaFin] = useState('')
+  const [file, setFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
   const set = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }))
+
+  const esIngreso = tipo === 'ingreso'
+  const color = esIngreso ? '#16a34a' : '#4f46e5'
+  const cats  = esIngreso ? CATEGORIAS_INGRESO : CATEGORIAS_APUNTE
 
   const base  = Number(form.base_imponible) || 0
   const pct   = Number(form.porcentaje_iva) || 0
@@ -324,57 +351,91 @@ function NuevoApunteModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
 
   async function guardar() {
     if (!form.base_imponible || base <= 0) { setErr('La base imponible debe ser mayor que 0'); return }
-    if (!form.proveedor && !form.concepto) { setErr('Indica proveedor o concepto'); return }
+    if (esIngreso ? !form.concepto : (!form.proveedor && !form.concepto)) {
+      setErr(esIngreso ? 'Indica un concepto' : 'Indica proveedor o concepto'); return
+    }
     setSaving(true); setErr('')
-    const r = await fetch('/api/admin/contabilidad/apuntes', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, base_imponible: base, porcentaje_iva: pct }),
-    })
-    const d = await r.json()
-    if (r.ok && (d.ok || d.id)) { onSaved() }
-    else { setErr(d.error || 'Error al guardar'); setSaving(false) }
+    try {
+      if (recurrente) {
+        const r = await fetch('/api/admin/contabilidad/recurrentes', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tipo, proveedor: form.proveedor, concepto: form.concepto, categoria: form.categoria,
+            base_imponible: base, porcentaje_iva: pct, periodicidad,
+            fecha_inicio: form.fecha, fecha_fin: fechaFin || null,
+          }),
+        })
+        const d = await r.json()
+        if (!r.ok || !(d.ok || d.id)) { setErr(d.error || 'Error al guardar'); setSaving(false); return }
+      } else {
+        const url  = esIngreso ? '/api/admin/contabilidad/ingresos' : '/api/admin/contabilidad/apuntes'
+        const body = esIngreso
+          ? { concepto: form.concepto, fecha: form.fecha, categoria: form.categoria, base_imponible: base, porcentaje_iva: pct, cobrado: form.liquidado, notas: form.notas }
+          : { proveedor: form.proveedor, concepto: form.concepto, fecha: form.fecha, categoria: form.categoria, base_imponible: base, porcentaje_iva: pct, numero_doc: form.numero_doc, pagado: form.liquidado, notas: form.notas }
+        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        const d = await r.json()
+        if (!r.ok || !(d.ok || d.id)) { setErr(d.error || 'Error al guardar'); setSaving(false); return }
+        if (file && d.id) {
+          const fd = new FormData()
+          fd.append('tipo', tipo); fd.append('id', d.id); fd.append('file', file)
+          await fetch('/api/admin/contabilidad/adjunto', { method: 'POST', body: fd })
+        }
+      }
+      onSaved()
+    } catch {
+      setErr('Error al guardar'); setSaving(false)
+    }
   }
 
   const inp: any = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 14, fontFamily: 'inherit', color: '#1e1b4b', boxSizing: 'border-box' }
   const lab: any = { fontSize: 11, fontWeight: 700, color: '#6b7280', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '.05em' }
+  const pill = (active: boolean): any => ({ flex: 1, padding: '9px 0', borderRadius: 9, border: `1.5px solid ${active ? color : '#e5e7eb'}`, background: active ? color : '#fff', color: active ? '#fff' : '#6b7280', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' })
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 460, maxHeight: '92vh', overflowY: 'auto' }}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: 17, color: '#1e1b4b' }}>➕ Nuevo apunte de gasto</div>
+          <div style={{ fontWeight: 800, fontSize: 17, color: '#1e1b4b' }}>➕ Nuevo apunte</div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, color: '#6b7280', cursor: 'pointer' }}>✕</button>
         </div>
         <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div>
-            <label style={lab}>Proveedor</label>
-            <input value={form.proveedor} onChange={e => set('proveedor', e.target.value)} placeholder="Ej: Endesa, Mapfre, Gestoría…" style={inp} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => { setTipo('gasto'); set('categoria', 'otros') }} style={pill(!esIngreso)}>💸 Gasto</button>
+            <button onClick={() => { setTipo('ingreso'); set('categoria', 'otros') }} style={pill(esIngreso)}>💶 Ingreso</button>
           </div>
+          {!esIngreso && (
+            <div>
+              <label style={lab}>Proveedor</label>
+              <input value={form.proveedor} onChange={e => set('proveedor', e.target.value)} placeholder="Ej: Endesa, Mapfre, Gestoría…" style={inp} />
+            </div>
+          )}
           <div>
-            <label style={lab}>Concepto</label>
-            <input value={form.concepto} onChange={e => set('concepto', e.target.value)} placeholder="Ej: Luz mayo, Cuota mensual…" style={inp} />
+            <label style={lab}>Concepto{esIngreso ? ' *' : ''}</label>
+            <input value={form.concepto} onChange={e => set('concepto', e.target.value)} placeholder={esIngreso ? 'Ej: Comisión Booking, Extra check-out…' : 'Ej: Luz mayo, Cuota mensual…'} style={inp} />
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{ flex: 1 }}>
-              <label style={lab}>Fecha *</label>
+              <label style={lab}>{recurrente ? 'Inicio *' : 'Fecha *'}</label>
               <input type="date" value={form.fecha} onChange={e => set('fecha', e.target.value)} style={inp} />
             </div>
+            {!esIngreso && !recurrente && (
+              <div style={{ flex: 1 }}>
+                <label style={lab}>Nº factura</label>
+                <input value={form.numero_doc} onChange={e => set('numero_doc', e.target.value)} placeholder="Opcional" style={inp} />
+              </div>
+            )}
             <div style={{ flex: 1 }}>
-              <label style={lab}>Nº factura</label>
-              <input value={form.numero_doc} onChange={e => set('numero_doc', e.target.value)} placeholder="Opcional" style={inp} />
+              <label style={lab}>Categoría</label>
+              <select value={form.categoria} onChange={e => set('categoria', e.target.value)} style={inp}>
+                {cats.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+              </select>
             </div>
-          </div>
-          <div>
-            <label style={lab}>Categoría</label>
-            <select value={form.categoria} onChange={e => set('categoria', e.target.value)} style={inp}>
-              {CATEGORIAS_APUNTE.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
-            </select>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{ flex: 2 }}>
               <label style={lab}>Base imponible € *</label>
               <input type="number" step="0.01" value={form.base_imponible} onChange={e => set('base_imponible', e.target.value)} placeholder="0,00"
-                style={{ ...inp, fontSize: 18, fontWeight: 800, color: '#4f46e5' }} />
+                style={{ ...inp, fontSize: 18, fontWeight: 800, color }} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={lab}>% IVA</label>
@@ -385,10 +446,36 @@ function NuevoApunteModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
             <span>IVA: <b>{fmtEur(cuota)}</b></span>
             <span>Total: <b>{fmtEur(total)}</b></span>
           </div>
+
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#1e1b4b', cursor: 'pointer' }}>
-            <input type="checkbox" checked={form.pagado} onChange={e => set('pagado', e.target.checked)} style={{ width: 18, height: 18 }} />
-            Ya pagado (cuenta en Tesorería)
+            <input type="checkbox" checked={recurrente} onChange={e => setRecurrente(e.target.checked)} style={{ width: 18, height: 18 }} />
+            🔁 Recurrente (se crea solo cada periodo)
           </label>
+          {recurrente ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, background: '#f9fafb', borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {PERIODICIDADES.map(p => (
+                  <button key={p.key} onClick={() => setPeriodicidad(p.key)} style={pill(periodicidad === p.key)}>{p.label}</button>
+                ))}
+              </div>
+              <div>
+                <label style={lab}>Hasta (opcional)</label>
+                <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} style={inp} />
+              </div>
+              <div style={{ fontSize: 11, color: '#6b7280' }}>Se generará un apunte por periodo desde la fecha de inicio. Déjalo sin fecha de fin para que siga indefinidamente.</div>
+            </div>
+          ) : (
+            <>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#1e1b4b', cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.liquidado} onChange={e => set('liquidado', e.target.checked)} style={{ width: 18, height: 18 }} />
+                {esIngreso ? 'Ya cobrado (cuenta en Tesorería)' : 'Ya pagado (cuenta en Tesorería)'}
+              </label>
+              <div>
+                <label style={lab}>📎 Adjuntar justificante (opcional)</label>
+                <input type="file" accept="image/*,application/pdf" onChange={e => setFile(e.target.files?.[0] || null)} style={{ ...inp, padding: '8px 10px' }} />
+              </div>
+            </>
+          )}
           <div>
             <label style={lab}>Notas</label>
             <textarea value={form.notas} onChange={e => set('notas', e.target.value)} rows={2} placeholder="Observaciones…"
@@ -398,7 +485,7 @@ function NuevoApunteModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
             <button onClick={guardar} disabled={saving}
-              style={{ flex: 2, padding: 12, borderRadius: 10, border: 'none', background: '#4f46e5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: saving ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: saving ? 0.6 : 1 }}>
+              style={{ flex: 2, padding: 12, borderRadius: 10, border: 'none', background: color, color: '#fff', fontSize: 13, fontWeight: 700, cursor: saving ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Guardando…' : '💾 Guardar apunte'}
             </button>
           </div>
@@ -409,32 +496,64 @@ function NuevoApunteModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
 }
 
 function TabApuntes() {
-  const [rows, setRows] = useState<any[]>([])
+  const [gastos, setGastos] = useState<any[]>([])
+  const [ingresos, setIngresos] = useState<any[]>([])
+  const [recurrentes, setRecurrentes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [year, setYear] = useState(new Date().getFullYear())
   const [showModal, setShowModal] = useState(false)
-  const [deleting, setDeleting] = useState<string | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
-    const r = await fetch(`/api/admin/contabilidad/apuntes?year=${year}`)
-    const d = await r.json()
-    setRows(d.rows || [])
+    const [g, i, rec] = await Promise.all([
+      fetch(`/api/admin/contabilidad/apuntes?year=${year}`).then(r => r.json()),
+      fetch(`/api/admin/contabilidad/ingresos?year=${year}`).then(r => r.json()),
+      fetch('/api/admin/contabilidad/recurrentes').then(r => r.json()),
+    ])
+    setGastos(g.rows || []); setIngresos(i.rows || []); setRecurrentes(rec.rows || [])
     setLoading(false)
   }, [year])
 
   useEffect(() => { load() }, [load])
 
-  async function borrar(id: string) {
-    if (!confirm('¿Eliminar este apunte contable?')) return
-    setDeleting(id)
-    await fetch(`/api/admin/contabilidad/apuntes/${id}`, { method: 'DELETE' })
-    setDeleting(null)
-    load()
+  async function borrar(row: any) {
+    if (!confirm('¿Eliminar este apunte?')) return
+    setBusy(row.id)
+    const url = row._tipo === 'ingreso' ? `/api/admin/contabilidad/ingresos/${row.id}` : `/api/admin/contabilidad/apuntes/${row.id}`
+    await fetch(url, { method: 'DELETE' })
+    setBusy(null); load()
   }
 
-  const cat = (k: string) => CATEGORIAS_APUNTE.find(c => c.key === k)?.label || '📦 Otros'
-  const total = rows.reduce((a, r) => a + Number(r.base_imponible || 0), 0)
+  async function marcar(row: any) {
+    setBusy(row.id)
+    await fetch('/api/admin/contabilidad/marcar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: row.id, tipo: row._tipo === 'ingreso' ? 'ingreso_manual' : 'gasto', pagado: true }),
+    })
+    setBusy(null); load()
+  }
+
+  async function borrarRec(id: string) {
+    if (!confirm('¿Eliminar esta plantilla recurrente? Los apuntes ya generados se mantienen.')) return
+    setBusy(id)
+    await fetch(`/api/admin/contabilidad/recurrentes/${id}`, { method: 'DELETE' })
+    setBusy(null); load()
+  }
+
+  const rows = [
+    ...ingresos.map((r: any) => ({ ...r, _tipo: 'ingreso' })),
+    ...gastos.map((r: any) => ({ ...r, _tipo: 'gasto' })),
+  ].sort((a, b) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0))
+
+  const totIng = ingresos.reduce((a, r) => a + Number(r.base_imponible || 0), 0)
+  const totGas = gastos.reduce((a, r) => a + Number(r.base_imponible || 0), 0)
+  const neto   = totIng - totGas
+
+  const catLabel = (row: any) => (row._tipo === 'ingreso'
+    ? CATEGORIAS_INGRESO.find(c => c.key === row.categoria)?.label
+    : CATEGORIAS_APUNTE.find(c => c.key === row.categoria)?.label) || '📦 Otros'
+  const perLabel = (p: string) => PERIODICIDADES.find(x => x.key === p)?.label || p
 
   return (
     <div>
@@ -448,35 +567,81 @@ function TabApuntes() {
         </button>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '14px 20px', marginBottom: 16, textAlign: 'center' }}>
-        <div style={{ fontSize: 20, fontWeight: 800, color: '#dc2626' }}>{fmtEur(total)}</div>
-        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>Total gastos registrados · {rows.length} apuntes</div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+        {[
+          { label: 'Ingresos', value: fmtEur(totIng), color: '#16a34a' },
+          { label: 'Gastos', value: fmtEur(totGas), color: '#dc2626' },
+          { label: 'Neto', value: fmtEur(neto), color: neto >= 0 ? '#4f46e5' : '#dc2626' },
+        ].map(k => (
+          <div key={k.label} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '12px 16px', flex: 1, textAlign: 'center', minWidth: 100 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: k.color }}>{k.value}</div>
+            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{k.label}</div>
+          </div>
+        ))}
       </div>
+
+      {recurrentes.length > 0 && (
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '12px 16px', marginBottom: 16 }}>
+          <div style={{ fontWeight: 700, fontSize: 12, color: '#6b7280', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.05em' }}>🔁 Recurrentes activos</div>
+          {recurrentes.map((r: any) => (
+            <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f3f4f6', gap: 10 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, color: '#1e1b4b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.concepto || r.proveedor || '—'}</div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>{r.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'} · {perLabel(r.periodicidad)} · desde {r.fecha_inicio}{r.fecha_fin ? ` hasta ${r.fecha_fin}` : ''}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                <span style={{ fontWeight: 700, fontSize: 13, color: r.tipo === 'ingreso' ? '#16a34a' : '#dc2626' }}>{fmtEur(r.base_imponible)}</span>
+                <button onClick={() => borrarRec(r.id)} disabled={busy === r.id} title="Eliminar plantilla"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: '#9ca3af', opacity: busy === r.id ? 0.4 : 1 }}>🗑️</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {loading ? <Spinner /> : (
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
           {rows.length === 0 && <div style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>Sin apuntes en {year}. Pulsa «➕ Nuevo apunte» para añadir uno.</div>}
-          {rows.map((r: any) => (
-            <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 16px', borderBottom: '1px solid #f3f4f6', gap: 10 }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, color: '#1e1b4b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {r.descripcion || r.proveedor || '—'}
+          {rows.map((r: any) => {
+            const ing = r._tipo === 'ingreso'
+            const liquidado = ing ? r.cobrado : r.pagado
+            const manual = ing || r.tipo_doc === 'manual'
+            return (
+              <div key={`${r._tipo}-${r.id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 16px', borderBottom: '1px solid #f3f4f6', gap: 10 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: '#1e1b4b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {(ing ? r.concepto : (r.descripcion || r.proveedor)) || '—'}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#6b7280' }}>
+                    {r.fecha} · {catLabel(r)}
+                    {!ing && r.proveedor && r.descripcion ? ` · ${r.proveedor}` : ''}
+                    {!ing && r.tipo_doc !== 'manual' ? ' · 📷 escaneado' : ''}
+                    {r.recurrente_origen ? ' · 🔁' : ''}
+                    {liquidado ? (ing ? ' · ✅ cobrado' : ' · ✅ pagado') : ' · ⏳ pendiente'}
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: '#6b7280' }}>
-                  {r.fecha} · {cat(r.categoria)}{r.proveedor && r.descripcion ? ` · ${r.proveedor}` : ''}
-                  {r.tipo_doc === 'manual' ? '' : ' · 📷 escaneado'}
-                  {r.pagado ? ' · ✅ pagado' : ' · ⏳ pendiente'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                  {r.documento_url && (
+                    <a href={r.documento_url} target="_blank" rel="noreferrer" title="Ver justificante"
+                      style={{ textDecoration: 'none', fontSize: 15 }}>📎</a>
+                  )}
+                  {!liquidado && manual && (
+                    <button onClick={() => marcar(r)} disabled={busy === r.id} title={ing ? 'Marcar cobrado' : 'Marcar pagado'}
+                      style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', opacity: busy === r.id ? 0.5 : 1 }}>
+                      ✓ {ing ? 'Cobrado' : 'Pagado'}
+                    </button>
+                  )}
+                  <span style={{ fontWeight: 700, fontSize: 14, color: ing ? '#16a34a' : '#dc2626' }}>
+                    {ing ? '+' : '-'}{fmtEur(r.total ?? r.base_imponible)}
+                  </span>
+                  {manual && (
+                    <button onClick={() => borrar(r)} disabled={busy === r.id} title="Eliminar"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: '#9ca3af', opacity: busy === r.id ? 0.4 : 1 }}>🗑️</button>
+                  )}
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                <span style={{ fontWeight: 700, fontSize: 14, color: '#dc2626' }}>{fmtEur(r.total ?? r.base_imponible)}</span>
-                {r.tipo_doc === 'manual' && (
-                  <button onClick={() => borrar(r.id)} disabled={deleting === r.id} title="Eliminar"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: '#9ca3af', opacity: deleting === r.id ? 0.4 : 1 }}>🗑️</button>
-                )}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -485,205 +650,10 @@ function TabApuntes() {
   )
 }
 
-// ─── TAB INGRESOS (alta manual de ingresos de empresa) ───────────
-const CATEGORIAS_INGRESO: { key: string; label: string }[] = [
-  { key: 'comision',       label: '🤝 Comisión' },
-  { key: 'gestion',        label: '📋 Gestión' },
-  { key: 'extra_limpieza', label: '🧹 Extra de limpieza' },
-  { key: 'consumibles',    label: '🧴 Consumibles' },
-  { key: 'subvencion',     label: '🏛️ Subvención' },
-  { key: 'otros',          label: '📦 Otros' },
-]
-
-function NuevoIngresoModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({
-    concepto: '', fecha: new Date().toISOString().split('T')[0],
-    categoria: 'otros', base_imponible: '', porcentaje_iva: '21',
-    cobrado: false, notas: '',
-  })
-  const [saving, setSaving] = useState(false)
-  const [err, setErr] = useState('')
-  const set = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }))
-
-  const base  = Number(form.base_imponible) || 0
-  const pct   = Number(form.porcentaje_iva) || 0
-  const cuota = Math.round(base * pct) / 100
-  const total = Math.round((base + cuota) * 100) / 100
-
-  async function guardar() {
-    if (!form.base_imponible || base <= 0) { setErr('La base imponible debe ser mayor que 0'); return }
-    if (!form.concepto) { setErr('Indica un concepto'); return }
-    setSaving(true); setErr('')
-    const r = await fetch('/api/admin/contabilidad/ingresos', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, base_imponible: base, porcentaje_iva: pct }),
-    })
-    const d = await r.json()
-    if (r.ok && (d.ok || d.id)) { onSaved() }
-    else { setErr(d.error || 'Error al guardar'); setSaving(false) }
-  }
-
-  const inp: any = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 14, fontFamily: 'inherit', color: '#1e1b4b', boxSizing: 'border-box' }
-  const lab: any = { fontSize: 11, fontWeight: 700, color: '#6b7280', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '.05em' }
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 16 }}>
-      <div style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 460, maxHeight: '92vh', overflowY: 'auto' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: 17, color: '#1e1b4b' }}>➕ Nuevo ingreso</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, color: '#6b7280', cursor: 'pointer' }}>✕</button>
-        </div>
-        <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div>
-            <label style={lab}>Concepto *</label>
-            <input value={form.concepto} onChange={e => set('concepto', e.target.value)} placeholder="Ej: Comisión Booking, Extra check-out…" style={inp} />
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <div style={{ flex: 1 }}>
-              <label style={lab}>Fecha *</label>
-              <input type="date" value={form.fecha} onChange={e => set('fecha', e.target.value)} style={inp} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={lab}>Categoría</label>
-              <select value={form.categoria} onChange={e => set('categoria', e.target.value)} style={inp}>
-                {CATEGORIAS_INGRESO.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
-              </select>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <div style={{ flex: 2 }}>
-              <label style={lab}>Base imponible € *</label>
-              <input type="number" step="0.01" value={form.base_imponible} onChange={e => set('base_imponible', e.target.value)} placeholder="0,00"
-                style={{ ...inp, fontSize: 18, fontWeight: 800, color: '#16a34a' }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={lab}>% IVA</label>
-              <input type="number" step="1" value={form.porcentaje_iva} onChange={e => set('porcentaje_iva', e.target.value)} style={inp} />
-            </div>
-          </div>
-          <div style={{ background: '#eef2ff', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#1e1b4b' }}>
-            <span>IVA: <b>{fmtEur(cuota)}</b></span>
-            <span>Total: <b>{fmtEur(total)}</b></span>
-          </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#1e1b4b', cursor: 'pointer' }}>
-            <input type="checkbox" checked={form.cobrado} onChange={e => set('cobrado', e.target.checked)} style={{ width: 18, height: 18 }} />
-            Ya cobrado (cuenta en Tesorería)
-          </label>
-          <div>
-            <label style={lab}>Notas</label>
-            <textarea value={form.notas} onChange={e => set('notas', e.target.value)} rows={2} placeholder="Observaciones…"
-              style={{ ...inp, resize: 'none' }} />
-          </div>
-          {err && <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#dc2626' }}>{err}</div>}
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
-            <button onClick={guardar} disabled={saving}
-              style={{ flex: 2, padding: 12, borderRadius: 10, border: 'none', background: '#4f46e5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: saving ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: saving ? 0.6 : 1 }}>
-              {saving ? 'Guardando…' : '💾 Guardar ingreso'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function TabIngresos() {
-  const [rows, setRows] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [year, setYear] = useState(new Date().getFullYear())
-  const [showModal, setShowModal] = useState(false)
-  const [deleting, setDeleting] = useState<string | null>(null)
-  const [marking, setMarking] = useState<string | null>(null)
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    const r = await fetch(`/api/admin/contabilidad/ingresos?year=${year}`)
-    const d = await r.json()
-    setRows(d.rows || [])
-    setLoading(false)
-  }, [year])
-
-  useEffect(() => { load() }, [load])
-
-  async function borrar(id: string) {
-    if (!confirm('¿Eliminar este ingreso?')) return
-    setDeleting(id)
-    await fetch(`/api/admin/contabilidad/ingresos/${id}`, { method: 'DELETE' })
-    setDeleting(null)
-    load()
-  }
-
-  async function marcarCobrado(id: string) {
-    setMarking(id)
-    await fetch('/api/admin/contabilidad/marcar', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, tipo: 'ingreso_manual', pagado: true })
-    })
-    setMarking(null)
-    load()
-  }
-
-  const cat = (k: string) => CATEGORIAS_INGRESO.find(c => c.key === k)?.label || '📦 Otros'
-  const total = rows.reduce((a, r) => a + Number(r.base_imponible || 0), 0)
-
-  return (
-    <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
-        <button onClick={() => setYear(y => y - 1)} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '6px 14px', background: '#fff', cursor: 'pointer' }}>‹</button>
-        <span style={{ fontWeight: 700, fontSize: 15 }}>{year}</span>
-        <button onClick={() => setYear(y => y + 1)} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '6px 14px', background: '#fff', cursor: 'pointer' }}>›</button>
-        <button onClick={() => setShowModal(true)}
-          style={{ marginLeft: 'auto', border: 'none', borderRadius: 9, padding: '9px 16px', background: '#4f46e5', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-          ➕ Nuevo ingreso
-        </button>
-      </div>
-
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '14px 20px', marginBottom: 16, textAlign: 'center' }}>
-        <div style={{ fontSize: 20, fontWeight: 800, color: '#16a34a' }}>{fmtEur(total)}</div>
-        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>Total ingresos manuales · {rows.length} ingresos</div>
-      </div>
-
-      {loading ? <Spinner /> : (
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
-          {rows.length === 0 && <div style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>Sin ingresos manuales en {year}. Pulsa «➕ Nuevo ingreso» para añadir uno.</div>}
-          {rows.map((r: any) => (
-            <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 16px', borderBottom: '1px solid #f3f4f6', gap: 10 }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, color: '#1e1b4b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {r.concepto || '—'}
-                </div>
-                <div style={{ fontSize: 11, color: '#6b7280' }}>
-                  {r.fecha} · {cat(r.categoria)}
-                  {r.cobrado ? ' · ✅ cobrado' : ' · ⏳ pendiente'}
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                {!r.cobrado && (
-                  <button onClick={() => marcarCobrado(r.id)} disabled={marking === r.id} title="Marcar cobrado"
-                    style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', opacity: marking === r.id ? 0.5 : 1 }}>
-                    ✓ Cobrado
-                  </button>
-                )}
-                <span style={{ fontWeight: 700, fontSize: 14, color: '#16a34a' }}>{fmtEur(r.total ?? r.base_imponible)}</span>
-                <button onClick={() => borrar(r.id)} disabled={deleting === r.id} title="Eliminar"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: '#9ca3af', opacity: deleting === r.id ? 0.4 : 1 }}>🗑️</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {showModal && <NuevoIngresoModal onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); load() }} />}
-    </div>
-  )
-}
-
 // ─── MAIN PAGE ────────────────────────────────────────────────────
 const TABS = [
   { key: 'resultado',    label: '📊 Resultado' },
   { key: 'apuntes',      label: '📒 Apuntes' },
-  { key: 'ingresos',     label: '💶 Ingresos' },
   { key: 'iva',          label: '🧾 IVA' },
   { key: 'tesoreria',   label: '💰 Tesorería' },
   { key: 'rentabilidad', label: '📈 Rentabilidad' },
@@ -740,10 +710,9 @@ export default function ContabilidadPage() {
       <div style={{ padding: '20px 24px', maxWidth: 960, margin: '0 auto' }}>
         {activeTab === 0 && <TabResultado />}
         {activeTab === 1 && <TabApuntes />}
-        {activeTab === 2 && <TabIngresos />}
-        {activeTab === 3 && <TabIva />}
-        {activeTab === 4 && <TabTesoreria />}
-        {activeTab === 5 && <TabRentabilidad />}
+        {activeTab === 2 && <TabIva />}
+        {activeTab === 3 && <TabTesoreria />}
+        {activeTab === 4 && <TabRentabilidad />}
       </div>
     </div>
   )

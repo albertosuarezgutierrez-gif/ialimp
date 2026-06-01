@@ -25,6 +25,8 @@ export async function GET(req: Request) {
         im.cobrado,
         im.fecha_cobro::text,
         im.notas,
+        im.documento_url,
+        im.recurrente_origen::text,
         im.propiedad_id::text,
         p.nombre AS propiedad_nombre,
         im.created_at::text
