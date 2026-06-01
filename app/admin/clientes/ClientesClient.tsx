@@ -202,6 +202,11 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
                     className="w-full text-sm border border-gray-200 rounded-lg py-2 text-gray-700 font-medium hover:bg-gray-50 transition">
                     Ver detalle
                   </button>
+                  {/* Ficha completa: datos fiscales, contactos y facturación */}
+                  <a href={'/admin/clientes/' + c.id}
+                    className="block w-full text-center text-sm border border-indigo-200 bg-indigo-50 rounded-lg py-2 text-indigo-700 font-medium hover:bg-indigo-100 transition">
+                    🧾 Ficha y facturación
+                  </a>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => abrirEditar(c)}
                       className="flex-1 min-w-[90px] text-xs border border-indigo-200 rounded-lg py-1.5 text-indigo-600 hover:bg-indigo-50 transition">
