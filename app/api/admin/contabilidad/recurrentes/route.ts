@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
     const t = tipo === 'ingreso' ? 'ingreso' : 'gasto'
     const base = Number(base_imponible)
-    const per = ['mensual', 'trimestral', 'anual'].includes(periodicidad) ? periodicidad : 'mensual'
+    const per = ['mensual', 'trimestral', 'semestral', 'anual'].includes(periodicidad) ? periodicidad : 'mensual'
 
     if (!fecha_inicio) return NextResponse.json({ error: 'La fecha de inicio es obligatoria' }, { status: 400 })
     if (!Number.isFinite(base) || base <= 0) {

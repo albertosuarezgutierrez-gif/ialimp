@@ -319,6 +319,7 @@ const CATEGORIAS_INGRESO: { key: string; label: string }[] = [
 const PERIODICIDADES = [
   { key: 'mensual',    label: 'Mensual' },
   { key: 'trimestral', label: 'Trimestral' },
+  { key: 'semestral',  label: 'Semestral' },
   { key: 'anual',      label: 'Anual' },
 ]
 
