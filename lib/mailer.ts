@@ -8,11 +8,22 @@ export const MAIL_FROM = process.env.MAIL_FROM || 'hola@ialimp.es'
 const TIMEOUTS = { connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 15_000 }
 
 // Construye el transporter de correo desde variables de entorno.
+// 0) Resend (preferido): RESEND_API_KEY → SMTP de Resend (smtp.resend.com:465).
+//    Requiere el dominio (ialimp.es) verificado en Resend para usar MAIL_FROM.
 // 1) SMTP genérico (IONOS u otro): SMTP_USER + SMTP_PASSWORD
 //    (host/puerto por defecto = IONOS España: smtp.ionos.es:465 SSL).
 // 2) Fallback Gmail: GMAIL_USER + GMAIL_APP_PASSWORD.
 // Devuelve null si no hay credenciales → la ruta marca el correo como no enviado.
 export function getTransporter() {
+  if (process.env.RESEND_API_KEY) {
+    return nodemailer.createTransport({
+      host: 'smtp.resend.com',
+      port: 465,
+      secure: true,
+      auth: { user: 'resend', pass: process.env.RESEND_API_KEY },
+      ...TIMEOUTS,
+    })
+  }
   if (process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
     const host = process.env.SMTP_HOST || 'smtp.ionos.es'
     const port = Number(process.env.SMTP_PORT || 465)
