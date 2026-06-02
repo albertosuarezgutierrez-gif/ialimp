@@ -1,6 +1,7 @@
 
 'use client'
 import { useState, useEffect } from 'react'
+import { photoSrc } from '@/lib/photo'
 
 const C = {
   primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff',
@@ -170,7 +171,7 @@ export default function ChecklistPropietario({ token, sesionId, titulo, onClose 
                   {fotos.filter((f:any) => f.tipo !== 'item').map((f:any, i:number) => (
                     <div key={i} style={{ textAlign:'center' }}>
                       <button onClick={() => setFoto(f.url)}
-                        style={{ width:150, height:110, borderRadius:10, backgroundImage:`url(${f.url})`, backgroundSize:'cover', backgroundPosition:'center', border:`1px solid ${C.border}`, cursor:'pointer', display:'block' }} />
+                        style={{ width:150, height:110, borderRadius:10, backgroundImage:`url(${photoSrc(f.url)})`, backgroundSize:'cover', backgroundPosition:'center', border:`1px solid ${C.border}`, cursor:'pointer', display:'block' }} />
                       <div style={{ fontSize:10, color:C.muted, marginTop:4 }}>
                         {f.tipo === 'antes' ? '🔴 Antes' : '🟢 Después'}
                       </div>
@@ -189,7 +190,7 @@ export default function ChecklistPropietario({ token, sesionId, titulo, onClose 
                   {fotos.filter((f:any) => f.tipo === 'item').map((f:any, i:number) => (
                     <div key={i} style={{ display:'flex', gap:10, alignItems:'center' }}>
                       <button onClick={() => setFoto(f.url)}
-                        style={{ width:72, height:72, borderRadius:8, backgroundImage:`url(${f.url})`, backgroundSize:'cover', backgroundPosition:'center', border:`1px solid ${C.border}`, cursor:'pointer', flexShrink:0 }} />
+                        style={{ width:72, height:72, borderRadius:8, backgroundImage:`url(${photoSrc(f.url)})`, backgroundSize:'cover', backgroundPosition:'center', border:`1px solid ${C.border}`, cursor:'pointer', flexShrink:0 }} />
                       <div>
                         <div style={{ fontSize:12, fontWeight:600, color:C.text }}>{f.descripcion}</div>
                         {f.notas && <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>💬 {f.notas}</div>}
@@ -207,7 +208,7 @@ export default function ChecklistPropietario({ token, sesionId, titulo, onClose 
       {fotoOpen && (
         <div onClick={() => setFoto(null)}
           style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.9)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200, padding:20 }}>
-          <img src={fotoOpen} style={{ maxWidth:'100%', maxHeight:'88vh', borderRadius:12 }} alt="" />
+          <img src={photoSrc(fotoOpen)} style={{ maxWidth:'100%', maxHeight:'88vh', borderRadius:12 }} alt="" />
         </div>
       )}
     </div>
@@ -237,7 +238,7 @@ function renderItems(items: any[], setFoto: (url: string) => void) {
         {item.notes && <div style={{ fontSize:11, color:C.brand, marginTop:3 }}>💬 {item.notes}</div>}
         {item.photo_url && (
           <button onClick={() => setFoto(item.photo_url)}
-            style={{ marginTop:6, width:60, height:60, borderRadius:8, backgroundImage:`url(${item.photo_url})`, backgroundSize:'cover', border:`1px solid ${C.border}`, cursor:'pointer', display:'block' }} />
+            style={{ marginTop:6, width:60, height:60, borderRadius:8, backgroundImage:`url(${photoSrc(item.photo_url)})`, backgroundSize:'cover', border:`1px solid ${C.border}`, cursor:'pointer', display:'block' }} />
         )}
       </div>
     </div>

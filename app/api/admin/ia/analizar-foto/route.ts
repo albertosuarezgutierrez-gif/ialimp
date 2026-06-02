@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { signCleaningPhoto } from '@/lib/cleaning-photos'
 
 const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -16,10 +17,11 @@ interface AnalisisCalidad {
 }
 
 async function analizarImagenConIA(imageUrl: string): Promise<AnalisisCalidad> {
-  // Descargar imagen desde Supabase Storage como base64
-  const imgResp = await fetch(imageUrl, {
-    headers: { 'Authorization': 'Bearer ' + SUPABASE_ANON }
-  })
+  // Descargar imagen desde Supabase Storage como base64.
+  // Bucket cleaning-photos es privado -> firmamos; fallback al público + anon mientras siga abierto.
+  const signed = await signCleaningPhoto(imageUrl)
+  const imgResp = await fetch(signed || imageUrl,
+    signed ? {} : { headers: { 'Authorization': 'Bearer ' + SUPABASE_ANON } })
   if (!imgResp.ok) throw new Error('No se pudo descargar la imagen: ' + imgResp.status)
 
   const buffer     = await imgResp.arrayBuffer()

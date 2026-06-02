@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import ChatSesion from '@/components/ChatSesion'
 import ConsumoProductos from '@/components/ConsumoProductos'
 import AccesoPropiedad from '@/components/AccesoPropiedad'
+import { photoSrc } from '@/lib/photo'
 
 // ── Colores corporativos ialimp ─────────────────────────────────────────
 const C = {
@@ -433,7 +434,7 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
                   )}
                   {item.foto_url && (
                     <div style={{ padding: '0 14px 12px' }}>
-                      <img src={item.foto_url} alt="foto" onClick={() => setFotoRef(item.foto_url)}
+                      <img src={photoSrc(item.foto_url)} alt="foto" onClick={() => setFotoRef(item.foto_url)}
                         style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, cursor: 'pointer', border: `2px solid ${C.ok}` }} />
                     </div>
                   )}
@@ -576,7 +577,7 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
       {fotoRef && (
         <div onClick={() => setFotoRef(null)} style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginBottom: 12 }}>Toca para cerrar</div>
-          <img src={fotoRef} alt="Referencia" style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: 12 }} />
+          <img src={photoSrc(fotoRef)} alt="Referencia" style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: 12 }} />
         </div>
       )}
 
