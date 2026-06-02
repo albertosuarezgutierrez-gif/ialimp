@@ -3,6 +3,12 @@
 -- dinero de las facturas de sus propietarios. IALIMP (plataforma) cobra una
 -- comisión (application_fee) por cada pago. Modo TEST primero.
 
+-- Limpieza de columnas Stripe HUÉRFANAS de un intento previo (estaban vacías y
+-- sin uso en ningún código/rama; se sustituyen por la convención de abajo).
+ALTER TABLE empresas          DROP COLUMN IF EXISTS stripe_onboarding_completo;
+ALTER TABLE facturas_clientes DROP COLUMN IF EXISTS stripe_payment_status;
+ALTER TABLE facturas_clientes DROP COLUMN IF EXISTS stripe_payment_url;
+
 -- ── empresas: cuenta conectada + estado de onboarding + comisión ──
 ALTER TABLE empresas ADD COLUMN IF NOT EXISTS stripe_account_id      text;        -- acct_... de la cuenta conectada (Express)
 ALTER TABLE empresas ADD COLUMN IF NOT EXISTS stripe_charges_enabled boolean NOT NULL DEFAULT false; -- onboarding completado (puede cobrar)
