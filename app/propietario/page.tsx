@@ -39,16 +39,16 @@ export default async function PropietarioHome() {
 
   const { propiedades, historial, permisos } = await loadPortalData(cliente)
 
+  // El botón de cerrar sesión va DENTRO del menú hamburguesa del portal
+  // (sesionPropia), no flotante: así no tapa los controles de la cabecera.
   return (
-    <>
-      <PropietarioLogoutButton nombre={cliente.nombre} />
-      <PropietarioClient
-        cliente={serialize(cliente)}
-        propiedades={serialize(propiedades)}
-        historial={serialize(historial)}
-        token={cliente.access_token}
-        permisos={permisos}
-      />
-    </>
+    <PropietarioClient
+      cliente={serialize(cliente)}
+      propiedades={serialize(propiedades)}
+      historial={serialize(historial)}
+      token={cliente.access_token}
+      permisos={permisos}
+      sesionPropia
+    />
   )
 }
