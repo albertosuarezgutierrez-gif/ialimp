@@ -50,6 +50,10 @@
     {
       "path": "/api/admin/contabilidad/generar-recurrentes",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/admin/saas/sync-asientos",
+      "schedule": "0 4 1 * *"
     }
   ]
 }
