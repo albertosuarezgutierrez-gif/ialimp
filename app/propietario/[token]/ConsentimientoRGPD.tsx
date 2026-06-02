@@ -15,6 +15,7 @@ export default function ConsentimientoRGPD({
   token, empresaNombre, version,
 }: { token: string; empresaNombre: string; empresaEmail?: string; version: string }) {
   const [acepto, setAcepto]   = useState(false)
+  const [marketing, setMarketing] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [error, setError]     = useState<string | null>(null)
   const empresa  = empresaNombre || 'tu empresa de limpieza'
@@ -28,7 +29,7 @@ export default function ConsentimientoRGPD({
       const r = await fetch(`/api/propietario/${token}/consentimiento`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ version }),
+        body: JSON.stringify({ version, marketing }),
       })
       if (!r.ok) {
         const d = await r.json().catch(() => ({}))
@@ -65,8 +66,8 @@ export default function ConsentimientoRGPD({
             Esta intranet es un software de <strong>{R.marca}</strong> que te damos de forma
             <strong> gratuita</strong> para que sigas tus limpiezas (estado de cada servicio en tiempo
             real, fotos, facturas y documentos). El servicio de limpieza lo presta <strong>{empresa}</strong>.
-            A cambio del acceso gratuito, necesitamos que autorices el tratamiento de tus datos en los
-            términos siguientes.
+            Para darte acceso solo necesitamos que autorices el tratamiento de tus datos para prestarte
+            el servicio.
           </p>
 
           <h2 style={{ fontSize:14, fontWeight:800, margin:'14px 0 6px', color:C.primary }}>Responsable del tratamiento</h2>
@@ -80,17 +81,18 @@ export default function ConsentimientoRGPD({
             Tus datos de contacto y fiscales, los de tus propiedades y el historial de limpiezas, con estas finalidades:
           </p>
           <ul style={{ margin:'0 0 12px 18px', padding:0 }}>
-            <li style={{ marginBottom:6 }}>Prestarte y facturar el servicio de limpieza y mostrarte esta intranet.</li>
-            <li>Enviarte <strong>ofertas y comunicaciones comerciales</strong> de {R.marca} y de sus
-              empresas asociadas (entre ellas una correduría de seguros), por email u otros medios.</li>
+            <li style={{ marginBottom:6 }}><strong>Necesaria:</strong> prestarte y facturar el servicio de
+              limpieza y mostrarte esta intranet. (Imprescindible para darte acceso.)</li>
+            <li><strong>Opcional:</strong> enviarte ofertas y comunicaciones comerciales de {R.marca} y de
+              sus empresas asociadas (entre ellas una correduría de seguros). <strong>Solo si lo autorizas
+              abajo</strong>; no es necesaria para usar la intranet.</li>
           </ul>
 
-          <h2 style={{ fontSize:14, fontWeight:800, margin:'14px 0 6px', color:C.primary }}>Acceso gratuito y retirada</h2>
+          <h2 style={{ fontSize:14, fontWeight:800, margin:'14px 0 6px', color:C.primary }}>Retirada y conservación</h2>
           <p style={{ marginBottom:12 }}>
-            El acceso a esta intranet se te ofrece sin coste a cambio de que autorices este tratamiento,
-            incluidas las comunicaciones comerciales. Puedes retirar tu consentimiento en cualquier momento
-            escribiendo a <strong>{contacto}</strong> o a la dirección indicada; ello implicará dejar de
-            tener acceso a la intranet.
+            Puedes retirar cualquiera de estos consentimientos en cualquier momento escribiendo a
+            <strong> {contacto}</strong> o a la dirección indicada. Retirar el de comunicaciones comerciales
+            no afecta a tu acceso a la intranet; retirar el del servicio implica dejar de tener acceso.
           </p>
 
           <h2 style={{ fontSize:14, fontWeight:800, margin:'14px 0 6px', color:C.primary }}>Tus derechos</h2>
@@ -103,13 +105,22 @@ export default function ConsentimientoRGPD({
         {/* Pie: check + botón (siempre visibles) */}
         <div style={{ padding:'14px 22px 20px', borderTop:`1px solid ${C.border}`, background:'#fff' }}>
           <label style={{ display:'flex', gap:10, alignItems:'flex-start', cursor:'pointer',
-            background:C.light, border:`1px solid ${C.border}`, borderRadius:10, padding:'12px 14px', marginBottom:12 }}>
+            background:C.light, border:`1px solid ${C.border}`, borderRadius:10, padding:'12px 14px', marginBottom:10 }}>
             <input type="checkbox" checked={acepto} onChange={e => setAcepto(e.target.checked)}
               style={{ width:20, height:20, marginTop:1, accentColor:C.primary, flexShrink:0 }} />
             <span style={{ fontSize:13.5, color:C.text, lineHeight:1.5 }}>
               He leído y <strong>autorizo a {R.nombre} ({R.marca})</strong> a tratar mis datos para
-              prestarme el servicio y esta intranet <strong>y a enviarme ofertas comerciales suyas y de sus
-              empresas asociadas</strong>, en los términos descritos, a cambio del acceso gratuito a esta intranet.
+              prestarme el servicio de limpieza y darme acceso a esta intranet. <em style={{ color:C.muted }}>(Obligatorio para entrar)</em>
+            </span>
+          </label>
+
+          <label style={{ display:'flex', gap:10, alignItems:'flex-start', cursor:'pointer',
+            background:'#fff', border:`1px solid ${C.border}`, borderRadius:10, padding:'12px 14px', marginBottom:12 }}>
+            <input type="checkbox" checked={marketing} onChange={e => setMarketing(e.target.checked)}
+              style={{ width:20, height:20, marginTop:1, accentColor:C.primary, flexShrink:0 }} />
+            <span style={{ fontSize:13.5, color:C.text, lineHeight:1.5 }}>
+              Además, autorizo a <strong>{R.marca}</strong> y a sus empresas asociadas a enviarme
+              ofertas y comunicaciones comerciales. <em style={{ color:C.muted }}>(Opcional · puedo revocarlo cuando quiera)</em>
             </span>
           </label>
 

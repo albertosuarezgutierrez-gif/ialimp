@@ -9,8 +9,10 @@ import { RGPD_VERSION } from '@/lib/rgpd'
 export async function POST(req: Request, { params }: { params: Promise<{ token: string }> }) {
   try {
     const { token } = await params
-    const { version } = await req.json().catch(() => ({}))
-    const ver = (version || RGPD_VERSION).toString()
+    const body = await req.json().catch(() => ({}))
+    const ver = (body.version || RGPD_VERSION).toString()
+    // Marketing = consentimiento APARTE y opcional (no condiciona el acceso).
+    const marketing = body.marketing === true
 
     // Identificar al cliente por su token de acceso (scope implícito por token único).
     const clientes = await prisma.$queryRaw<any[]>(Prisma.sql`
@@ -24,19 +26,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || null
     const userAgent = req.headers.get('user-agent') || null
 
-    // Snapshot del consentimiento vigente en el cliente.
+    // Snapshot del consentimiento vigente en el cliente (servicio + marketing).
     await prisma.$executeRaw(Prisma.sql`
       UPDATE clientes SET
-        rgpd_aceptado    = true,
-        rgpd_aceptado_at = now(),
-        rgpd_version     = ${ver}
+        rgpd_aceptado         = true,
+        rgpd_aceptado_at      = now(),
+        rgpd_version          = ${ver},
+        marketing_aceptado    = ${marketing},
+        marketing_aceptado_at = CASE WHEN ${marketing} THEN now() ELSE NULL END
       WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
     `)
 
-    // Histórico auditable.
+    // Histórico auditable (evidencia de qué se aceptó en este evento).
     await prisma.$executeRaw(Prisma.sql`
-      INSERT INTO cliente_consentimientos (empresa_id, cliente_id, version, ip, user_agent)
-      VALUES (${empresa_id}::uuid, ${id}::uuid, ${ver}, ${ip}, ${userAgent})
+      INSERT INTO cliente_consentimientos (empresa_id, cliente_id, version, ip, user_agent, marketing)
+      VALUES (${empresa_id}::uuid, ${id}::uuid, ${ver}, ${ip}, ${userAgent}, ${marketing})
     `)
 
     return NextResponse.json({ ok: true })

@@ -20,6 +20,8 @@ function StatCard({ label, value, sub, color }: any) {
 
 export default function SuperadminPage() {
   const [empresas, setEmpresas] = useState<any[]>([])
+  const [consent, setConsent]   = useState<any[]>([])
+  const [soloMkt, setSoloMkt]   = useState(false)
   const [loading, setLoading]   = useState(true)
   const [loggedIn, setLoggedIn] = useState(false)
   const [loginForm, setLoginForm] = useState({ email: 'alberto.suarez.gutierrez@gmail.com', password: '' })
@@ -31,6 +33,10 @@ export default function SuperadminPage() {
       .then(r => { if (r.ok) { setLoggedIn(true); return r.json() } throw r })
       .then(d => { setEmpresas(d.empresas || []); setLoading(false) })
       .catch(() => { setLoggedIn(false); setLoading(false) })
+    fetch('/api/superadmin/consentimientos')
+      .then(r => r.ok ? r.json() : { clientes: [] })
+      .then(d => setConsent(d.clientes || []))
+      .catch(() => {})
   }, [])
 
   async function doLogin(e: React.FormEvent) {
@@ -45,6 +51,9 @@ export default function SuperadminPage() {
       const r2 = await fetch('/api/superadmin/empresas')
       const d2 = await r2.json()
       setEmpresas(d2.empresas || [])
+      const r3 = await fetch('/api/superadmin/consentimientos')
+      const d3 = await r3.json().catch(() => ({ clientes: [] }))
+      setConsent(d3.clientes || [])
       setLoading(false)
     } else {
       setLoginErr(d.error || 'Error')
@@ -93,6 +102,25 @@ export default function SuperadminPage() {
   const totalLimpiadoras     = empresas.reduce((a, e) => a + Number(e.limpiadoras_activas || 0), 0)
   const totalSesiones        = empresas.reduce((a, e) => a + Number(e.sesiones_mes || 0), 0)
   const mrr                  = empresas.reduce((a, e) => a + 49 + Number(e.limpiadoras_activas || 0) * 12, 0)
+
+  // ── Consentimientos ─────────────────────────────────────────────
+  const fmtFecha = (v: any) => v ? new Date(v).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
+  const consentView = soloMkt ? consent.filter(c => c.marketing_aceptado) : consent
+  const totalMkt    = consent.filter(c => c.marketing_aceptado).length
+
+  function exportarCSV() {
+    const filas = consent.filter(c => c.marketing_aceptado)
+    const head  = ['Cliente', 'Empresa', 'Email', 'Telefono', 'Acepta_ofertas_desde']
+    const esc   = (s: any) => `"${String(s ?? '').replace(/"/g, '""')}"`
+    const csv   = [head.join(',')].concat(
+      filas.map(c => [c.nombre, c.empresa_nombre, c.email, c.telefono, fmtFecha(c.marketing_aceptado_at)].map(esc).join(','))
+    ).join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href = url; a.download = `marketing-clientes-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click(); URL.revokeObjectURL(url)
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Nunito', sans-serif", color: C.text }}>
@@ -174,6 +202,70 @@ export default function SuperadminPage() {
               <span style={{ color: C.muted }}>Total limpiadoras: <strong style={{ color: C.text }}>{totalLimpiadoras}</strong></span>
               <span style={{ color: C.muted }}>MRR: <strong style={{ color: '#f59e0b' }}>{mrr}€</strong></span>
               <span style={{ color: C.muted }}>ARR: <strong style={{ color: '#f59e0b' }}>{mrr * 12}€</strong></span>
+            </div>
+          )}
+        </div>
+
+        {/* Consentimientos RGPD (cross-empresa) */}
+        <div style={{ background: C.card, borderRadius: 16, border: `1px solid ${C.border}`, overflow: 'hidden', marginTop: 28 }}>
+          <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 15 }}>Consentimientos de clientes</div>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+                {consent.length} con consentimiento · <strong style={{ color: C.ok }}>{totalMkt}</strong> aceptan ofertas (marketing)
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.muted, cursor: 'pointer' }}>
+                <input type="checkbox" checked={soloMkt} onChange={e => setSoloMkt(e.target.checked)} style={{ accentColor: C.accent }} />
+                Solo los que aceptan ofertas
+              </label>
+              <button onClick={exportarCSV} disabled={totalMkt === 0}
+                style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: totalMkt === 0 ? '#c7d2fe' : C.accent,
+                  color: '#fff', fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: totalMkt === 0 ? 'default' : 'pointer' }}>
+                ⬇ Exportar CSV marketing
+              </button>
+            </div>
+          </div>
+
+          {consentView.length === 0
+            ? <div style={{ padding: 40, textAlign: 'center', color: C.muted, fontSize: 13 }}>Sin consentimientos todavía.</div>
+            : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                    {['Cliente', 'Empresa', 'Email', 'Teléfono', 'Servicio', 'Ofertas', 'Desde'].map(h => (
+                      <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: C.muted, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {consentView.map((c: any) => (
+                    <tr key={c.id} style={{ borderBottom: `1px solid ${C.border}20` }}>
+                      <td style={{ padding: '12px 16px', fontWeight: 700, color: C.text, whiteSpace: 'nowrap' }}>{c.nombre}</td>
+                      <td style={{ padding: '12px 16px', color: C.muted, fontSize: 12 }}>{c.empresa_nombre}</td>
+                      <td style={{ padding: '12px 16px', color: C.muted, fontSize: 12 }}>{c.email || '—'}</td>
+                      <td style={{ padding: '12px 16px', color: C.muted, fontSize: 12 }}>{c.telefono || '—'}</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '3px 10px',
+                          background: c.rgpd_aceptado ? C.okBg : '#fef2f2', color: c.rgpd_aceptado ? C.ok : C.red }}>
+                          {c.rgpd_aceptado ? `✓ v${c.rgpd_version || '?'}` : '✗'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '3px 10px',
+                          background: c.marketing_aceptado ? C.okBg : C.light, color: c.marketing_aceptado ? C.ok : C.muted }}>
+                          {c.marketing_aceptado ? '✓ Sí' : '— No'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px', color: C.muted, fontSize: 12, whiteSpace: 'nowrap' }}>
+                        {fmtFecha(c.marketing_aceptado_at || c.rgpd_aceptado_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
