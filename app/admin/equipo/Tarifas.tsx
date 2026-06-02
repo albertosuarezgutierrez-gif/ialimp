@@ -11,7 +11,7 @@ const C = {
 const CAT = {
   piso:     { label: 'Piso',     color: C.brand,  bg: C.light },
   servicio: { label: 'Servicio', color: C.ok,     bg: C.okBg  },
-  pc:       { label: 'PC',       color: C.warn,   bg: C.warnBg },
+  pc:       { label: 'PC · 2ª pers.', color: C.warn, bg: C.warnBg },
 } as Record<string, { label: string; color: string; bg: string }>
 
 export function fmtMin(m: number | null | undefined) {
@@ -70,9 +70,9 @@ export default function Tarifas() {
       </p>
 
       {nPc > 0 && (
-        <div style={{ background: C.warnBg, border: `1px solid #fde68a`, borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12.5, color: '#92400e', lineHeight: 1.5 }}>
-          ⚠️ Hay <strong>{nPc} conceptos «PC»</strong> importados tal cual del Excel. <strong>Pendiente de confirmar con Vanessa</strong> qué
-          significan (¿pago a la limpiadora del piso?, ¿otro tipo de servicio?). Quedan marcados aparte para no mezclarlos.
+        <div style={{ background: C.light, border: `1px solid #c7d2fe`, borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12.5, color: C.text, lineHeight: 1.5 }}>
+          ℹ️ Los <strong>{nPc} conceptos «PC»</strong> son la parte de una <strong>2ª limpiadora</strong>: cuando un piso (normalmente una reserva
+          puntual) hay que sacarlo rápido y se hace <strong>entre dos personas</strong>, esta fila es el tiempo y el pago de esa segunda persona.
         </div>
       )}
 
@@ -133,7 +133,7 @@ export default function Tarifas() {
                 <select value={modal.categoria} onChange={e => setModal((m: any) => ({ ...m, categoria: e.target.value }))} style={inp}>
                   <option value="piso">Piso</option>
                   <option value="servicio">Servicio</option>
-                  <option value="pc">PC</option>
+                  <option value="pc">PC (2ª persona)</option>
                 </select>
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
