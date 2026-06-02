@@ -4,10 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manual de ialimp — Guía completa</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
+  /* Fuentes AUTO-ALOJADAS (sin Google Fonts → no se transfiere la IP del visitante).
+     Los .woff2 se descargan a /fonts en el build (scripts/fetch-fonts.mjs). Si
+     faltaran, degrada a la fuente del sistema. */
+  @font-face{font-family:'DM Sans';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/dm-sans-400.woff2') format('woff2')}
+  @font-face{font-family:'DM Sans';font-style:normal;font-weight:500;font-display:swap;src:url('/fonts/dm-sans-500.woff2') format('woff2')}
+  @font-face{font-family:'DM Sans';font-style:normal;font-weight:600;font-display:swap;src:url('/fonts/dm-sans-600.woff2') format('woff2')}
+  @font-face{font-family:'DM Sans';font-style:normal;font-weight:700;font-display:swap;src:url('/fonts/dm-sans-700.woff2') format('woff2')}
+  @font-face{font-family:'DM Sans';font-style:normal;font-weight:800;font-display:swap;src:url('/fonts/dm-sans-800.woff2') format('woff2')}
+  @font-face{font-family:'Syne';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/syne-400.woff2') format('woff2')}
+  @font-face{font-family:'Syne';font-style:normal;font-weight:700;font-display:swap;src:url('/fonts/syne-700.woff2') format('woff2')}
+  @font-face{font-family:'Syne';font-style:normal;font-weight:800;font-display:swap;src:url('/fonts/syne-800.woff2') format('woff2')}
   :root{
     --primary:#4f46e5; --brand:#6366f1; --light:#eef2ff;
     --bg:#f1f5f9; --text:#1e1b4b; --muted:#64748b; --border:#e2e8f0;
