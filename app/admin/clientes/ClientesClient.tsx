@@ -62,14 +62,16 @@ export default function ClientesClient({ clientesIniciales }: { clientesIniciale
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
       })
-      const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Error'); return }
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setError(data.error || 'No se pudo guardar el cliente'); return }
       if (editando) {
         setClientes(cs => cs.map(c => c.id === editando.id ? { ...c, ...data.cliente } : c))
       } else {
         setClientes(cs => [{ ...data.cliente, pms_count: 0, sesiones_hoy: 0, sesiones_pendientes: 0 }, ...cs])
       }
       setShowModal(false)
+    } catch {
+      setError('Error de red al guardar. Revisa tu conexión e inténtalo de nuevo.')
     } finally {
       setLoading(false)
     }

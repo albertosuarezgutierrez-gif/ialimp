@@ -47,6 +47,9 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
 
   // ── Paso 1: Cliente ──
   const [clienteId, setClienteId] = useState('')
+  const [buscaCliente, setBuscaCliente] = useState('')
+  const clientesFiltrados = clientes.filter(c =>
+    !buscaCliente || c.nombre?.toLowerCase().includes(buscaCliente.toLowerCase()))
 
   // ── Paso 2: Propiedad ──
   const [propiedades, setPropiedades]       = useState<any[]>([])
@@ -180,8 +183,16 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Selecciona el cliente <span className="text-red-400">*</span>
                 </label>
+                {clientes.length > 6 && (
+                  <input
+                    value={buscaCliente}
+                    onChange={e => setBuscaCliente(e.target.value)}
+                    placeholder="🔍 Buscar cliente por nombre…"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                )}
                 <div className="space-y-2">
-                  {clientes.map(c => (
+                  {clientesFiltrados.map(c => (
                     <button key={c.id} type="button"
                       onClick={() => setClienteId(c.id)}
                       className="w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition"
@@ -205,6 +216,9 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
                 </div>
                 {clientes.length === 0 && (
                   <p className="text-sm text-gray-400 text-center py-4">No hay clientes creados aún</p>
+                )}
+                {clientes.length > 0 && clientesFiltrados.length === 0 && (
+                  <p className="text-sm text-gray-400 text-center py-4">Ningún cliente coincide con «{buscaCliente}»</p>
                 )}
               </div>
 
