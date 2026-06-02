@@ -1,6 +1,6 @@
 'use client'
 import LogoIalimp from '@/components/LogoIalimp'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const C = { primary:'#4f46e5',brand:'#6366f1',light:'#eef2ff',bg:'#f1f5f9',text:'#1e293b',muted:'#64748b',border:'#e2e8f0',ok:'#16a34a',okBg:'#f0fdf4' }
 
@@ -28,6 +28,41 @@ const PLANES = [
 export default function PlanesPage() {
   const [loading, setLoading] = useState<string|null>(null)
   const [annual, setAnnual]   = useState(false)
+  const [connect, setConnect] = useState<any>(null)
+  const [connectLoading, setConnectLoading] = useState(false)
+  const [sub, setSub] = useState<any>(null)
+  const [subLoading, setSubLoading] = useState(false)
+  const [fechaInicio, setFechaInicio] = useState('')
+
+  useEffect(() => {
+    fetch('/api/admin/stripe/connect').then(r => r.json()).then(setConnect).catch(() => {})
+    fetch('/api/admin/saas/suscripcion').then(r => r.json()).then(setSub).catch(() => {})
+  }, [])
+
+  async function activarSuscripcion() {
+    setSubLoading(true)
+    try {
+      const r = await fetch('/api/admin/saas/suscripcion', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ fecha_inicio: fechaInicio || undefined })
+      })
+      const d = await r.json()
+      if (d.url) { window.location.href = d.url; return }
+      alert(d.error || 'No se pudo iniciar la suscripción')
+    } catch { alert('Error de conexión') }
+    setSubLoading(false)
+  }
+
+  async function activarPagos() {
+    setConnectLoading(true)
+    try {
+      const r = await fetch('/api/admin/stripe/connect', { method: 'POST' })
+      const d = await r.json()
+      if (d.url) { window.location.href = d.url; return }
+      alert(d.error || 'No se pudo iniciar la activación de pagos')
+    } catch { alert('Error de conexión') }
+    setConnectLoading(false)
+  }
 
   async function suscribir(planId: string) {
     if (planId === 'starter') return
@@ -123,6 +158,71 @@ export default function PlanesPage() {
               </button>
             </div>
           ))}
+        </div>
+
+        {/* ── Suscripción del programa (base + por limpiadora activa) ── */}
+        <div style={{ marginTop:36, background:'white', borderRadius:16, border:`1px solid ${C.border}`, padding:'24px', maxWidth:560, marginLeft:'auto', marginRight:'auto' }}>
+          <h3 style={{ fontWeight:800, fontSize:17, color:C.text, marginBottom:6 }}>📦 Tu suscripción a IALIMP</h3>
+          <p style={{ fontSize:13, color:C.muted, marginBottom:16 }}>
+            Cuota mensual = base + un importe por cada <b>limpiadora activa</b>. Cada mes
+            se ajusta sola: si en temporada baja tienes menos activas, pagas menos.
+          </p>
+          {sub ? (
+            <>
+              <div style={{ background:C.light, borderRadius:12, padding:'14px 16px', marginBottom:16 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, color:C.text, padding:'3px 0' }}>
+                  <span>Base</span><span>€{Number(sub.base||0).toFixed(2)}</span>
+                </div>
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, color:C.text, padding:'3px 0' }}>
+                  <span>{sub.activas} limpiadora{sub.activas===1?'':'s'} activa{sub.activas===1?'':'s'} × €{Number(sub.precio_limpiadora||0).toFixed(2)}</span>
+                  <span>€{Number(sub.porAsiento||0).toFixed(2)}</span>
+                </div>
+                <div style={{ display:'flex', justifyContent:'space-between', fontWeight:800, fontSize:16, color:C.text, borderTop:`1px solid ${C.border}`, marginTop:6, paddingTop:8 }}>
+                  <span>Total / mes</span><span>€{Number(sub.total||0).toFixed(2)}</span>
+                </div>
+              </div>
+              {sub.estado === 'activa' ? (
+                <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:C.okBg, color:C.ok, fontWeight:700, fontSize:14, padding:'10px 16px', borderRadius:10 }}>
+                  ✓ Suscripción activa{sub.proximo_cobro ? ` · próximo cobro ${sub.proximo_cobro}` : ''}
+                </div>
+              ) : (
+                <>
+                  <label style={{ display:'block', fontSize:12, fontWeight:700, color:C.muted, marginBottom:6 }}>
+                    Fecha del primer cobro (opcional — en blanco = ahora)
+                  </label>
+                  <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)}
+                    style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:`1px solid ${C.border}`, fontSize:14, fontFamily:'inherit', marginBottom:12 }} />
+                  <button onClick={activarSuscripcion} disabled={subLoading}
+                    style={{ width:'100%', padding:12, borderRadius:10, border:'none', cursor:'pointer',
+                      background:C.primary, color:'white', fontSize:14, fontWeight:700, opacity:subLoading?0.6:1, fontFamily:'inherit' }}>
+                    {subLoading ? 'Cargando...' : `Activar suscripción · €${Number(sub.total||0).toFixed(2)}/mes`}
+                  </button>
+                </>
+              )}
+            </>
+          ) : (
+            <div style={{ fontSize:13, color:C.muted }}>Cargando…</div>
+          )}
+        </div>
+
+        {/* ── Cobros online (Stripe Connect) ── */}
+        <div style={{ marginTop:36, background:'white', borderRadius:16, border:`1px solid ${C.border}`, padding:'24px', maxWidth:560, marginLeft:'auto', marginRight:'auto' }}>
+          <h3 style={{ fontWeight:800, fontSize:17, color:C.text, marginBottom:6 }}>💳 Cobros online a propietarios</h3>
+          <p style={{ fontSize:13, color:C.muted, marginBottom:16 }}>
+            Activa los pagos con tarjeta para que tus propietarios paguen sus facturas
+            desde su portal. El dinero llega a tu cuenta; se aplica una pequeña comisión de servicio.
+          </p>
+          {connect?.charges_enabled ? (
+            <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:C.okBg, color:C.ok, fontWeight:700, fontSize:14, padding:'10px 16px', borderRadius:10 }}>
+              ✓ Pagos online activados
+            </div>
+          ) : (
+            <button onClick={activarPagos} disabled={connectLoading}
+              style={{ width:'100%', padding:12, borderRadius:10, border:'none', cursor:'pointer',
+                background:C.primary, color:'white', fontSize:14, fontWeight:700, opacity:connectLoading?0.6:1, fontFamily:'inherit' }}>
+              {connectLoading ? 'Cargando...' : connect?.conectada ? 'Continuar configuración de cobros' : 'Activar cobros online'}
+            </button>
+          )}
         </div>
 
         <div style={{ marginTop:32, textAlign:'center', fontSize:12, color: C.muted }}>

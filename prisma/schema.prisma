@@ -10,13 +10,27 @@ datasource db {
 
 // ─── MULTI-TENANT ────────────────────────────────────────────────
 model Empresa {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  nombre        String
-  email         String   @unique
-  password_hash String
-  plan          String   @default("starter")
-  activa        Boolean  @default(true)
-  created_at    DateTime @default(now()) @db.Timestamptz
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nombre                 String
+  email                  String   @unique
+  password_hash          String
+  plan                   String   @default("starter")
+  activa                 Boolean  @default(true)
+  created_at             DateTime @default(now()) @db.Timestamptz
+
+  // ── Stripe ──
+  stripe_subscription_id String?  // suscripción de plan SaaS (starter/pro/agency)
+  stripe_account_id      String?  // cuenta CONECTADA (Connect Express) que recibe los pagos de facturas
+  stripe_charges_enabled Boolean  @default(false) // onboarding de Connect completado
+  stripe_comision_pct    Decimal  @default(2.5) @db.Decimal // comisión única al cobro (~1,5% Stripe + ~1% neto IALIMP)
+  stripe_customer_id     String?  // cliente Stripe de la empresa (suscripción del programa)
+
+  // ── Suscripción del programa: base + por limpiadora activa ──
+  saas_precio_base               Decimal? @db.Decimal // €/mes base (def. 80)
+  saas_precio_limpiadora         Decimal? @db.Decimal // €/mes por limpiadora activa (def. 20)
+  saas_suscripcion_inicio        DateTime? @db.Date   // fecha del primer cobro
+  saas_subscription_item_base    String?  // id item base en Stripe
+  saas_subscription_item_asiento String?  // id item por-limpiadora (ajuste de cantidad)
 
   @@map("empresas")
 }
