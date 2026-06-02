@@ -1,6 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import PisosLimpiadora from './PisosLimpiadora'
+import Tarifas from './Tarifas'
+import Nominas from './Nominas'
 
 const C = {
   primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff', bg: '#f1f5f9',
@@ -13,6 +15,8 @@ const TABS = [
   { id: 'quejas',        label: '⚠️ Quejas' },
   { id: 'equipo',        label: '👥 Equipo' },
   { id: 'limpiadoras',   label: '🧹 Limpiadoras' },
+  { id: 'tarifas',       label: '💶 Tarifas' },
+  { id: 'nominas',       label: '🧾 Nóminas' },
   { id: 'kits',          label: '🎒 Kits' },
   { id: 'disponibilidad',label: '📅 Disponibilidad' },
   { id: 'usuarios',      label: '🔐 Accesos' },
@@ -49,6 +53,8 @@ export default function EquipoPage() {
         {tab === 'quejas'         && <TabQuejas />}
         {tab === 'equipo'         && <TabEquipoRRHH />}
         {tab === 'limpiadoras'    && <TabLimpiadoras />}
+        {tab === 'tarifas'        && <Tarifas />}
+        {tab === 'nominas'        && <Nominas />}
         {tab === 'disponibilidad' && <TabDisponibilidad />}
         {tab === 'usuarios'       && <TabUsuarios />}
         {tab === 'kits'          && <TabKits />}
