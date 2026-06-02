@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import LogoIalimp from '@/components/LogoIalimp'
+import { RGPD_RESPONSABLE } from '@/lib/rgpd'
 
 const C = {
   primary:'#4f46e5', brand:'#6366f1', light:'#eef2ff',
@@ -11,13 +12,14 @@ const C = {
 // La página servidor (page.tsx) solo renderiza esto cuando NO hay consentimiento
 // vigente, así que aquí no se ha cargado ningún dato personal de limpiezas.
 export default function ConsentimientoRGPD({
-  token, empresaNombre, empresaEmail, version,
+  token, empresaNombre, version,
 }: { token: string; empresaNombre: string; empresaEmail?: string; version: string }) {
   const [acepto, setAcepto]   = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [error, setError]     = useState<string | null>(null)
-  const empresa = empresaNombre || 'la empresa'
-  const contacto = empresaEmail ? `${empresaEmail}` : empresa
+  const empresa  = empresaNombre || 'tu empresa de limpieza'
+  const R        = RGPD_RESPONSABLE
+  const contacto = R.email
 
   async function aceptar() {
     if (!acepto || enviando) return
@@ -60,37 +62,41 @@ export default function ConsentimientoRGPD({
         {/* Cuerpo (scroll si no cabe) */}
         <div style={{ padding:'18px 22px', overflowY:'auto', color:C.text, fontSize:14.5, lineHeight:1.6 }}>
           <p style={{ marginBottom:14 }}>
-            <strong>{empresa}</strong> gestiona las limpiezas de tus alojamientos y, para que puedas
-            seguirlas, te da acceso a esta intranet privada (estado de cada limpieza en tiempo real,
-            fotos, facturas y documentos). La intranet es un software prestado por su titular de forma
-            <strong> gratuita</strong> para ti. A cambio, necesitamos que autorices el tratamiento de tus datos.
+            Esta intranet es un software de <strong>{R.marca}</strong> que te damos de forma
+            <strong> gratuita</strong> para que sigas tus limpiezas (estado de cada servicio en tiempo
+            real, fotos, facturas y documentos). El servicio de limpieza lo presta <strong>{empresa}</strong>.
+            A cambio del acceso gratuito, necesitamos que autorices el tratamiento de tus datos en los
+            términos siguientes.
+          </p>
+
+          <h2 style={{ fontSize:14, fontWeight:800, margin:'14px 0 6px', color:C.primary }}>Responsable del tratamiento</h2>
+          <p style={{ marginBottom:12 }}>
+            <strong>{R.nombre}</strong> ({R.marca}), NIF {R.nif}, {R.direccion}.
+            Contacto: <strong>{R.email}</strong>.
           </p>
 
           <h2 style={{ fontSize:14, fontWeight:800, margin:'14px 0 6px', color:C.primary }}>¿Qué datos tratamos y para qué?</h2>
-          <p style={{ marginBottom:12 }}>
-            Tus datos de contacto y fiscales, los datos de tus propiedades y el historial de limpiezas,
-            con la finalidad de prestar y facturar el servicio de limpieza y mostrarte esta información
-            en tu intranet privada.
+          <p style={{ marginBottom:8 }}>
+            Tus datos de contacto y fiscales, los de tus propiedades y el historial de limpiezas, con estas finalidades:
           </p>
-
-          <h2 style={{ fontSize:14, fontWeight:800, margin:'14px 0 6px', color:C.primary }}>¿Quién trata tus datos?</h2>
-          <p style={{ marginBottom:12 }}>
-            Tus datos los tratan <strong>{empresa}</strong>, como empresa que presta tu servicio de
-            limpieza, y el <strong>titular de la plataforma</strong> que hace funcionar esta intranet.
-            No se ceden a terceros salvo obligación legal o para prestar el propio servicio.
-          </p>
+          <ul style={{ margin:'0 0 12px 18px', padding:0 }}>
+            <li style={{ marginBottom:6 }}>Prestarte y facturar el servicio de limpieza y mostrarte esta intranet.</li>
+            <li>Enviarte <strong>ofertas y comunicaciones comerciales</strong> de {R.marca} y de sus
+              empresas asociadas (entre ellas una correduría de seguros), por email u otros medios.</li>
+          </ul>
 
           <h2 style={{ fontSize:14, fontWeight:800, margin:'14px 0 6px', color:C.primary }}>Acceso gratuito y retirada</h2>
           <p style={{ marginBottom:12 }}>
-            El acceso a esta intranet se te ofrece sin coste a cambio de que autorices este tratamiento.
-            Puedes retirar tu consentimiento en cualquier momento escribiendo a <strong>{contacto}</strong>;
-            ello implicará dejar de tener acceso a la intranet.
+            El acceso a esta intranet se te ofrece sin coste a cambio de que autorices este tratamiento,
+            incluidas las comunicaciones comerciales. Puedes retirar tu consentimiento en cualquier momento
+            escribiendo a <strong>{contacto}</strong> o a la dirección indicada; ello implicará dejar de
+            tener acceso a la intranet.
           </p>
 
           <h2 style={{ fontSize:14, fontWeight:800, margin:'14px 0 6px', color:C.primary }}>Tus derechos</h2>
           <p style={{ marginBottom:4 }}>
-            Puedes acceder, rectificar o suprimir tus datos, así como ejercer el resto de derechos que
-            te reconoce el RGPD, dirigiéndote a <strong>{contacto}</strong>.
+            Puedes acceder, rectificar, suprimir y oponerte al tratamiento de tus datos, así como ejercer
+            el resto de derechos que te reconoce el RGPD, dirigiéndote a <strong>{contacto}</strong>.
           </p>
         </div>
 
@@ -101,8 +107,9 @@ export default function ConsentimientoRGPD({
             <input type="checkbox" checked={acepto} onChange={e => setAcepto(e.target.checked)}
               style={{ width:20, height:20, marginTop:1, accentColor:C.primary, flexShrink:0 }} />
             <span style={{ fontSize:13.5, color:C.text, lineHeight:1.5 }}>
-              He leído y <strong>autorizo el tratamiento de mis datos</strong> por parte de {empresa} y del
-              titular de la plataforma, en los términos descritos, a cambio del acceso gratuito a esta intranet.
+              He leído y <strong>autorizo a {R.nombre} ({R.marca})</strong> a tratar mis datos para
+              prestarme el servicio y esta intranet <strong>y a enviarme ofertas comerciales suyas y de sus
+              empresas asociadas</strong>, en los términos descritos, a cambio del acceso gratuito a esta intranet.
             </span>
           </label>
 
