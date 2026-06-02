@@ -26,6 +26,8 @@ export function appBaseUrl(): string {
   )
 }
 
-// Comisión de plataforma por defecto (1%). Se puede sobreescribir por empresa
-// con la columna empresas.stripe_comision_pct.
-export const DEFAULT_COMISION_PCT = 1.0
+// Comisión ÚNICA de plataforma por defecto (2,5%). Incluye la tarifa de Stripe
+// (~1,5%) que paga la plataforma + el margen de IALIMP (~1% neto). Es lo que ve
+// la empresa como descuento único. Configurable por empresa en
+// empresas.stripe_comision_pct.
+export const DEFAULT_COMISION_PCT = 2.5

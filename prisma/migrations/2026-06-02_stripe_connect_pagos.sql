@@ -12,7 +12,7 @@ ALTER TABLE facturas_clientes DROP COLUMN IF EXISTS stripe_payment_url;
 -- ── empresas: cuenta conectada + estado de onboarding + comisión ──
 ALTER TABLE empresas ADD COLUMN IF NOT EXISTS stripe_account_id      text;        -- acct_... de la cuenta conectada (Express)
 ALTER TABLE empresas ADD COLUMN IF NOT EXISTS stripe_charges_enabled boolean NOT NULL DEFAULT false; -- onboarding completado (puede cobrar)
-ALTER TABLE empresas ADD COLUMN IF NOT EXISTS stripe_comision_pct    numeric NOT NULL DEFAULT 1.0;    -- % que se queda IALIMP por pago (1 = 1%)
+ALTER TABLE empresas ADD COLUMN IF NOT EXISTS stripe_comision_pct    numeric NOT NULL DEFAULT 2.5;    -- comisión ÚNICA al cobro (incluye tarifa Stripe ~1,5% + ~1% neto IALIMP)
 -- Columna ya USADA por app/api/stripe/webhook (suscripciones de plan) pero que
 -- faltaba en la tabla — se formaliza aquí.
 ALTER TABLE empresas ADD COLUMN IF NOT EXISTS stripe_subscription_id text;

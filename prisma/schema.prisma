@@ -22,7 +22,7 @@ model Empresa {
   stripe_subscription_id String?  // suscripción de plan SaaS (starter/pro/agency)
   stripe_account_id      String?  // cuenta CONECTADA (Connect Express) que recibe los pagos de facturas
   stripe_charges_enabled Boolean  @default(false) // onboarding de Connect completado
-  stripe_comision_pct    Decimal  @default(1.0) @db.Decimal // % que retiene IALIMP por pago
+  stripe_comision_pct    Decimal  @default(2.5) @db.Decimal // comisión única al cobro (~1,5% Stripe + ~1% neto IALIMP)
   stripe_customer_id     String?  // cliente Stripe de la empresa (suscripción del programa)
 
   // ── Suscripción del programa: base + por limpiadora activa ──
