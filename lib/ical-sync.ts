@@ -5,6 +5,7 @@
 // Mantener aquí TODA la lógica de parseo/upsert para que ambos caminos sean idénticos.
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { getTransporter, MAIL_FROM } from '@/lib/mailer'
 
 // ── iCal parser ───────────────────────────────────────────────────────────────
 export function parseIcal(text: string): any[] {
@@ -58,6 +59,33 @@ function todayMadrid(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Madrid' })
 }
 
+// Correo a la empresa por una limpieza de ÚLTIMA HORA (salida hoy, piso aún sin
+// limpiar). No crítico: si falla o no hay proveedor SMTP, no rompe el sync.
+async function avisarEmpresaUrgente(
+  empresa: { nombre: string; email: string | null },
+  piso: string, guest: string | null, fecha: string,
+): Promise<boolean> {
+  const transporter = getTransporter()
+  if (!transporter || !empresa.email) return false
+  const fechaEs = fecha.split('-').reverse().join('/') // YYYY-MM-DD → DD/MM/YYYY
+  await transporter.sendMail({
+    from:    `"${empresa.nombre}" <${MAIL_FROM}>`,
+    to:      empresa.email,
+    subject: `🔴 Limpieza de ÚLTIMA HORA hoy — ${piso}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#f8fafc;padding:24px;border-radius:12px;">
+        <div style="background:#dc2626;color:white;padding:20px 24px;border-radius:10px;margin-bottom:18px;">
+          <h1 style="margin:0;font-size:20px;">🔴 Limpieza de última hora</h1>
+          <p style="margin:6px 0 0;opacity:0.9;font-size:14px;">Salida HOY · ${fechaEs}</p>
+        </div>
+        <p style="font-size:15px;color:#1e293b;margin:0 0 10px;">Ha entrado una reserva nueva en el calendario y <b>${piso}</b> necesita limpieza <b>hoy</b>${guest ? ` (huésped: ${guest})` : ''}.</p>
+        <p style="font-size:14px;color:#475569;margin:0 0 16px;">El piso todavía no consta limpio. Asigna una limpiadora cuanto antes desde la agenda.</p>
+        <p style="font-size:12px;color:#94a3b8;margin:0;">Aviso automático de ialimp · sincronización de calendario iCal.</p>
+      </div>`,
+  })
+  return true
+}
+
 // ── Sync iCal de una propiedad ────────────────────────────────────────────────
 // prop debe traer: id, empresa_id, cliente_id, nombre, ical_urls, limpiadora_principal_id
 export async function syncPropertyIcal(prop: any): Promise<{ synced: number; urgentes: number; errors: string[] }> {
@@ -67,6 +95,9 @@ export async function syncPropertyIcal(prop: any): Promise<{ synced: number; urg
   let synced = 0
   let urgentes = 0
   const errors: string[] = []
+  // Datos de la empresa (nombre + email destino), cargados una sola vez y solo
+  // si hace falta avisar. undefined = aún no consultado.
+  let empresaInfo: { nombre: string; email: string | null } | undefined
   const seen = new Set<string>()
   const hoy  = todayMadrid()
 
@@ -145,6 +176,27 @@ export async function syncPropertyIcal(prop: any): Promise<{ synced: number; urg
             `)
             urgentes++
           } catch { /* el aviso no es crítico: no romper el sync */ }
+
+          // Email a la empresa SOLO si ese piso no tiene ya una limpieza
+          // completada hoy (si ya está limpio, no hay urgencia que avisar).
+          try {
+            const yaLimpio = await prisma.$queryRaw<any[]>(Prisma.sql`
+              SELECT 1 FROM cleaning_sessions
+              WHERE propiedad_id = ${prop.id}::uuid
+                AND session_date = ${hoy}::date
+                AND completed_at IS NOT NULL
+              LIMIT 1
+            `)
+            if (!yaLimpio.length) {
+              if (empresaInfo === undefined) {
+                const er = await prisma.$queryRaw<any[]>(Prisma.sql`
+                  SELECT nombre, email FROM empresas WHERE id = ${prop.empresa_id}::uuid LIMIT 1
+                `)
+                empresaInfo = { nombre: er[0]?.nombre || 'ialimp', email: er[0]?.email || null }
+              }
+              await avisarEmpresaUrgente(empresaInfo, prop.nombre, guest, checkout_date)
+            }
+          } catch { /* email no crítico: no romper el sync */ }
         }
       }
     } catch (e: any) {
