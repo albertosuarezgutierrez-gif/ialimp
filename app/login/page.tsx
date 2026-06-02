@@ -31,9 +31,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap');
-        .login-root {
+      <style>{`        .login-root {
           min-height: 100dvh;
           display: flex;
           align-items: center;

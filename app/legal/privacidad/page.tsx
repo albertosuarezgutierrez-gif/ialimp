@@ -51,8 +51,8 @@ export default function PrivacidadPage() {
       <h2 style={h2}>5. Transferencias internacionales</h2>
       <p style={p}>Algunos proveedores pueden estar ubicados fuera del Espacio Económico Europeo. En tal caso,
         las transferencias se amparan en las garantías adecuadas previstas en el RGPD (por ejemplo, cláusulas
-        contractuales tipo de la Comisión Europea). La aplicación carga la tipografía Nunito desde Google
-        Fonts, lo que puede implicar la comunicación de tu dirección IP a Google.</p>
+        contractuales tipo de la Comisión Europea). La tipografía de la aplicación se sirve auto-alojada desde
+        nuestros propios servidores, sin recurrir a fuentes de terceros.</p>
 
       <h2 style={h2}>6. Tus derechos</h2>
       <p style={p}>Puedes ejercer los derechos de <strong>acceso, rectificación, supresión, oposición,

@@ -57,7 +57,6 @@ export default function PropietarioLogin() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap');
         .pl-root {
           min-height: 100dvh; display: flex; align-items: center; justify-content: center;
           padding: clamp(16px, 5vw, 48px); font-family: 'Nunito', -apple-system, sans-serif;

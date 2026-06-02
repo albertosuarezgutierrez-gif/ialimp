@@ -158,7 +158,6 @@ export default function CotizadorPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Nunito', -apple-system, sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
       {/* Header */}
       <div style={{ background: C.primary, padding: '24px 20px', textAlign: 'center' }}>

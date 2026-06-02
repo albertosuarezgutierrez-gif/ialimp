@@ -44,7 +44,6 @@ export default function SetPasswordClient({ token }: { token: string }) {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
         .sp-root { min-height:100dvh; display:flex; align-items:center; justify-content:center;
           padding:clamp(16px,5vw,48px); font-family:'Nunito',-apple-system,sans-serif;
           background:linear-gradient(145deg,#eef2ff 0%,#f1f5f9 55%,#e0e7ff 100%); color:#1e1b4b; }
