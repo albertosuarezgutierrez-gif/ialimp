@@ -248,6 +248,33 @@ function TabLimpiadoras() {
   const [form, setForm] = useState({ nombre: '', telefono: '', pin: '', color: '#6366f1' })
   const [saving, setSaving] = useState(false)
   const [expandedPisos, setExpandedPisos] = useState<string|null>(null)
+  const [accesoFor, setAccesoFor] = useState<string|null>(null)
+  const [accesoUrl, setAccesoUrl] = useState('')
+  const [accesoLoading, setAccesoLoading] = useState(false)
+  const [copiado, setCopiado] = useState(false)
+
+  async function abrirAcceso(l: any, regenerate = false) {
+    if (accesoFor === l.id && !regenerate) { setAccesoFor(null); return }
+    setAccesoFor(l.id); setAccesoLoading(true); setAccesoUrl(''); setCopiado(false)
+    try {
+      const r = await fetch(`/api/admin/limpiadoras/${l.id}/acceso`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ regenerate }),
+      })
+      const d = await r.json()
+      if (d.token) setAccesoUrl(`${window.location.origin}/l/acceso/${d.token}`)
+    } finally {
+      setAccesoLoading(false)
+    }
+  }
+  function mensajeAcceso(l: any, url: string) {
+    return `Hola ${l.nombre} 👋 Este es tu acceso a la app de limpiezas. Solo tienes que tocar este enlace y entrarás directa, sin contraseñas: ${url}`
+  }
+  function whatsappHref(l: any, url: string) {
+    const texto = encodeURIComponent(mensajeAcceso(l, url))
+    const tel = (l.telefono || '').replace(/[^0-9]/g, '')
+    return tel ? `https://wa.me/${tel}?text=${texto}` : `https://wa.me/?text=${texto}`
+  }
 
   useEffect(() => { cargar() }, [])
   async function cargar() {
@@ -306,7 +333,7 @@ function TabLimpiadoras() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {limpiadoras.map((l: any) => (
           <div key={l.id} style={{ background: C.white, borderRadius: 12, border: `1px solid ${C.border}`, overflow: 'hidden', borderLeft: `4px solid ${l.color || C.brand}` }}>
-            <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: l.color || C.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.white, fontWeight: 800 }}>
                 {l.nombre?.[0]?.toUpperCase() || '?'}
               </div>
@@ -319,10 +346,46 @@ function TabLimpiadoras() {
                 style={{ fontSize: 12, color: expandedPisos === l.id ? C.primary : C.brand, padding: '5px 10px', border: `1px solid ${C.border}`, borderRadius: 8, background: expandedPisos === l.id ? C.light : C.white, cursor: 'pointer', fontWeight: 700 }}>
                 🏠 Pisos {expandedPisos === l.id ? '▲' : '▼'}
               </button>
+              <button
+                onClick={() => abrirAcceso(l)}
+                style={{ fontSize: 12, color: accesoFor === l.id ? C.primary : C.brand, padding: '5px 10px', border: `1px solid ${C.border}`, borderRadius: 8, background: accesoFor === l.id ? C.light : C.white, cursor: 'pointer', fontWeight: 700 }}>
+                📲 Enviar acceso
+              </button>
               <a href={`/admin/usuarios`} style={{ fontSize: 12, color: C.brand, textDecoration: 'none', padding: '5px 10px', border: `1px solid ${C.border}`, borderRadius: 8 }}>
                 Ver acceso
               </a>
             </div>
+            {accesoFor === l.id && (
+              <div style={{ borderTop: `1px solid ${C.border}`, padding: '16px 18px', background: C.light }}>
+                {accesoLoading ? (
+                  <div style={{ color: C.muted, fontSize: 13 }}>Generando enlace…</div>
+                ) : accesoUrl ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ fontSize: 12, color: C.muted, fontWeight: 700 }}>
+                      Enlace de acceso directo (la limpiadora entra sin PIN ni contraseña):
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <input readOnly value={accesoUrl} onFocus={e => e.target.select()}
+                        style={{ flex: 1, minWidth: 200, padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: 'inherit', background: C.white, color: C.text }} />
+                      <button onClick={async () => { await navigator.clipboard.writeText(accesoUrl); setCopiado(true); setTimeout(() => setCopiado(false), 2000) }}
+                        style={{ padding: '9px 14px', borderRadius: 8, border: 'none', background: C.primary, color: C.white, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                        {copiado ? '✓ Copiado' : 'Copiar'}
+                      </button>
+                      <a href={whatsappHref(l, accesoUrl)} target="_blank" rel="noopener noreferrer"
+                        style={{ padding: '9px 14px', borderRadius: 8, border: 'none', background: C.ok, color: C.white, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                        WhatsApp
+                      </a>
+                    </div>
+                    <button onClick={() => abrirAcceso(l, true)}
+                      style={{ alignSelf: 'flex-start', fontSize: 11, color: C.muted, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                      Regenerar enlace (invalida el anterior)
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ color: C.red, fontSize: 13 }}>No se pudo generar el enlace.</div>
+                )}
+              </div>
+            )}
             {expandedPisos === l.id && (
               <div style={{ borderTop: `1px solid ${C.border}`, padding: '16px 18px' }}>
                 <PisosLimpiadora limpiadoraId={l.id} />

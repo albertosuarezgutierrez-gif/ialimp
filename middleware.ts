@@ -49,8 +49,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  // Rutas limpiadora — auth por PIN/cookie propia
-  if (pathname.startsWith('/l/') || pathname.startsWith('/api/l/')) {
+  // Rutas limpiadora — auth por PIN/cookie propia (incluye /l a secas, que si
+  // no rebotaría a /login = acceso admin con correo+contraseña)
+  if (pathname === '/l' || pathname.startsWith('/l/') || pathname.startsWith('/api/l/')) {
     return NextResponse.next()
   }
 
