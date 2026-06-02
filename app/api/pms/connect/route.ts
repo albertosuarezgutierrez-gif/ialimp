@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
+import { BASE_URL } from '@/lib/site-url'
 
 export async function POST(req: Request) {
   try {
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
 
     // Sync inmediato en background si hay URL iCal
     if (ical_url) {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+      const appUrl = BASE_URL
       fetch(appUrl + '/api/pms/sync?connection_id=' + connection.id, { method: 'GET' })
         .catch(() => {})
     }

@@ -3,10 +3,10 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { aiComplete } from '@/lib/ai-client'
 import { getTransporter, MAIL_FROM } from '@/lib/mailer'
+import { BASE_URL as APP_URL } from '@/lib/site-url'
 
 const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const APP_URL       = process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app'
 
 // ─── Generador de HTML de propuesta ───────────────────────────────────────
 

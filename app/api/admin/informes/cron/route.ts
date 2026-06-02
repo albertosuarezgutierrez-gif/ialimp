@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { BASE_URL } from '@/lib/site-url'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,8 +23,7 @@ export async function GET() {
         SELECT id FROM clientes WHERE empresa_id = ${emp.id}::uuid
       `)
       for (const c of clientes) {
-        await fetch(new URL('/api/admin/informes/generar',
-          process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app').toString(),
+        await fetch(new URL('/api/admin/informes/generar', BASE_URL).toString(),
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-empresa-id': emp.id },

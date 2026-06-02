@@ -4,8 +4,8 @@ Lee este archivo al empezar cualquier sesión. Son las reglas para trabajar en e
 
 ## Qué es
 IALIMP: SaaS **multi-tenant** de gestión de limpiezas de pisos turísticos (spin-off del módulo de limpieza de SIVRA). Flujo: salida de huésped (Smoobu) → sesión de limpieza → asignación a limpiadora → app móvil de la limpiadora (checklist + fotos) → facturación al propietario.
-- App: `ialimp.vercel.app` · Landing del SaaS: `ialimp.es`.
-- White-label por host: `siquebrilla.vercel.app` muestra "Sique Brilla"; `ialimp.vercel.app` muestra "ialimp" (misma app, según `hostname`).
+- App (producción): **`ialimp.es`** (dominio propio; `ialimp.vercel.app` queda como alias/preview). La URL base para enlaces absolutos (emails, redirects de Stripe, llamadas servidor→servidor) está **centralizada en `lib/site-url.ts`** (`BASE_URL`): lee `NEXTAUTH_URL` → `NEXT_PUBLIC_APP_URL` → fallback `https://ialimp.es`. En Vercel-Producción poner `NEXTAUTH_URL` y `NEXT_PUBLIC_APP_URL` = `https://ialimp.es`. **No** volver a hardcodear `ialimp.vercel.app`.
+- **White-label:** **NO está implementado por hostname** en el código (no hay detección de `host`). Solo existe una página de **propuesta comercial estática** en `app/propuesta/siquebrilla`. (Si algún día se quiere marca por dominio, habría que añadir la lógica; hoy la app muestra siempre "ialimp".)
 - Cliente piloto: Sique Brilla SL (dueña: Vanessa Cruz).
 
 ## Fronteras (no mezclar)
@@ -24,7 +24,7 @@ Next.js `^15.5` · React 19 · Prisma `^5.22` · **JWT (jose + bcryptjs, SIN Nex
 - Commits/PR: prefijo **`fix:`** o **`feat:`**. Vercel ignora los que empiezan por `chore|trigger|rebuild`.
 
 ## Despliegue y producción (OJO — cliente en vivo)
-- **Producción = `ialimp.vercel.app` = rama `main`.** Vanessa (Sique Brilla) la usa en directo: **cualquier merge a `main` se ve al instante**. No mergear sin que el cambio esté validado (preview verde).
+- **Producción = `ialimp.es` (dominio propio, alias `ialimp.vercel.app`) = rama `main`.** Vanessa (Sique Brilla) la usa en directo: **cualquier merge a `main` se ve al instante**. No mergear sin que el cambio esté validado (preview verde).
 - **Flujo:** desarrollar en rama `feat:`/`fix:` → PR (en borrador) → Vercel genera **preview** propia de la rama (misma BD de producción: lo que escribas en la preview se guarda de verdad) → validar ahí → mergear a `main` para publicar.
 - **Controlar qué está "Ready" en producción = panel de Vercel** (`vercel.com/.../ialimp`, filtro *Production*): muestra el deploy *Current* en vivo y los *rollback candidates* para volver atrás en 1 clic. GitHub/PR = el *qué cambió*; Vercel = el *qué está publicado*. (Conviene activar avisos de deploy a Slack/email en Settings → Notifications.)
 - Cada PR mergeado a `main` = un deploy de producción. Solo `main` despliega a producción.

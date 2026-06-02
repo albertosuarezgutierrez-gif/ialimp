@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { genResetToken, hashToken } from '@/lib/auth'
 import { getTransporter, MAIL_FROM } from '@/lib/mailer'
+import { BASE_URL } from '@/lib/site-url'
 
 // POST /api/auth/forgot-password  (público; /api/auth está exento en middleware)
 // Body { email }. Genera un token de recuperación y manda el enlace por email.
@@ -71,7 +72,7 @@ export async function POST(req: Request) {
     `)
 
     // Enviar email con el enlace (si SMTP no está configurado, no romper).
-    const base = process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app'
+    const base = BASE_URL
     const url  = `${base}/recuperar/${tokenClaro}`
     const transporter = getTransporter()
     if (transporter) {
