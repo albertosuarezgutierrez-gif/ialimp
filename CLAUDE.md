@@ -63,7 +63,7 @@ Customer `127993947`, header `Api-Key` (no Bearer). READ: reservations/messages/
 
 ## Asignación de limpiezas
 - Disponibilidad por turnos (`limpiadora_disponibilidad` + `turno`: mañana 08-14 / tarde 14-20 / completo 08-20). **Sin disponibilidad marcada → NO se asigna.**
-- Auto-asignación real: `GET /api/admin/auto-assign`, solo toca sesiones de hoy+mañana con `limpiadora_id` NULL (lo ya asignado no se mueve). Crons 5:30 y 16:00 (hora España). El scoring actual prioriza `conoce_propiedad` y desempata por carga (pendiente de mejora).
+- Auto-asignación real: `GET /api/admin/auto-assign`, solo toca sesiones de hoy+mañana con `limpiadora_id` NULL (lo ya asignado no se mueve). Crons 5:30 y 16:00 (hora España). **Scoring** (pesos tuneables en el `.map` del route): `dentro_ventana` (hora cae en su turno) +1000 ≫ `cabe_jornada` (carga del día + sesión ≤ `horas_max`) +300 ≫ `conoce_propiedad` +40, y a igualdad **equidad por carga SEMANAL** (lun-dom, −5/h) con desempate por carga del día (−1/h). Ventana y jornada **penalizan pero no excluyen**: si nadie cumple, asigna igual al mejor (no deja sesiones huérfanas).
 - **Asignación manual:** `PATCH /api/admin/sesiones/[id]` con `{ limpiadora_id }` (uuid = asignar/reasignar · `null`/'' = desasignar). Scope `empresa_id`; **bloquea si `completed_at`** (409). `DELETE /api/admin/sesiones/[id]` solo `origen='manual'` y sin empezar/completar (las de Smoobu las recrearía `pms/sync`).
 - **UI de reasignación:** en **Inicio** (`/dashboard`) el chip de la limpiadora es tocable → bottom-sheet (update optimista, sin recarga); en **Agenda** (`/admin/agenda`) panel "Asignar limpiadora por día" (hoy/mañana). Ambas usan el PATCH de arriba; al desasignar, avisar de que el cron de las 16:00 puede reasignar.
 
