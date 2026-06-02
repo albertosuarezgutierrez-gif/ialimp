@@ -41,6 +41,7 @@ Next.js `^15.5` · React 19 · Prisma `^5.22` · **JWT (jose + bcryptjs, SIN Nex
 
 ## Base de datos (Supabase `wswbehlcuxqxyinousql`, COMPARTIDA con SIVRA)
 - `$queryRaw` **SIEMPRE** con `Prisma.sql` (nunca interpolar strings). Los **casts van en el SQL** (`${v}::uuid`, `${v}::date`), **nunca concatenados al valor del parámetro** (`${v + '::uuid'}` manda el texto `"…::uuid"` y rompe con `42804 COALESCE types text and uuid cannot be matched`).
+- **Tipos reales de `cleaning_sessions`:** `hora_inicio` es **TEXT** (no `time`) → **nunca** castear `::time` (un `COALESCE(${v}::time, hora_inicio)` rompe con `42804 time vs text`). Al editar una sesión por PATCH, hacer **un `UPDATE` por campo y solo si viene en el body** (en vez de un COALESCE de todas las columnas) para no chocar tipos ni pisar lo no enviado.
 - `schema.prisma` solo declara `empresas` y `pms_connections`; el resto de tablas (`limpiadoras`, `cleaning_sessions`, `clientes`, `propiedades`, `facturas_*`, etc.) se gestionan por **SQL crudo**.
 - `cliente` = entidad facturable (`tipo_persona` ∈ particular/autonomo/empresa); datos fiscales en `clientes`. `cliente_contactos`: N por cliente, `principal` exclusivo. Las columnas jsonb `telefonos`/`emails` fueron ELIMINADAS.
 - `facturas_clientes` congela el destinatario (`dest_*`) para VeriFactu; `iva_importe` / `total` / `lineas.importe` son **GENERATED**.
