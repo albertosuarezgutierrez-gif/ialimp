@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
           ${qty},
           ${coste_unitario},
           ${notas ?? null},
-          ${limpiadora_id ? limpiadora_id + '::uuid' : null}::uuid
+          ${limpiadora_id || null}::uuid
         )
         ON CONFLICT (session_id, producto_id) DO UPDATE
           SET cantidad = EXCLUDED.cantidad,
