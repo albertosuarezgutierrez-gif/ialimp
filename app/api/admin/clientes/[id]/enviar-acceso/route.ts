@@ -124,7 +124,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         ${asunto},
         ${enviado ? 'enviado' : 'error'},
         ${errorMsg},
-        ${enviado ? new Date().toISOString() : null}
+        ${enviado ? new Date().toISOString() : null}::timestamptz
       )
     `)
 
