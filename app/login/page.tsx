@@ -187,6 +187,9 @@ export default function LoginPage() {
               </button>
             </form>
             <div className="login-footer">
+              <a href="/recuperar">¿Olvidaste tu contraseña?</a>
+            </div>
+            <div className="login-footer" style={{ marginTop: 6 }}>
               ¿Sin cuenta?{' '}
               <a href="/register">Registrar empresa</a>
             </div>

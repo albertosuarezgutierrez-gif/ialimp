@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireEmpresaId } from '@/lib/tenant'
+import { BASE_URL } from '@/lib/site-url'
 
 const PRICES: Record<string, Record<string, string>> = {
   pro:    { monthly: 'price_pro_monthly',    annual: 'price_pro_annual'    },
@@ -33,8 +34,8 @@ export async function POST(req: Request) {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { empresa_id },
-      success_url: (process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app') + '/dashboard?plan=ok',
-      cancel_url:  (process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app') + '/admin/planes',
+      success_url: BASE_URL + '/dashboard?plan=ok',
+      cancel_url:  BASE_URL + '/admin/planes',
       allow_promotion_codes: true,
     })
 

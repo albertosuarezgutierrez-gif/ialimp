@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
 import { getTransporter, MAIL_FROM } from '@/lib/mailer'
+import { BASE_URL } from '@/lib/site-url'
 
 // POST /api/admin/clientes/[id]/enviar-acceso
 // Envía al cliente un email con el enlace a su intranet (portal del propietario).
@@ -50,7 +51,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     `)
     const empresaNombre = emp[0]?.nombre || 'IALIMP'
 
-    const urlPortal = `${process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app'}/propietario/${c.access_token}`
+    const urlPortal = `${BASE_URL}/propietario/${c.access_token}`
     const nombreCorto = (c.nombre || '').split(' ')[0] || c.nombre || ''
     const asunto = `Tu acceso a la intranet de ${empresaNombre}`
 

@@ -23,7 +23,7 @@ export async function GET(req: Request) {
 
     const res = await fetch(url, {
       headers: {
-        'User-Agent': 'IALIMP-SaaS/1.0 (limpieza@ialimp.vercel.app)',
+        'User-Agent': 'IALIMP-SaaS/1.0 (hola@ialimp.es)',
         'Accept-Language': 'es',
       },
       // Nominatim pide máx 1 req/seg — en producción añadir cache

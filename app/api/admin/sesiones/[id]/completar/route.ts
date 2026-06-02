@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
 import { getTransporter, MAIL_FROM } from '@/lib/mailer'
+import { BASE_URL } from '@/lib/site-url'
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -45,7 +46,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const d       = datos[0]
     const hora    = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
     const fecha   = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-    const urlProp = `${process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app'}/propietario/${d.access_token}`
+    const urlProp = `${BASE_URL}/propietario/${d.access_token}`
     const propNombre = sesion.property_name || d.propiedad_nombre || 'su propiedad'
 
     // 3. Enviar email

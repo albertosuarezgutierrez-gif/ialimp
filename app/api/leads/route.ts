@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
-
-const APP_URL = process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app'
+import { BASE_URL as APP_URL } from '@/lib/site-url'
 
 export async function GET() {
   return NextResponse.json({ ok: true, message: 'Endpoint público de leads' })
