@@ -3,7 +3,7 @@ import LogoIalimp from '@/components/LogoIalimp'
 import TurnstileWidget from '@/components/TurnstileWidget'
 import { useState } from 'react'
 
-type Modo = 'login' | 'registro'
+type Modo = 'login' | 'recuperar'
 
 export default function PropietarioLogin() {
   const [modo, setModo]         = useState<Modo>('login')
@@ -13,6 +13,8 @@ export default function PropietarioLogin() {
   const [error, setError]       = useState('')
   const [ok, setOk]             = useState('')
   const [loading, setLoading]   = useState(false)
+
+  function cambiar(m: Modo) { setModo(m); setError(''); setOk('') }
 
   async function entrar(e: React.FormEvent) {
     e.preventDefault()
@@ -33,18 +35,18 @@ export default function PropietarioLogin() {
     }
   }
 
-  async function pedirEnlace(e: React.FormEvent) {
+  async function recuperar(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true); setError(''); setOk('')
     try {
-      const res = await fetch('/api/propietario/auth/register', {
+      const res = await fetch('/api/propietario/auth/recuperar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, turnstileToken: captcha }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'No se pudo enviar el correo'); return }
-      setOk(data.message || 'Si tu correo está registrado, te hemos enviado un enlace. Revisa tu bandeja y la carpeta de spam.')
+      setOk(data.message || 'Si tu cuenta está activada, te hemos enviado un enlace. Revisa tu bandeja y la carpeta de spam.')
     } catch {
       setError('Error de conexión')
     } finally {
@@ -71,10 +73,7 @@ export default function PropietarioLogin() {
           text-transform:uppercase; margin: 6px 0 clamp(22px,5vw,36px); }
         .pl-card { background:#fff; border:1px solid #e2e8f0; border-radius:24px;
           padding: clamp(22px,5vw,34px); box-shadow:0 10px 40px rgba(79,70,229,.10); }
-        .pl-tabs { display:flex; gap:6px; background:#f1f5f9; border-radius:12px; padding:4px; margin-bottom:22px; }
-        .pl-tab { flex:1; border:none; background:transparent; border-radius:9px; padding:9px 8px;
-          font-family:inherit; font-size:13px; font-weight:800; color:#64748b; cursor:pointer; transition:all .15s; }
-        .pl-tab.active { background:#fff; color:#4f46e5; box-shadow:0 1px 4px rgba(79,70,229,.15); }
+        .pl-title { font-size:18px; font-weight:900; margin:0 0 18px; text-align:center; }
         .pl-label { display:block; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;
           letter-spacing:.08em; margin-bottom:7px; }
         .pl-input { width:100%; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:13px 15px;
@@ -92,9 +91,11 @@ export default function PropietarioLogin() {
         .pl-ok { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 14px;
           color:#15803d; font-size:13px; line-height:1.5; margin-bottom:14px; }
         .pl-hint { font-size:12px; color:#94a3b8; line-height:1.5; margin-bottom:16px; }
-        .pl-footer { text-align:center; font-size:12px; color:#94a3b8; margin-top:18px; line-height:1.6; }
-        .pl-footer a { color:#4f46e5; font-weight:700; text-decoration:none; cursor:pointer; }
-        .pl-footer a:hover { text-decoration:underline; }
+        .pl-link { text-align:center; font-size:12px; color:#94a3b8; margin-top:18px; line-height:1.6; }
+        .pl-link a { color:#4f46e5; font-weight:700; text-decoration:none; cursor:pointer; }
+        .pl-link a:hover { text-decoration:underline; }
+        .pl-foot { text-align:center; font-size:11.5px; color:#94a3b8; margin-top:14px; line-height:1.5;
+          border-top:1px solid #eef2ff; padding-top:14px; }
       `}</style>
 
       <div className="pl-root">
@@ -108,22 +109,12 @@ export default function PropietarioLogin() {
           <div className="pl-tagline">Acceso para propietarios</div>
 
           <div className="pl-card">
-            <div className="pl-tabs">
-              <button className={`pl-tab ${modo==='login'?'active':''}`}
-                onClick={() => { setModo('login'); setError(''); setOk('') }} type="button">
-                Entrar
-              </button>
-              <button className={`pl-tab ${modo==='registro'?'active':''}`}
-                onClick={() => { setModo('registro'); setError(''); setOk('') }} type="button">
-                Crear cuenta
-              </button>
-            </div>
-
             {error && <div className="pl-error">⚠ {error}</div>}
             {ok    && <div className="pl-ok">✅ {ok}</div>}
 
             {modo === 'login' ? (
               <form onSubmit={entrar}>
+                <div className="pl-title">Entra en tu portal</div>
                 <label className="pl-label">Tu email</label>
                 <input className="pl-input" type="email" value={email}
                   onChange={e => setEmail(e.target.value)} placeholder="tucorreo@ejemplo.com"
@@ -134,18 +125,21 @@ export default function PropietarioLogin() {
                   autoComplete="current-password" required />
                 <TurnstileWidget onToken={setCaptcha} />
                 <button className="pl-btn" type="submit" disabled={loading}>
-                  {loading ? 'Accediendo…' : 'Entrar en mi portal →'}
+                  {loading ? 'Accediendo…' : 'Entrar →'}
                 </button>
-                <div className="pl-footer">
-                  ¿Olvidaste tu contraseña?{' '}
-                  <a onClick={() => { setModo('registro'); setError(''); setOk('') }}>Recupérala aquí</a>
+                <div className="pl-link">
+                  <a onClick={() => cambiar('recuperar')}>¿Olvidaste tu contraseña?</a>
+                </div>
+                <div className="pl-foot">
+                  ¿Aún no tienes acceso? Tu empresa de limpieza te enviará una invitación por email para crear tu contraseña.
                 </div>
               </form>
             ) : (
-              <form onSubmit={pedirEnlace}>
+              <form onSubmit={recuperar}>
+                <div className="pl-title">Recuperar contraseña</div>
                 <p className="pl-hint">
-                  Escribe el correo que tienes registrado con tu empresa de limpieza.
-                  Te enviaremos un enlace para crear (o restablecer) tu contraseña.
+                  Escribe tu email y te enviaremos un enlace para elegir una nueva contraseña.
+                  (Solo funciona si tu cuenta ya está activada.)
                 </p>
                 <label className="pl-label">Tu email</label>
                 <input className="pl-input" type="email" value={email}
@@ -155,9 +149,8 @@ export default function PropietarioLogin() {
                 <button className="pl-btn" type="submit" disabled={loading}>
                   {loading ? 'Enviando…' : 'Enviarme el enlace →'}
                 </button>
-                <div className="pl-footer">
-                  ¿Ya tienes contraseña?{' '}
-                  <a onClick={() => { setModo('login'); setError(''); setOk('') }}>Inicia sesión</a>
+                <div className="pl-link">
+                  <a onClick={() => cambiar('login')}>← Volver a iniciar sesión</a>
                 </div>
               </form>
             )}
