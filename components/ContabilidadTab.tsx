@@ -560,6 +560,9 @@ export default function ContabilidadTab({ token }: { token: string }) {
       </div>
 
       {/* ── Botones acción ── */}
+      <div style={{ fontSize:12, color:C.muted, fontWeight:600, marginBottom:8, textAlign:'center' }}>
+        Registra aquí tus propios ingresos y gastos
+      </div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
         <button onClick={() => setShowGasto(true)}
           style={{ padding:'12px', borderRadius:12, border:`2px solid ${C.border}`, background:'white', color:C.text, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
