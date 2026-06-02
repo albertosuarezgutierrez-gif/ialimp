@@ -65,7 +65,13 @@ export default function DashboardClient({
   const completadas = sesiones.filter(s => s.completed_at)
 
   // Prioridad: ventana ajustada arriba → con entrada de huésped → quien entra antes → por hora
-  const hhmm = (v: any) => (typeof v === 'string' ? v.slice(0, 5) : '')
+  // hora_* puede llegar como Date (time de Postgres vía SSR), ISO string (API) o "HH:MM:SS" (text).
+  const hhmm = (v: any): string => {
+    if (!v) return ''
+    if (v instanceof Date) return isNaN(v.getTime()) ? '' : v.toISOString().slice(11, 16)
+    const s = String(v)
+    return (s.includes('T') ? s.split('T')[1] : s).slice(0, 5)
+  }
   function prioridad(a: any, b: any) {
     const av = a.alerta_ventana ? 0 : 1, bv = b.alerta_ventana ? 0 : 1
     if (av !== bv) return av - bv
@@ -906,7 +912,7 @@ export default function DashboardClient({
                             )}
                             {s.hora_checkin_siguiente && (
                               <span className="ses-chip" style={{ background:'#fee2e2', color:'#dc2626', borderColor:'#fca5a5', fontWeight:700 }}>
-                                🔴 Entra {typeof s.hora_checkin_siguiente === 'string' ? s.hora_checkin_siguiente.slice(0,5) : s.hora_checkin_siguiente}
+                                🔴 Entra {hhmm(s.hora_checkin_siguiente)}
                               </span>
                             )}
                             {s.alerta_ventana && (

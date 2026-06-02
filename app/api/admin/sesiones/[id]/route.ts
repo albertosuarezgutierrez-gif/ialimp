@@ -67,9 +67,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     // ni si ya la tenía). No crítico: si faltan VAPID/suscripciones, se omite.
     if (cambiaLimpiadora && body.limpiadora_id && body.limpiadora_id !== actual[0].limpiadora_id) {
       const s = result[0] || {}
+      // hora_* puede venir como Date (time de Postgres), ISO string o "HH:MM:SS"
+      const hhmm = (v: any): string => {
+        if (!v) return ''
+        if (v instanceof Date) return isNaN(v.getTime()) ? '' : v.toISOString().slice(11, 16)
+        const t = String(v)
+        return (t.includes('T') ? t.split('T')[1] : t).slice(0, 5)
+      }
       const fecha = s.session_date || ''
-      const hora = s.hora_inicio ? ' ' + String(s.hora_inicio).slice(0, 5) : ''
-      const entrada = s.hora_checkin_siguiente ? ` · 🔴 Entra ${String(s.hora_checkin_siguiente).slice(0, 5)}` : ''
+      const hora = hhmm(s.hora_inicio) ? ' ' + hhmm(s.hora_inicio) : ''
+      const entrada = s.hora_checkin_siguiente ? ` · 🔴 Entra ${hhmm(s.hora_checkin_siguiente)}` : ''
       await sendPushToLimpiadora(
         empresa_id,
         body.limpiadora_id,
