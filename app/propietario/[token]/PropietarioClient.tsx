@@ -535,7 +535,7 @@ function FiltrosBarra({ propiedades, filtroProp, setFiltroProp, filtroEstado, se
 }
 
 // ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
-export default function PropietarioClient({ cliente, propiedades, historial, token, permisos }: any) {
+export default function PropietarioClient({ cliente, propiedades, historial, token, permisos, sesionPropia }: any) {
   const [tab, setTab]     = useState<'hoy'|'reservas'|'calendario'|'finanzas'|'docs'|'acceso'|'chat'>('hoy')
   const [menuOpen, setMenu] = useState(false)
   const [quejaModal, setQueja]          = useState<any>(null)
@@ -648,6 +648,11 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
 
   const cardProps = { token, permisos, onChat:setChatSesion, onChecklist:setChecklist, onQueja:setQueja, quejaEnviada }
 
+  async function cerrarSesion() {
+    try { await fetch('/api/propietario/auth/logout', { method:'POST' }) } catch {}
+    window.location.href = '/propietario'
+  }
+
   return (
     <div style={{ fontFamily:"'Nunito',-apple-system,sans-serif", background:C.bg, minHeight:'100vh', maxWidth:480, margin:'0 auto' }}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0} ::-webkit-scrollbar{display:none}`}</style>
@@ -737,6 +742,12 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
                 </button>
               ))}
             </nav>
+            {sesionPropia && (
+              <button onClick={cerrarSesion}
+                style={{ margin:'0 16px 12px', padding:'12px', border:`1px solid ${C.border}`, background:'#fff', borderRadius:10, color:C.primary, fontFamily:'inherit', fontWeight:800, fontSize:14, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                ⎋ Cerrar sesión
+              </button>
+            )}
             <div style={{ padding:'14px 20px', borderTop:`1px solid ${C.border}`, fontSize:11, color:C.muted, textAlign:'center' }}>
               {cliente.empresa_nombre} · <span style={{ color:C.brand, fontWeight:600 }}>ialimp</span>
             </div>
