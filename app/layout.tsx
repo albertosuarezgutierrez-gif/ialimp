@@ -13,6 +13,10 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
+  // IALIMP es tema CLARO siempre: declara color-scheme light para que Android/
+  // el navegador no aplique "forzar oscuro" e invierta la app (ver CLAUDE.md).
+  colorScheme: 'light',
+  themeColor: '#4f46e5',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

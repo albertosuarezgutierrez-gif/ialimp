@@ -52,6 +52,7 @@ export default function DashboardClient({
   const [verDetAsign,  setVerDetAsign]  = useState(false)
   const [sheet,        setSheet]        = useState<any|null>(null)   // sesión en reasignación
   const [busyId,       setBusyId]       = useState<string|null>(null)
+  const [buscaLimp,    setBuscaLimp]    = useState('')               // filtro de limpiadora en el sheet
   const [toast,        setToast]        = useState<{msg:string;tipo:'ok'|'warn'|'error'}|null>(null)
 
   function showToast(msg: string, tipo: 'ok'|'warn'|'error' = 'ok') {
@@ -63,10 +64,28 @@ export default function DashboardClient({
   const enCurso     = sesiones.filter(s => s.started_at && !s.completed_at)
   const completadas = sesiones.filter(s => s.completed_at)
 
-  const sesionesFiltradas = filtroEstado === 'all'      ? sesiones
+  // Prioridad: ventana ajustada arriba → con entrada de huésped → quien entra antes → por hora
+  // hora_* puede llegar como Date (time de Postgres vía SSR), ISO string (API) o "HH:MM:SS" (text).
+  const hhmm = (v: any): string => {
+    if (!v) return ''
+    if (v instanceof Date) return isNaN(v.getTime()) ? '' : v.toISOString().slice(11, 16)
+    const s = String(v)
+    return (s.includes('T') ? s.split('T')[1] : s).slice(0, 5)
+  }
+  function prioridad(a: any, b: any) {
+    const av = a.alerta_ventana ? 0 : 1, bv = b.alerta_ventana ? 0 : 1
+    if (av !== bv) return av - bv
+    const ae = a.hora_checkin_siguiente ? 0 : 1, be = b.hora_checkin_siguiente ? 0 : 1
+    if (ae !== be) return ae - be
+    const ac = hhmm(a.hora_checkin_siguiente) || '99:99', bc = hhmm(b.hora_checkin_siguiente) || '99:99'
+    if (ac !== bc) return ac < bc ? -1 : 1
+    return (hhmm(a.hora_inicio) || '99:99').localeCompare(hhmm(b.hora_inicio) || '99:99')
+  }
+
+  const sesionesFiltradas = (filtroEstado === 'all'      ? sesiones
     : filtroEstado === 'pendiente' ? pendientes
     : filtroEstado === 'en_curso'  ? enCurso
-    : completadas
+    : completadas).slice().sort(prioridad)
 
   async function cargarBriefing() {
     setLoadingBriefing(true)
@@ -140,6 +159,7 @@ export default function DashboardClient({
       ? { ...s, limpiadora_id: limpiadoraId || null, limpiadora_nombre: limp ? limp.nombre : null }
       : s))
     setSheet(null)
+    setBuscaLimp('')
     setBusyId(sessionId)
     try {
       const r = await fetch('/api/admin/sesiones/' + sessionId, {
@@ -890,6 +910,16 @@ export default function DashboardClient({
                                 🕐 {typeof s.hora_inicio === 'string' ? s.hora_inicio.slice(0,5) : s.hora_inicio}
                               </span>
                             )}
+                            {s.hora_checkin_siguiente && (
+                              <span className="ses-chip" style={{ background:'#fee2e2', color:'#dc2626', borderColor:'#fca5a5', fontWeight:700 }}>
+                                🔴 Entra {hhmm(s.hora_checkin_siguiente)}
+                              </span>
+                            )}
+                            {s.alerta_ventana && (
+                              <span className="ses-chip" style={{ background:'#fef2f2', color:'#b91c1c', borderColor:'#fca5a5' }}>
+                                ⚠️ Ventana ajustada
+                              </span>
+                            )}
                             {manual && (
                               <span className="ses-chip" style={{ background:'#f5f3ff', color:'#7c3aed' }}>manual</span>
                             )}
@@ -986,18 +1016,29 @@ export default function DashboardClient({
 
       {/* Bottom-sheet: elegir limpiadora */}
       {sheet && (
-        <div className="sheet-backdrop" onClick={() => setSheet(null)}>
+        <div className="sheet-backdrop" onClick={() => { setSheet(null); setBuscaLimp('') }}>
           <div className="sheet" onClick={e => e.stopPropagation()}>
             <div className="sheet-handle" />
             <div style={{ fontWeight:800, fontSize:15, color:'#0f172a' }}>Asignar limpiadora</div>
             <div style={{ fontSize:12, color:'#64748b', marginBottom:12 }}>{sheet.property_name || '— Sin piso —'}</div>
+            {limpiadoras.filter((l: any) => l.activa !== false).length > 6 && (
+              <input
+                value={buscaLimp}
+                onChange={e => setBuscaLimp(e.target.value)}
+                placeholder="🔍 Buscar limpiadora…"
+                style={{ width:'100%', border:'1px solid #e2e8f0', borderRadius:10, padding:'8px 12px', fontSize:13, marginBottom:10, outline:'none' }}
+              />
+            )}
             <div className="sheet-list">
               <button className="sheet-item" disabled={busyId === sheet.id}
                 onClick={() => reasignar(sheet.id, '')} style={{ color:'#c2410c' }}>
                 <span>✕ Sin asignar</span>
                 {!sheet.limpiadora_id && <span className="sheet-check">✓</span>}
               </button>
-              {limpiadoras.filter((l: any) => l.activa !== false).map((l: any) => (
+              {limpiadoras
+                .filter((l: any) => l.activa !== false)
+                .filter((l: any) => !buscaLimp || l.nombre?.toLowerCase().includes(buscaLimp.toLowerCase()))
+                .map((l: any) => (
                 <button key={l.id} className="sheet-item" disabled={busyId === sheet.id}
                   onClick={() => reasignar(sheet.id, l.id)}>
                   <span><span className="sheet-dot" style={{ background: l.color || '#6366f1' }} />{l.nombre}</span>

@@ -258,7 +258,19 @@ export default function AgendaPage() {
                     background: completada ? C.okBg : C.bg, border:`1px solid ${C.border}`,
                   }}>
                     <div style={{ flex:'1 1 200px', minWidth:0 }}>
-                      <div style={{ fontSize:14, fontWeight:700, color: C.text }}>{s.property_name || 'Sin nombre'}</div>
+                      <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+                        <span style={{ fontSize:14, fontWeight:700, color: C.text }}>{s.property_name || 'Sin nombre'}</span>
+                        {s.hora_checkin_siguiente && (
+                          <span style={{ fontSize:11, fontWeight:800, color:'#dc2626', background:'#fee2e2', border:'1px solid #fca5a5', borderRadius:20, padding:'1px 8px' }}>
+                            🔴 Entra {s.hora_checkin_siguiente.slice(0,5)}
+                          </span>
+                        )}
+                        {s.alerta_ventana && (
+                          <span style={{ fontSize:11, fontWeight:700, color:'#b91c1c', background:'#fef2f2', border:'1px solid #fca5a5', borderRadius:20, padding:'1px 8px' }}>
+                            ⚠️ Ventana ajustada
+                          </span>
+                        )}
+                      </div>
                       <div style={{ fontSize:12, color: C.muted }}>
                         {(s.hora_checkout || s.hora_inicio)?.slice(0,5) || 'sin hora'}
                         {manual ? ' · manual' : ' · Smoobu'}

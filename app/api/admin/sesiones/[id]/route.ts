@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
+import { sendPushToLimpiadora } from '@/lib/push'
 
 // PATCH — editar sesión: asignar / reasignar / DESASIGNAR limpiadora y otros campos.
 // Scope obligatorio por empresa_id. No deja tocar una sesión ya completada.
@@ -16,7 +17,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     // Sesión actual (y comprobación de pertenencia a la empresa)
     const actual = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT id, completed_at FROM cleaning_sessions
+      SELECT id, completed_at, limpiadora_id::text AS limpiadora_id FROM cleaning_sessions
       WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
     `)
     if (!actual.length) return NextResponse.json({ error: 'Sesión no encontrada' }, { status: 404 })
@@ -61,6 +62,29 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       LEFT JOIN limpiadoras l ON l.id = cs.limpiadora_id
       WHERE cs.id = ${id}::uuid AND cs.empresa_id = ${empresa_id}::uuid
     `)
+
+    // Aviso push a la limpiadora al asignarle/reasignarle a mano (no al desasignar
+    // ni si ya la tenía). No crítico: si faltan VAPID/suscripciones, se omite.
+    if (cambiaLimpiadora && body.limpiadora_id && body.limpiadora_id !== actual[0].limpiadora_id) {
+      const s = result[0] || {}
+      // hora_* puede venir como Date (time de Postgres), ISO string o "HH:MM:SS"
+      const hhmm = (v: any): string => {
+        if (!v) return ''
+        if (v instanceof Date) return isNaN(v.getTime()) ? '' : v.toISOString().slice(11, 16)
+        const t = String(v)
+        return (t.includes('T') ? t.split('T')[1] : t).slice(0, 5)
+      }
+      const fecha = s.session_date || ''
+      const hora = hhmm(s.hora_inicio) ? ' ' + hhmm(s.hora_inicio) : ''
+      const entrada = s.hora_checkin_siguiente ? ` · 🔴 Entra ${hhmm(s.hora_checkin_siguiente)}` : ''
+      await sendPushToLimpiadora(
+        empresa_id,
+        body.limpiadora_id,
+        '🧹 Nueva limpieza asignada',
+        `${s.property_name || 'Limpieza'} · ${fecha}${hora}${entrada}`
+      )
+    }
+
     return NextResponse.json({ ok: true, sesion: result[0] })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })

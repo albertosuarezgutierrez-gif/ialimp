@@ -136,6 +136,7 @@ const APP_CSS = `
 .l-card.ok   { border-left-color: #10b981; }
 .l-card.go   { border-left-color: #4f46e5; }
 .l-card.pend { border-left-color: #e2e8f0; }
+.l-card.prio { border-left-color: #dc2626; border-left-width: 5px; }
 
 .l-card-icon {
   width: clamp(40px, 10vw, 48px); height: clamp(40px, 10vw, 48px);
@@ -158,6 +159,7 @@ const APP_CSS = `
 .l-chip.time  { background: #eef2ff; color: #4f46e5; }
 .l-chip.warn  { background: #fffbeb; color: #b45309; }
 .l-chip.pax   { background: #f1f5f9; color: #64748b; }
+.l-chip.entra { background: #fee2e2; color: #dc2626; }
 
 /* progreso inline */
 .l-prog { margin-top: 9px; }
@@ -200,7 +202,8 @@ function SesionCard({ s, onTap }: { s: any; onTap: () => void }) {
     ? Math.round(s.checklist_data.filter((i: any) => i.hecho).length / s.checklist_data.length * 100)
     : null
 
-  const cls = hecho ? 'ok' : enCurso ? 'go' : 'pend'
+  const prioridad = !hecho && !!s.hora_checkin_siguiente
+  const cls = hecho ? 'ok' : prioridad ? `${enCurso ? 'go' : 'pend'} prio` : enCurso ? 'go' : 'pend'
   const icon = ({ rotacion:'🏠', particular:'🏡', comunidad:'🏢', oficina:'💼' } as any)[s.tipo_servicio] || '🏠'
 
   return (
@@ -215,6 +218,7 @@ function SesionCard({ s, onTap }: { s: any; onTap: () => void }) {
               🚪 {inicio}{limite ? ` → ${limite}` : ''}
             </span>
           )}
+          {limite && !hecho && <span className="l-chip entra">🔴 Entra {limite}</span>}
           {s.alerta_ventana && <span className="l-chip warn">⚠️ Ventana ajustada</span>}
           {s.num_huespedes && <span className="l-chip pax">👥 {s.num_huespedes}</span>}
         </div>
