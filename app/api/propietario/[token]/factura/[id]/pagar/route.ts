@@ -80,6 +80,10 @@ export async function POST(
       }],
       payment_intent_data: {
         application_fee_amount: feeCent,
+        // on_behalf_of → la cuenta de la empresa es el "comerciante" y asume la
+        // comisión de Stripe; IALIMP cobra su application_fee (1%) LIMPIO, sin
+        // pagar las tarifas de procesamiento. (Sin esto, las pagaría la plataforma.)
+        on_behalf_of: empresa.stripe_account_id,
         transfer_data: { destination: empresa.stripe_account_id },
         metadata: { factura_id: factura.id, empresa_id: cliente.empresa_id, cliente_id: cliente.id },
       },
