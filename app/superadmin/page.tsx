@@ -89,7 +89,10 @@ export default function SuperadminPage() {
             Entrar →
           </button>
         </form>
-        <div style={{ marginTop: 16, fontSize: 11, color: C.muted, textAlign: 'center' }}>
+        <div style={{ marginTop: 16, fontSize: 12, textAlign: 'center' }}>
+          <a href="/recuperar" style={{ color: C.accent, fontWeight: 700, textDecoration: 'none' }}>¿Olvidaste tu contraseña?</a>
+        </div>
+        <div style={{ marginTop: 10, fontSize: 11, color: C.muted, textAlign: 'center' }}>
           Primera vez: pon cualquier contraseña — quedará guardada como la tuya
         </div>
       </div>
