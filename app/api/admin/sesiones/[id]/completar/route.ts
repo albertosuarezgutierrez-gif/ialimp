@@ -96,7 +96,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         ${d.notif_email || null},
         ${'✅ ' + propNombre + ' está listo — ' + hora},
         ${emailEnviado ? 'enviado' : 'pendiente'},
-        ${emailEnviado ? new Date().toISOString() : null}
+        ${emailEnviado ? new Date().toISOString() : null}::timestamptz
       )
     `)
 

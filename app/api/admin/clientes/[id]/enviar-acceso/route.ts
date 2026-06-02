@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { randomBytes } from 'crypto'
+import { randomBytes, createHash } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { requireEmpresaId } from '@/lib/tenant'
@@ -50,9 +50,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     `)
     const empresaNombre = emp[0]?.nombre || 'IALIMP'
 
-    const urlPortal = `${process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app'}/propietario/${c.access_token}`
+    const base = process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app'
+    const urlPortal = `${base}/propietario`
     const nombreCorto = (c.nombre || '').split(' ')[0] || c.nombre || ''
-    const asunto = `Tu acceso a la intranet de ${empresaNombre}`
+    const asunto = `Crea tu contraseña de acceso · ${empresaNombre}`
+
+    // 2.b Token de un solo uso para que el propietario fije su contraseña.
+    //     El admin es quien da el alta (el propietario no se registra solo).
+    //     Hash SHA-256 igual que valida /api/propietario/auth/set-password.
+    const rawToken   = randomBytes(32).toString('hex')
+    const tokenHash  = createHash('sha256').update(rawToken).digest('hex')
+    await prisma.$executeRaw(Prisma.sql`
+      INSERT INTO cliente_auth_tokens (cliente_id, empresa_id, token_hash, purpose, email, expires_at)
+      VALUES (${id}::uuid, ${empresa_id}::uuid, ${tokenHash}, 'set_password', ${destinatario}, now() + interval '7 days')
+    `)
+    const urlClave = `${base}/propietario/clave/${rawToken}`
 
     // 3. Enviar email
     let enviado = false
@@ -72,18 +84,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
               </div>
               <p style="color:#475569;font-size:15px;line-height:1.6;">
                 Hola ${nombreCorto},<br><br>
-                Ya puedes acceder a tu intranet privada, donde podrás consultar en tiempo real
-                el estado de tus limpiezas, las fotos de cada servicio, tus facturas y documentos.
+                Te damos acceso a tu intranet privada, donde verás en tiempo real el estado de
+                tus limpiezas, las fotos de cada servicio, tus facturas y documentos.<br><br>
+                Solo tienes que <strong>crear tu contraseña</strong>. Después entrarás siempre desde
+                <strong>${base.replace(/^https?:\/\//, '')}/propietario</strong> con tu email y tu contraseña.
               </p>
-              <a href="${urlPortal}" style="display:block;background:#4f46e5;color:white;text-align:center;padding:13px;border-radius:8px;text-decoration:none;font-weight:700;margin:18px 0;">
-                Entrar en mi intranet →
+              <a href="${urlClave}" style="display:block;background:#4f46e5;color:white;text-align:center;padding:13px;border-radius:8px;text-decoration:none;font-weight:700;margin:18px 0;">
+                Crear mi contraseña →
               </a>
               <p style="color:#94a3b8;font-size:12px;line-height:1.5;">
                 Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
-                <span style="color:#6366f1;word-break:break-all;">${urlPortal}</span>
+                <span style="color:#6366f1;word-break:break-all;">${urlClave}</span>
               </p>
               <p style="color:#94a3b8;font-size:12px;text-align:center;margin-top:18px;border-top:1px solid #e2e8f0;padding-top:14px;">
-                Este enlace es personal: no lo compartas.<br>
+                Este enlace es personal y caduca en 7 días: no lo compartas.<br>
                 ${empresaNombre} · Servicio de limpieza profesional
               </p>
             </div>
@@ -110,7 +124,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         ${asunto},
         ${enviado ? 'enviado' : 'error'},
         ${errorMsg},
-        ${enviado ? new Date().toISOString() : null}
+        ${enviado ? new Date().toISOString() : null}::timestamptz
       )
     `)
 

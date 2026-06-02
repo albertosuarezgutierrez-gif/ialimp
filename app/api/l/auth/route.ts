@@ -49,12 +49,37 @@ export async function POST(req: Request) {
     )
   }
 
-  const { pin } = await req.json()
-  if (!pin || pin.length < 4) {
+  const { pin, token } = await req.json()
+  if (!token && (!pin || pin.length < 4)) {
     return NextResponse.json({ error: 'PIN inválido' }, { status: 400 })
   }
 
   try {
+    // ── Acceso por "enlace mágico" (token personal de la limpiadora) ──
+    if (token) {
+      const porToken = await prisma.$queryRaw<any[]>(Prisma.sql`
+        SELECT id, nombre, empresa_id, propiedades, color
+        FROM limpiadoras
+        WHERE acceso_token = ${token} AND activa = true AND empresa_id IS NOT NULL
+        LIMIT 1
+      `)
+      if (porToken.length === 0) {
+        return NextResponse.json({ error: 'Enlace de acceso no válido' }, { status: 401 })
+      }
+      clearRateLimit(ip)
+      const limp = porToken[0]
+      const session = await prisma.$queryRaw<any[]>(Prisma.sql`
+        INSERT INTO limpiadora_sessions (limpiadora_id)
+        VALUES (${limp.id}::uuid) RETURNING token
+      `)
+      const res = NextResponse.json({ ok: true, limpiadora: limp })
+      res.cookies.set('limpiadora_token', session[0].token, {
+        httpOnly: true, secure: true, sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30, path: '/',
+      })
+      return res
+    }
+
     const pinHash = await hashPin(pin)
 
     // 1. Buscar en limpiadoras (flujo original)
