@@ -207,7 +207,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     await prisma.$executeRaw(Prisma.sql`
       INSERT INTO propietario_ingresos (empresa_id, cliente_id, propiedad_id, concepto, importe, fecha, portal, num_noches, notas)
       VALUES (${cliente.empresa_id}::uuid, ${cliente.id}::uuid,
-        ${propiedad_id || null},
+        ${propiedad_id || null}::uuid,
         ${concepto}, ${Number(importe)}, ${fecha}::date,
         ${portal || 'directo'}, ${num_noches ? Number(num_noches) : null}, ${notas || null})
     `)
