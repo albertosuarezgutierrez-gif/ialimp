@@ -551,55 +551,116 @@ function TabDisponibilidad() {
   )
 }
 
-// ─── TAB USUARIOS ────────────────────────────────────────────────
+// ─── TAB ACCESOS DEL EQUIPO ──────────────────────────────────────
+const MODULOS_LABEL: Record<string, { label: string; icon: string }> = {
+  sesiones: { label: 'Sesiones', icon: '📋' }, clientes: { label: 'Clientes', icon: '🏠' },
+  rrhh: { label: 'RRHH', icon: '👥' }, lenceria: { label: 'Lencería', icon: '🛏️' },
+  stock: { label: 'Stock', icon: '🧴' }, facturacion: { label: 'Facturación', icon: '💶' },
+  informes: { label: 'Informes', icon: '📊' }, agenda: { label: 'Agenda', icon: '📅' },
+  configuracion: { label: 'Configuración', icon: '⚙️' },
+}
+const TIPOS_INFO: Record<string, { icon: string; label: string; sub: string; color: string; bg: string; border: string }> = {
+  admin_solo:  { icon: '👤', label: 'Panel admin',           sub: 'Entran al panel web con email y contraseña', color: '#4f46e5', bg: '#eef2ff', border: '#a5b4fc' },
+  admin_y_app: { icon: '🔑', label: 'Panel + App limpieza',  sub: 'Acceso completo: panel web Y app móvil con PIN', color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd' },
+  solo_app:    { icon: '🧹', label: 'Limpiadoras',           sub: 'Solo la app móvil /l con PIN, sin panel', color: '#059669', bg: '#f0fdf4', border: '#6ee7b7' },
+}
+const ORDEN_TIPOS = ['admin_solo', 'admin_y_app', 'solo_app']
+
 function TabUsuarios() {
   const [personas, setPersonas] = useState<any[]>([])
   const [loading, setLoading]   = useState(true)
-  const [tab, setTab]           = useState<'todos'|'panel'|'app'>('todos')
 
-  useEffect(() => {
-    fetch('/api/admin/usuarios-empresa').then(r => r.json()).then(d => {
-      setPersonas(d.usuarios || [])
-      setLoading(false)
-    })
-  }, [])
-
-  const filtradas = personas.filter(p => {
-    if (tab === 'panel') return p._tipo !== 'solo_app'
-    if (tab === 'app')   return p._tipo === 'solo_app' || p._tipo === 'admin_y_app'
-    return true
-  })
+  useEffect(() => { cargar() }, [])
+  async function cargar() {
+    setLoading(true)
+    // Combina usuarios de panel + limpiadoras (igual que /admin/usuarios) para clasificar bien el rol.
+    const [rU, rL] = await Promise.all([
+      fetch('/api/admin/usuarios-empresa').then(r => r.json()).catch(() => ({})),
+      fetch('/api/admin/limpiadoras').then(r => r.json()).catch(() => ({})),
+    ])
+    const usuarios: any[] = (rU.usuarios || []).map((u: any) => ({
+      ...u, _tipo: u.modulos?.includes('limpiadora') ? 'admin_y_app' : 'admin_solo',
+    }))
+    const idsVinculados = new Set(usuarios.map((u: any) => u.limpiadora_id).filter(Boolean))
+    const limpSueltas: any[] = (rL.limpiadoras || [])
+      .filter((l: any) => !idsVinculados.has(l.id))
+      .map((l: any) => ({ id: l.id, nombre: l.nombre, email: null, modulos: ['limpiadora'], activo: l.activa, _tipo: 'solo_app' }))
+    setPersonas([...usuarios, ...limpSueltas])
+    setLoading(false)
+  }
 
   if (loading) return <div style={{ textAlign: 'center', padding: 40, color: C.muted }}>Cargando...</div>
 
+  const porTipo = ORDEN_TIPOS
+    .map(t => ({ tipo: t, info: TIPOS_INFO[t], gente: personas.filter(p => p._tipo === t) }))
+    .filter(g => g.gente.length > 0)
+
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        {[{id:'todos',label:`Todos (${personas.length})`},{id:'panel',label:`Panel`},{id:'app',label:`App /l`}].map(t => (
-          <button key={t.id} onClick={() => setTab(t.id as any)}
-            style={{ padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: tab === t.id ? 700 : 400,
-              background: tab === t.id ? C.primary : C.bg, color: tab === t.id ? C.white : C.muted }}>
-            {t.label}
-          </button>
-        ))}
-        <a href="/admin/usuarios" style={{ marginLeft: 'auto', padding: '6px 14px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12, color: C.brand, textDecoration: 'none', fontWeight: 600 }}>
-          ⚙️ Gestionar accesos completo →
+      {/* Cabecera: qué es esto + acceso a la gestión completa */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 180 }}>
+          <h3 style={{ fontWeight: 800, fontSize: 16, color: C.text, margin: 0 }}>Quién forma tu equipo</h3>
+          <p style={{ fontSize: 12.5, color: C.muted, margin: '3px 0 0', lineHeight: 1.4 }}>
+            Todas las personas con acceso —administración, limpiadoras, contabilidad…— agrupadas por rol. {personas.length} en total.
+          </p>
+        </div>
+        <a href="/admin/usuarios"
+          style={{ padding: '9px 16px', borderRadius: 9, border: 'none', background: C.primary, color: C.white, fontSize: 13, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          ➕ Añadir / gestionar
         </a>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {filtradas.map((p: any) => (
-          <div key={p.id} style={{ background: C.white, borderRadius: 10, border: `1px solid ${C.border}`, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: C.light, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: C.primary, fontSize: 15 }}>
-              {p.nombre?.[0]?.toUpperCase() || '?'}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{p.nombre}</div>
-              <div style={{ fontSize: 12, color: C.muted }}>{p.email || p.tipo_acceso || ''}</div>
-            </div>
-            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: C.light, color: C.brand, fontWeight: 700 }}>{p.rol || p._tipo || '—'}</span>
+
+      {personas.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: C.muted }}>
+          <div style={{ fontSize: 36, marginBottom: 8 }}>👥</div>
+          <div style={{ fontWeight: 700 }}>Aún no hay nadie en el equipo</div>
+        </div>
+      )}
+
+      {porTipo.map(({ tipo, info, gente }) => (
+        <div key={tipo} style={{ marginBottom: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 16 }}>{info.icon}</span>
+            <span style={{ fontWeight: 800, fontSize: 13.5, color: info.color }}>{info.label}</span>
+            <span style={{ fontSize: 11.5, color: C.muted, background: C.bg, borderRadius: 20, padding: '1px 9px', fontWeight: 700 }}>{gente.length}</span>
+            <span style={{ fontSize: 11.5, color: C.muted }}>· {info.sub}</span>
           </div>
-        ))}
-      </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {gente.map((p: any) => (
+              <div key={p.id} style={{ background: C.white, borderRadius: 12, border: `1px solid ${C.border}`, padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: 12, opacity: p.activo === false ? 0.55 : 1 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, background: info.bg, border: `2px solid ${info.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
+                  {info.icon}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+                    <span style={{ fontWeight: 700, fontSize: 14.5, color: C.text }}>{p.nombre}</span>
+                    {p.activo === false && <span style={{ fontSize: 10, color: C.muted, background: C.bg, borderRadius: 6, padding: '2px 7px' }}>Inactivo</span>}
+                  </div>
+                  {p.email && <div style={{ fontSize: 12, color: C.muted, marginBottom: 6 }}>{p.email}</div>}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {(p._tipo === 'admin_y_app' || p._tipo === 'solo_app') && (
+                      <span style={{ fontSize: 10, background: '#f0fdf4', color: '#059669', borderRadius: 6, padding: '2px 7px', fontWeight: 600 }}>🧹 App /l con PIN</span>
+                    )}
+                    {(p._tipo === 'admin_solo' || p._tipo === 'admin_y_app') && (
+                      <span style={{ fontSize: 10, background: C.light, color: C.primary, borderRadius: 6, padding: '2px 7px', fontWeight: 600 }}>💻 Panel admin</span>
+                    )}
+                    {(p.modulos || []).filter((m: string) => m !== 'limpiadora').map((m: string) => {
+                      const mod = MODULOS_LABEL[m]
+                      return mod ? <span key={m} style={{ fontSize: 10, background: C.bg, borderRadius: 6, padding: '2px 7px', color: C.text }}>{mod.icon} {mod.label}</span> : null
+                    })}
+                  </div>
+                  {p.ultimo_acceso && (
+                    <div style={{ fontSize: 10, color: C.muted, marginTop: 5 }}>
+                      Último acceso: {new Date(p.ultimo_acceso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
