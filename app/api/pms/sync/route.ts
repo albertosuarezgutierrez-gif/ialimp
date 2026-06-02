@@ -119,6 +119,8 @@ async function syncPropertyIcal(prop: any): Promise<{ synced: number; errors: st
             session_date  = EXCLUDED.session_date,
             guest_name    = EXCLUDED.guest_name,
             limpiadora_id = COALESCE(cleaning_sessions.limpiadora_id, EXCLUDED.limpiadora_id),
+            property_name = COALESCE(NULLIF(cleaning_sessions.property_name, ''), EXCLUDED.property_name),
+            propiedad_id  = COALESCE(cleaning_sessions.propiedad_id, EXCLUDED.propiedad_id),
             updated_at    = now()
           WHERE cleaning_sessions.completed_at IS NULL
         `)
@@ -216,6 +218,8 @@ async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ sy
           session_date  = EXCLUDED.session_date,
           guest_name    = EXCLUDED.guest_name,
           num_huespedes = EXCLUDED.num_huespedes,
+          property_name = COALESCE(NULLIF(cleaning_sessions.property_name, ''), EXCLUDED.property_name),
+          propiedad_id  = COALESCE(cleaning_sessions.propiedad_id, EXCLUDED.propiedad_id),
           updated_at    = now()
         WHERE cleaning_sessions.completed_at IS NULL
       `)
