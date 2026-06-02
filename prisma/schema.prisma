@@ -10,13 +10,19 @@ datasource db {
 
 // ─── MULTI-TENANT ────────────────────────────────────────────────
 model Empresa {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  nombre        String
-  email         String   @unique
-  password_hash String
-  plan          String   @default("starter")
-  activa        Boolean  @default(true)
-  created_at    DateTime @default(now()) @db.Timestamptz
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nombre                 String
+  email                  String   @unique
+  password_hash          String
+  plan                   String   @default("starter")
+  activa                 Boolean  @default(true)
+  created_at             DateTime @default(now()) @db.Timestamptz
+
+  // ── Stripe ──
+  stripe_subscription_id String?  // suscripción de plan SaaS (starter/pro/agency)
+  stripe_account_id      String?  // cuenta CONECTADA (Connect Express) que recibe los pagos de facturas
+  stripe_charges_enabled Boolean  @default(false) // onboarding de Connect completado
+  stripe_comision_pct    Decimal  @default(1.0) @db.Decimal // % que retiene IALIMP por pago
 
   @@map("empresas")
 }

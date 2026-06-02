@@ -943,11 +943,25 @@ export default function ContabilidadTab({ token }: { token: string }) {
                   ))}
                   {Object.keys(porPiso).length===0 && <div style={{ fontSize:12, color:C.muted }}>Sin líneas</div>}
                 </div>
-                <div style={{ padding:'0 16px 14px' }}>
+                <div style={{ padding:'0 16px 14px', display:'flex', gap:8, flexWrap:'wrap' }}>
                   <a href={`/api/propietario/${token}/factura/${f.id}`} target="_blank" rel="noopener noreferrer"
                      style={{ display:'inline-flex', alignItems:'center', gap:8, background:C.primary, color:'white', textDecoration:'none', fontSize:13, fontWeight:700, padding:'10px 16px', borderRadius:10 }}>
                     ⬇ Descargar PDF
                   </a>
+                  {f.estado !== 'pagada' && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const r = await fetch(`/api/propietario/${token}/factura/${f.id}/pagar`, { method:'POST' })
+                          const d = await r.json()
+                          if (d.url) { window.location.href = d.url; return }
+                          alert(d.error || 'No se pudo iniciar el pago')
+                        } catch { alert('No se pudo iniciar el pago') }
+                      }}
+                      style={{ display:'inline-flex', alignItems:'center', gap:8, background:C.ok, color:'white', border:'none', cursor:'pointer', fontSize:13, fontWeight:700, padding:'10px 16px', borderRadius:10 }}>
+                      💳 Pagar {fmt(f.total||0)}
+                    </button>
+                  )}
                 </div>
               </div>
             )

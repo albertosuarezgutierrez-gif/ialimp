@@ -45,6 +45,33 @@ export async function POST(req: Request) {
       }
     }
 
+    // ── Pago online de una factura del propietario (Connect destination charge) ──
+    if (event.type === 'checkout.session.completed') {
+      const cs        = event.data.object
+      const factura_id = cs.metadata?.factura_id
+      const empresa_id = cs.metadata?.empresa_id
+      // Solo pagos de factura (los de suscripción son mode 'subscription' y no traen factura_id)
+      if (factura_id && empresa_id && cs.payment_status === 'paid') {
+        await prisma.$executeRaw(Prisma.sql`
+          UPDATE facturas_clientes SET
+            estado                   = 'pagada',
+            fecha_cobro              = COALESCE(fecha_cobro, CURRENT_DATE),
+            pagada_online_at         = COALESCE(pagada_online_at, now()),
+            stripe_payment_intent_id = ${cs.payment_intent ?? null}
+          WHERE id = ${factura_id}::uuid AND empresa_id = ${empresa_id}::uuid
+        `)
+      }
+    }
+
+    // ── La empresa completó (o cambió) su alta en Connect → refrescar flag ──
+    if (event.type === 'account.updated') {
+      const acct = event.data.object
+      await prisma.$executeRaw(Prisma.sql`
+        UPDATE empresas SET stripe_charges_enabled = ${!!acct.charges_enabled}
+        WHERE stripe_account_id = ${acct.id}
+      `)
+    }
+
     return NextResponse.json({ ok: true })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
