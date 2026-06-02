@@ -11,54 +11,95 @@ const C = {
   red: '#dc2626', redBg: '#fef2f2', white: '#ffffff'
 }
 
-const TABS = [
-  { id: 'quejas',        label: '⚠️ Quejas' },
-  { id: 'equipo',        label: '👥 Equipo' },
-  { id: 'limpiadoras',   label: '🧹 Limpiadoras' },
-  { id: 'tarifas',       label: '💶 Tarifas' },
-  { id: 'nominas',       label: '🧾 Nóminas' },
-  { id: 'kits',          label: '🎒 Kits' },
-  { id: 'disponibilidad',label: '📅 Disponibilidad' },
-  { id: 'usuarios',      label: '🔐 Accesos' },
-  { id: 'ia',            label: '🤖 Análisis IA' },
+// Navegación en 2 niveles: 3 grupos (siempre visibles en móvil) con sus sub-pestañas.
+// "Limpiadoras" absorbe el antiguo tab "Equipo" (era la misma entidad + el botón 🤖 Analizar).
+const GRUPOS = [
+  { id: 'equipo',    label: '👥 Equipo',    subs: [
+    { id: 'limpiadoras',    label: '🧹 Limpiadoras' },
+    { id: 'disponibilidad', label: '📅 Disponibilidad' },
+    { id: 'accesos',        label: '🔐 Accesos del equipo' },
+  ]},
+  { id: 'economia',  label: '💶 Economía',  subs: [
+    { id: 'tarifas', label: '💶 Tarifas' },
+    { id: 'nominas', label: '🧾 Nóminas' },
+  ]},
+  { id: 'operacion', label: '🛠️ Operación', subs: [
+    { id: 'quejas', label: '⚠️ Quejas' },
+    { id: 'kits',   label: '🎒 Kits' },
+    { id: 'ia',     label: '🤖 Análisis IA' },
+  ]},
 ]
 
 export default function EquipoPage() {
-  const [tab, setTab] = useState('quejas')
+  const [grupo, setGrupo] = useState('equipo')
+  const [sub, setSub]     = useState('limpiadoras')
+
+  const grupoActual = GRUPOS.find(g => g.id === grupo) || GRUPOS[0]
+
+  function seleccionarGrupo(gid: string) {
+    const g = GRUPOS.find(x => x.id === gid)
+    if (!g) return
+    setGrupo(gid)
+    setSub(g.subs[0].id)
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Nunito', sans-serif" }}>
       <header style={{ background: C.primary, padding: '0 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 0 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 0 14px' }}>
           <a href="/dashboard" style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, textDecoration: 'none' }}>← Dashboard</a>
           <h1 style={{ color: C.white, fontWeight: 800, fontSize: 20 }}>Equipo</h1>
         </div>
-        <div style={{ display: 'flex', gap: 0, overflowX: 'auto', marginTop: 12 }}>
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              style={{
-                padding: '10px 16px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                background: 'transparent', whiteSpace: 'nowrap', fontSize: 13,
-                color: tab === t.id ? C.white : 'rgba(255,255,255,0.55)',
-                fontWeight: tab === t.id ? 700 : 400,
-                borderBottom: `2.5px solid ${tab === t.id ? C.white : 'transparent'}`,
-              }}>
-              {t.label}
-            </button>
-          ))}
+        {/* Nivel 1 — grupos (segmented control, sin scroll horizontal) */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingBottom: 12 }}>
+          {GRUPOS.map(g => {
+            const activo = grupo === g.id
+            return (
+              <button key={g.id} onClick={() => seleccionarGrupo(g.id)}
+                style={{
+                  padding: '8px 16px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  fontSize: 14, whiteSpace: 'nowrap',
+                  background: activo ? C.white : 'rgba(255,255,255,0.14)',
+                  color: activo ? C.primary : 'rgba(255,255,255,0.85)',
+                  fontWeight: activo ? 800 : 600,
+                }}>
+                {g.label}
+              </button>
+            )
+          })}
         </div>
       </header>
 
+      {/* Nivel 2 — sub-pestañas del grupo activo */}
+      <div style={{ background: C.white, borderBottom: `1px solid ${C.border}`, padding: '0 24px' }}>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: 960, margin: '0 auto' }}>
+          {grupoActual.subs.map(s => {
+            const activo = sub === s.id
+            return (
+              <button key={s.id} onClick={() => setSub(s.id)}
+                style={{
+                  padding: '12px 14px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  background: 'transparent', whiteSpace: 'nowrap', fontSize: 13,
+                  color: activo ? C.primary : C.muted,
+                  fontWeight: activo ? 800 : 500,
+                  borderBottom: `2.5px solid ${activo ? C.primary : 'transparent'}`,
+                }}>
+                {s.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       <div style={{ padding: '20px 24px', maxWidth: 960, margin: '0 auto' }}>
-        {tab === 'quejas'         && <TabQuejas />}
-        {tab === 'equipo'         && <TabEquipoRRHH />}
-        {tab === 'limpiadoras'    && <TabLimpiadoras />}
-        {tab === 'tarifas'        && <Tarifas />}
-        {tab === 'nominas'        && <Nominas />}
-        {tab === 'disponibilidad' && <TabDisponibilidad />}
-        {tab === 'usuarios'       && <TabUsuarios />}
-        {tab === 'kits'          && <TabKits />}
-        {tab === 'ia'             && <TabAnalisisIA />}
+        {sub === 'limpiadoras'    && <TabLimpiadoras />}
+        {sub === 'disponibilidad' && <TabDisponibilidad />}
+        {sub === 'accesos'        && <TabUsuarios />}
+        {sub === 'tarifas'        && <Tarifas />}
+        {sub === 'nominas'        && <Nominas />}
+        {sub === 'quejas'         && <TabQuejas />}
+        {sub === 'kits'           && <TabKits />}
+        {sub === 'ia'             && <TabAnalisisIA />}
       </div>
     </div>
   )
@@ -170,76 +211,6 @@ function TabQuejas() {
   )
 }
 
-// ─── TAB EQUIPO RRHH ─────────────────────────────────────────────
-function TabEquipoRRHH() {
-  const [limpiadoras, setLimpiadoras] = useState<any[]>([])
-  const [analisis, setAnalisis]       = useState<Record<string,any>>({})
-  const [analizando, setAnalizando]   = useState<string|null>(null)
-  const [loading, setLoading]         = useState(true)
-
-  useEffect(() => {
-    fetch('/api/admin/limpiadoras').then(r => r.json()).then(d => {
-      setLimpiadoras(d.limpiadoras || [])
-      setLoading(false)
-    })
-  }, [])
-
-  async function analizarLimpiadora(id: string) {
-    setAnalizando(id)
-    try {
-      const r = await fetch('/api/admin/rrhh/analisis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ limpiadora_id: id })
-      })
-      const d = await r.json()
-      if (d.ok) setAnalisis(prev => ({ ...prev, [id]: d.analisis }))
-    } catch {}
-    setAnalizando(null)
-  }
-
-  if (loading) return <div style={{ textAlign: 'center', padding: 40, color: C.muted }}>Cargando...</div>
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {limpiadoras.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: C.muted }}>
-          <div style={{ fontSize: 36, marginBottom: 8 }}>👥</div>
-          <div style={{ fontWeight: 700 }}>Sin limpiadoras registradas</div>
-        </div>
-      )}
-      {limpiadoras.map((l: any) => {
-        const a = analisis[l.id]
-        return (
-          <div key={l.id} style={{ background: C.white, borderRadius: 12, border: `1px solid ${C.border}`, padding: '16px 18px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: a ? 12 : 0 }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: l.color || C.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.white, fontWeight: 800, fontSize: 16 }}>
-                {l.nombre?.[0]?.toUpperCase() || '?'}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{l.nombre}</div>
-                {l.telefono && <a href={`tel:${l.telefono}`} style={{ fontSize: 12, color: C.brand, textDecoration: 'none' }}>📞 {l.telefono}</a>}
-              </div>
-              <button onClick={() => analizarLimpiadora(l.id)} disabled={analizando === l.id}
-                style={{ padding: '6px 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.light, color: C.brand, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                {analizando === l.id ? 'Analizando...' : '🤖 Analizar'}
-              </button>
-            </div>
-            {a && (
-              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
-                <div style={{ background: a.recomendacion_tipo === 'positiva' ? C.okBg : a.recomendacion_tipo === 'urgente' ? C.redBg : C.warnBg, borderRadius: 8, padding: '8px 12px', marginBottom: 10, fontSize: 13, color: a.recomendacion_tipo === 'positiva' ? C.ok : a.recomendacion_tipo === 'urgente' ? C.red : C.warn, fontWeight: 600 }}>
-                  {a.recomendacion_tipo === 'positiva' ? '✅ Buen rendimiento' : a.recomendacion_tipo === 'urgente' ? '🔴 Requiere atención' : '⚠️ Revisar'} — {a.recomendacion}
-                </div>
-                <p style={{ fontSize: 13, color: C.text, lineHeight: 1.6, margin: 0 }}>{a.resumen}</p>
-              </div>
-            )}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 // ─── TAB LIMPIADORAS ─────────────────────────────────────────────
 function TabLimpiadoras() {
   const [limpiadoras, setLimpiadoras] = useState<any[]>([])
@@ -252,6 +223,24 @@ function TabLimpiadoras() {
   const [accesoUrl, setAccesoUrl] = useState('')
   const [accesoLoading, setAccesoLoading] = useState(false)
   const [copiado, setCopiado] = useState(false)
+  // Análisis RRHH/IA por limpiadora (antes vivía en el tab "Equipo", ahora integrado aquí)
+  const [analisis, setAnalisis]       = useState<Record<string,any>>({})
+  const [analizando, setAnalizando]   = useState<string|null>(null)
+
+  async function analizarLimpiadora(id: string) {
+    if (analisis[id]) { setAnalisis(prev => { const n = { ...prev }; delete n[id]; return n }); return }
+    setAnalizando(id)
+    try {
+      const r = await fetch('/api/admin/rrhh/analisis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limpiadora_id: id })
+      })
+      const d = await r.json()
+      if (d.ok) setAnalisis(prev => ({ ...prev, [id]: d.analisis }))
+    } catch {}
+    setAnalizando(null)
+  }
 
   async function abrirAcceso(l: any, regenerate = false) {
     if (accesoFor === l.id && !regenerate) { setAccesoFor(null); return }
@@ -351,10 +340,26 @@ function TabLimpiadoras() {
                 style={{ fontSize: 12, color: accesoFor === l.id ? C.primary : C.brand, padding: '5px 10px', border: `1px solid ${C.border}`, borderRadius: 8, background: accesoFor === l.id ? C.light : C.white, cursor: 'pointer', fontWeight: 700 }}>
                 📲 Enviar acceso
               </button>
+              <button
+                onClick={() => analizarLimpiadora(l.id)} disabled={analizando === l.id}
+                style={{ fontSize: 12, color: analisis[l.id] ? C.primary : C.brand, padding: '5px 10px', border: `1px solid ${C.border}`, borderRadius: 8, background: analisis[l.id] ? C.light : C.white, cursor: 'pointer', fontWeight: 700, opacity: analizando === l.id ? 0.6 : 1 }}>
+                {analizando === l.id ? 'Analizando…' : `🤖 Analizar${analisis[l.id] ? ' ▲' : ''}`}
+              </button>
               <a href={`/admin/usuarios`} style={{ fontSize: 12, color: C.brand, textDecoration: 'none', padding: '5px 10px', border: `1px solid ${C.border}`, borderRadius: 8 }}>
                 Ver acceso
               </a>
             </div>
+            {analisis[l.id] && (() => {
+              const a = analisis[l.id]
+              return (
+                <div style={{ borderTop: `1px solid ${C.border}`, padding: '14px 18px' }}>
+                  <div style={{ background: a.recomendacion_tipo === 'positiva' ? C.okBg : a.recomendacion_tipo === 'urgente' ? C.redBg : C.warnBg, borderRadius: 8, padding: '8px 12px', marginBottom: 10, fontSize: 13, color: a.recomendacion_tipo === 'positiva' ? C.ok : a.recomendacion_tipo === 'urgente' ? C.red : C.warn, fontWeight: 600 }}>
+                    {a.recomendacion_tipo === 'positiva' ? '✅ Buen rendimiento' : a.recomendacion_tipo === 'urgente' ? '🔴 Requiere atención' : '⚠️ Revisar'} — {a.recomendacion}
+                  </div>
+                  <p style={{ fontSize: 13, color: C.text, lineHeight: 1.6, margin: 0 }}>{a.resumen}</p>
+                </div>
+              )
+            })()}
             {accesoFor === l.id && (
               <div style={{ borderTop: `1px solid ${C.border}`, padding: '16px 18px', background: C.light }}>
                 {accesoLoading ? (
@@ -473,9 +478,8 @@ function TabDisponibilidad() {
               </div>
               {isOpen && (
                 <div style={{ borderTop: `1px solid ${C.border}`, padding: '12px 16px' }}>
-                  <div style={{ overflowX: 'auto' }}>
-                    <div style={{ overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
-                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '4px 4px', fontSize: 12 }}>
+                  <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                    <table style={{ width: '100%', minWidth: 360, borderCollapse: 'separate', borderSpacing: '4px 4px', fontSize: 12 }}>
                       <thead>
                         <tr>
                           <th style={{ color: C.muted, fontWeight: 600, padding: '4px 8px', textAlign: 'left' }}>Turno</th>
@@ -502,7 +506,6 @@ function TabDisponibilidad() {
                         ))}
                       </tbody>
                     </table>
-                    </div>
                   </div>
                 </div>
               )}
@@ -548,55 +551,116 @@ function TabDisponibilidad() {
   )
 }
 
-// ─── TAB USUARIOS ────────────────────────────────────────────────
+// ─── TAB ACCESOS DEL EQUIPO ──────────────────────────────────────
+const MODULOS_LABEL: Record<string, { label: string; icon: string }> = {
+  sesiones: { label: 'Sesiones', icon: '📋' }, clientes: { label: 'Clientes', icon: '🏠' },
+  rrhh: { label: 'RRHH', icon: '👥' }, lenceria: { label: 'Lencería', icon: '🛏️' },
+  stock: { label: 'Stock', icon: '🧴' }, facturacion: { label: 'Facturación', icon: '💶' },
+  informes: { label: 'Informes', icon: '📊' }, agenda: { label: 'Agenda', icon: '📅' },
+  configuracion: { label: 'Configuración', icon: '⚙️' },
+}
+const TIPOS_INFO: Record<string, { icon: string; label: string; sub: string; color: string; bg: string; border: string }> = {
+  admin_solo:  { icon: '👤', label: 'Panel admin',           sub: 'Entran al panel web con email y contraseña', color: '#4f46e5', bg: '#eef2ff', border: '#a5b4fc' },
+  admin_y_app: { icon: '🔑', label: 'Panel + App limpieza',  sub: 'Acceso completo: panel web Y app móvil con PIN', color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd' },
+  solo_app:    { icon: '🧹', label: 'Limpiadoras',           sub: 'Solo la app móvil /l con PIN, sin panel', color: '#059669', bg: '#f0fdf4', border: '#6ee7b7' },
+}
+const ORDEN_TIPOS = ['admin_solo', 'admin_y_app', 'solo_app']
+
 function TabUsuarios() {
   const [personas, setPersonas] = useState<any[]>([])
   const [loading, setLoading]   = useState(true)
-  const [tab, setTab]           = useState<'todos'|'panel'|'app'>('todos')
 
-  useEffect(() => {
-    fetch('/api/admin/usuarios-empresa').then(r => r.json()).then(d => {
-      setPersonas(d.usuarios || [])
-      setLoading(false)
-    })
-  }, [])
-
-  const filtradas = personas.filter(p => {
-    if (tab === 'panel') return p._tipo !== 'solo_app'
-    if (tab === 'app')   return p._tipo === 'solo_app' || p._tipo === 'admin_y_app'
-    return true
-  })
+  useEffect(() => { cargar() }, [])
+  async function cargar() {
+    setLoading(true)
+    // Combina usuarios de panel + limpiadoras (igual que /admin/usuarios) para clasificar bien el rol.
+    const [rU, rL] = await Promise.all([
+      fetch('/api/admin/usuarios-empresa').then(r => r.json()).catch(() => ({})),
+      fetch('/api/admin/limpiadoras').then(r => r.json()).catch(() => ({})),
+    ])
+    const usuarios: any[] = (rU.usuarios || []).map((u: any) => ({
+      ...u, _tipo: u.modulos?.includes('limpiadora') ? 'admin_y_app' : 'admin_solo',
+    }))
+    const idsVinculados = new Set(usuarios.map((u: any) => u.limpiadora_id).filter(Boolean))
+    const limpSueltas: any[] = (rL.limpiadoras || [])
+      .filter((l: any) => !idsVinculados.has(l.id))
+      .map((l: any) => ({ id: l.id, nombre: l.nombre, email: null, modulos: ['limpiadora'], activo: l.activa, _tipo: 'solo_app' }))
+    setPersonas([...usuarios, ...limpSueltas])
+    setLoading(false)
+  }
 
   if (loading) return <div style={{ textAlign: 'center', padding: 40, color: C.muted }}>Cargando...</div>
 
+  const porTipo = ORDEN_TIPOS
+    .map(t => ({ tipo: t, info: TIPOS_INFO[t], gente: personas.filter(p => p._tipo === t) }))
+    .filter(g => g.gente.length > 0)
+
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        {[{id:'todos',label:`Todos (${personas.length})`},{id:'panel',label:`Panel`},{id:'app',label:`App /l`}].map(t => (
-          <button key={t.id} onClick={() => setTab(t.id as any)}
-            style={{ padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: tab === t.id ? 700 : 400,
-              background: tab === t.id ? C.primary : C.bg, color: tab === t.id ? C.white : C.muted }}>
-            {t.label}
-          </button>
-        ))}
-        <a href="/admin/usuarios" style={{ marginLeft: 'auto', padding: '6px 14px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12, color: C.brand, textDecoration: 'none', fontWeight: 600 }}>
-          ⚙️ Gestionar accesos completo →
+      {/* Cabecera: qué es esto + acceso a la gestión completa */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 180 }}>
+          <h3 style={{ fontWeight: 800, fontSize: 16, color: C.text, margin: 0 }}>Quién forma tu equipo</h3>
+          <p style={{ fontSize: 12.5, color: C.muted, margin: '3px 0 0', lineHeight: 1.4 }}>
+            Todas las personas con acceso —administración, limpiadoras, contabilidad…— agrupadas por rol. {personas.length} en total.
+          </p>
+        </div>
+        <a href="/admin/usuarios"
+          style={{ padding: '9px 16px', borderRadius: 9, border: 'none', background: C.primary, color: C.white, fontSize: 13, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          ➕ Añadir / gestionar
         </a>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {filtradas.map((p: any) => (
-          <div key={p.id} style={{ background: C.white, borderRadius: 10, border: `1px solid ${C.border}`, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: C.light, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: C.primary, fontSize: 15 }}>
-              {p.nombre?.[0]?.toUpperCase() || '?'}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{p.nombre}</div>
-              <div style={{ fontSize: 12, color: C.muted }}>{p.email || p.tipo_acceso || ''}</div>
-            </div>
-            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: C.light, color: C.brand, fontWeight: 700 }}>{p.rol || p._tipo || '—'}</span>
+
+      {personas.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: C.muted }}>
+          <div style={{ fontSize: 36, marginBottom: 8 }}>👥</div>
+          <div style={{ fontWeight: 700 }}>Aún no hay nadie en el equipo</div>
+        </div>
+      )}
+
+      {porTipo.map(({ tipo, info, gente }) => (
+        <div key={tipo} style={{ marginBottom: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 16 }}>{info.icon}</span>
+            <span style={{ fontWeight: 800, fontSize: 13.5, color: info.color }}>{info.label}</span>
+            <span style={{ fontSize: 11.5, color: C.muted, background: C.bg, borderRadius: 20, padding: '1px 9px', fontWeight: 700 }}>{gente.length}</span>
+            <span style={{ fontSize: 11.5, color: C.muted }}>· {info.sub}</span>
           </div>
-        ))}
-      </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {gente.map((p: any) => (
+              <div key={p.id} style={{ background: C.white, borderRadius: 12, border: `1px solid ${C.border}`, padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: 12, opacity: p.activo === false ? 0.55 : 1 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, background: info.bg, border: `2px solid ${info.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
+                  {info.icon}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+                    <span style={{ fontWeight: 700, fontSize: 14.5, color: C.text }}>{p.nombre}</span>
+                    {p.activo === false && <span style={{ fontSize: 10, color: C.muted, background: C.bg, borderRadius: 6, padding: '2px 7px' }}>Inactivo</span>}
+                  </div>
+                  {p.email && <div style={{ fontSize: 12, color: C.muted, marginBottom: 6 }}>{p.email}</div>}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {(p._tipo === 'admin_y_app' || p._tipo === 'solo_app') && (
+                      <span style={{ fontSize: 10, background: '#f0fdf4', color: '#059669', borderRadius: 6, padding: '2px 7px', fontWeight: 600 }}>🧹 App /l con PIN</span>
+                    )}
+                    {(p._tipo === 'admin_solo' || p._tipo === 'admin_y_app') && (
+                      <span style={{ fontSize: 10, background: C.light, color: C.primary, borderRadius: 6, padding: '2px 7px', fontWeight: 600 }}>💻 Panel admin</span>
+                    )}
+                    {(p.modulos || []).filter((m: string) => m !== 'limpiadora').map((m: string) => {
+                      const mod = MODULOS_LABEL[m]
+                      return mod ? <span key={m} style={{ fontSize: 10, background: C.bg, borderRadius: 6, padding: '2px 7px', color: C.text }}>{mod.icon} {mod.label}</span> : null
+                    })}
+                  </div>
+                  {p.ultimo_acceso && (
+                    <div style={{ fontSize: 10, color: C.muted, marginTop: 5 }}>
+                      Último acceso: {new Date(p.ultimo_acceso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -900,7 +964,7 @@ function TabKits() {
       {modalKit !== null && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', display:'flex', alignItems:'center',
           justifyContent:'center', zIndex:200, padding:16 }}>
-          <div style={{ background:C.white, borderRadius:16, width:'100%', maxWidth:400, padding:24 }}>
+          <div style={{ background:C.white, borderRadius:16, width:'100%', maxWidth:400, padding:24, maxHeight:'90vh', overflowY:'auto' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
               <div style={{ fontWeight:800, fontSize:17, color:C.text }}>Asignar producto al kit</div>
               <button onClick={() => setModalKit(null)} style={{ background:'none', border:'none', fontSize:22, color:C.muted, cursor:'pointer' }}>×</button>
@@ -946,7 +1010,7 @@ function TabKits() {
       {modalRepo !== null && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', display:'flex', alignItems:'center',
           justifyContent:'center', zIndex:200, padding:16 }}>
-          <div style={{ background:C.white, borderRadius:16, width:'100%', maxWidth:380, padding:24 }}>
+          <div style={{ background:C.white, borderRadius:16, width:'100%', maxWidth:380, padding:24, maxHeight:'90vh', overflowY:'auto' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
               <div style={{ fontWeight:800, fontSize:17, color:C.text }}>Registrar reposición</div>
               <button onClick={() => setModalRepo(null)} style={{ background:'none', border:'none', fontSize:22, color:C.muted, cursor:'pointer' }}>×</button>

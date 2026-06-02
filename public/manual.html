@@ -194,7 +194,7 @@
         <div class="mod"><div class="ic">🗓️</div><div class="nm">Operaciones</div><div class="ds">Las limpiezas en curso, programadas y su estado.</div></div>
         <div class="mod"><div class="ic">💼</div><div class="nm">Negocio</div><div class="ds">Clientes, leads (CRM), facturas e informes.</div></div>
         <div class="mod"><div class="ic">📦</div><div class="nm">Materiales</div><div class="ds">Stock, lencería, proveedores, checklists y documentos.</div></div>
-        <div class="mod"><div class="ic">👥</div><div class="nm">Equipo</div><div class="ds">Limpiadoras, PINs, disponibilidad, quejas y accesos.</div></div>
+        <div class="mod"><div class="ic">👥</div><div class="nm">Equipo</div><div class="ds">Tres bloques: <b>Equipo</b> (limpiadoras, disponibilidad, accesos), <b>Economía</b> (tarifas, nóminas) y <b>Operación</b> (quejas, kits, IA).</div></div>
         <div class="mod"><div class="ic">⚙️</div><div class="nm">Configuración</div><div class="ds">Catálogos y ajustes del cotizador.</div></div>
       </div>
       <p style="margin-top:14px">En el móvil, el botón central <b>＋</b> de la barra inferior es el atajo para <b>crear una limpieza nueva</b> al instante.</p>
@@ -352,15 +352,28 @@
       <h2>👤 Equipo y limpiadoras</h2>
       <p class="lead">Aquí gestionas a las personas que limpian y sus accesos.</p>
       <div class="path">👥 Equipo</div>
-      <p>El módulo Equipo tiene varias pestañas:</p>
+      <p>El módulo está organizado en <b>tres bloques</b> (los botones de arriba), y dentro de cada uno hay sus pestañas:</p>
       <ul>
-        <li><b>🧹 Limpiadoras</b> — da de alta a cada limpiadora con su <b>PIN</b> para que entre en la app <code>/l</code>. En cada limpiadora tienes el botón <b>«📲 Enviar acceso»</b>: genera su <b>enlace directo</b> y te deja <b>copiarlo</b> o <b>enviarlo por WhatsApp</b> de un toque (con ese enlace entra sin escribir nada). Si hace falta, puedes <b>regenerarlo</b> (invalida el anterior).</li>
-        <li><b>💶 Tarifas</b> — el catálogo de <b>precios y tiempos</b> de cada piso y servicio (ver más abajo).</li>
-        <li><b>🧾 Nóminas</b> — qué hizo cada limpiadora cada quincena y cuánto se le paga (ver más abajo).</li>
-        <li><b>📅 Disponibilidad</b> — para cada limpiadora pulsa las casillas de la rejilla para marcar en qué <b>días</b> y <b>turnos</b> puede trabajar: <b>Mañana</b> (08:00–14:00), <b>Tarde</b> (14:00–20:00) o <b>Completo</b> (08:00–20:00). Aquí también registras sus ausencias y vacaciones. <b>Importante:</b> sin disponibilidad marcada, esa limpiadora no aparece para asignarle limpiezas (ni manual ni automáticamente).</li>
-        <li><b>⚠️ Quejas</b> — registra y sigue incidencias de calidad.</li>
-        <li><b>🔐 Accesos</b> — gestiona quién puede entrar y con qué permisos.</li>
-        <li><b>🤖 Análisis IA</b> — resúmenes automáticos del rendimiento del equipo.</li>
+        <li><b>👥 Equipo</b> — las personas:
+          <ul>
+            <li><b>🧹 Limpiadoras</b> — da de alta a cada limpiadora con su <b>PIN</b> para que entre en la app <code>/l</code>. En cada una tienes el botón <b>«📲 Enviar acceso»</b> (genera su <b>enlace directo</b> y te deja <b>copiarlo</b> o <b>enviarlo por WhatsApp</b>; con ese enlace entra sin escribir nada, y puedes <b>regenerarlo</b> si hace falta) y el botón <b>«🤖 Analizar»</b>, que te da un resumen del rendimiento de esa limpiadora.</li>
+            <li><b>📅 Disponibilidad</b> — marca en qué <b>días</b> y <b>turnos</b> puede trabajar cada una: <b>Mañana</b> (08:00–14:00), <b>Tarde</b> (14:00–20:00) o <b>Completo</b> (08:00–20:00). Aquí también registras ausencias y vacaciones. <b>Importante:</b> sin disponibilidad marcada, esa limpiadora no aparece para asignarle limpiezas.</li>
+            <li><b>🔐 Accesos del equipo</b> — la lista de <b>todas las personas</b> que trabajan contigo (administración, limpiadoras, contabilidad…) con su rol y quién puede entrar al panel o a la app.</li>
+          </ul>
+        </li>
+        <li><b>💶 Economía</b> — el dinero del equipo:
+          <ul>
+            <li><b>💶 Tarifas</b> — el catálogo de <b>precios y tiempos</b> de cada piso y servicio (ver más abajo).</li>
+            <li><b>🧾 Nóminas</b> — qué hizo cada limpiadora cada quincena y cuánto se le paga (ver más abajo).</li>
+          </ul>
+        </li>
+        <li><b>🛠️ Operación</b> — el día a día:
+          <ul>
+            <li><b>⚠️ Quejas</b> — registra y sigue incidencias de calidad.</li>
+            <li><b>🎒 Kits</b> — el material asignado a cada limpiadora y sus reposiciones.</li>
+            <li><b>🤖 Análisis IA</b> — resúmenes automáticos de patrones del equipo (últimos 60 días).</li>
+          </ul>
+        </li>
       </ul>
       <div class="tip"><b>El PIN es la llave de la limpiadora.</b> Es el código que usa para entrar en su app del día a día. Si lo olvida, lo ves o lo regeneras desde esta misma pantalla.</div>
 
