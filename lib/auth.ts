@@ -43,6 +43,30 @@ export async function createSuperadminToken(id: string, email: string): Promise<
     .sign(JWT_SECRET)
 }
 
+// ── Propietario (cliente facturable que accede a su portal) ──────────
+// Cookie propia `ialimp_prop` (NO `ialimp_session`): así el middleware del
+// panel admin nunca trata a un propietario como usuario interno.
+export async function createPropietarioToken(
+  cliente_id: string, empresa_id: string, email: string
+): Promise<string> {
+  return new SignJWT({ cliente_id, empresa_id, email, rol: 'propietario', type: 'propietario' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('30d')
+    .sign(JWT_SECRET)
+}
+
+// Política de contraseña: ≥8, mayúscula, minúscula, número y símbolo.
+// Devuelve el mensaje de error o null si es válida.
+export function validatePasswordStrength(pw: string): string | null {
+  if (!pw || pw.length < 8) return 'La contraseña debe tener al menos 8 caracteres'
+  if (!/[a-z]/.test(pw))     return 'Debe incluir una letra minúscula'
+  if (!/[A-Z]/.test(pw))     return 'Debe incluir una letra mayúscula'
+  if (!/[0-9]/.test(pw))     return 'Debe incluir un número'
+  if (!/[^A-Za-z0-9]/.test(pw)) return 'Debe incluir un símbolo (p. ej. ! @ # . -)'
+  return null
+}
+
 export async function verifySessionToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET)

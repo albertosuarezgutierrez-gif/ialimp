@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { signCleaningPhoto } from '@/lib/cleaning-photos'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -16,7 +17,10 @@ interface Comparacion {
 }
 
 async function descargarBuffer(url: string): Promise<Buffer> {
-  const r = await fetch(url, { headers: { Authorization: 'Bearer ' + SUPABASE_ANON } })
+  // Bucket cleaning-photos privado -> firmamos; fallback al público + anon mientras siga abierto.
+  const signed = await signCleaningPhoto(url)
+  const r = await fetch(signed || url,
+    signed ? {} : { headers: { Authorization: 'Bearer ' + SUPABASE_ANON } })
   if (!r.ok) throw new Error('No se pudo descargar imagen: ' + r.status)
   return Buffer.from(await r.arrayBuffer())
 }

@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { photoSrc } from '@/lib/photo'
 
 const C = {
   primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff',
@@ -326,7 +327,7 @@ export default function AccesoPropiedad({
           style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginBottom: 12 }}>Toca para cerrar</div>
           {vistaArchivo.tipo.startsWith('image/') && (
-            <img src={vistaArchivo.url} alt={vistaArchivo.nombre} style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: 8 }} />
+            <img src={photoSrc(vistaArchivo.url)} alt={vistaArchivo.nombre} style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: 8 }} />
           )}
         </div>
       )}
