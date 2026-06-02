@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import PropietarioClient from './PropietarioClient'
+import ConsentimientoRGPD from './ConsentimientoRGPD'
+import { RGPD_VERSION } from '@/lib/rgpd'
 import { serialize } from '@/lib/serialize'
 
 export default async function PropietarioPage({ params }: { params: Promise<{ token: string }> }) {
@@ -16,6 +18,20 @@ export default async function PropietarioPage({ params }: { params: Promise<{ to
   `)
   if (!clientes.length) redirect('/')
   const cliente = clientes[0]
+
+  // Gate RGPD: hasta que el cliente no autorice el tratamiento de sus datos
+  // (en la versión vigente del texto) no se cargan ni se envían sus datos.
+  const consentido = cliente.rgpd_aceptado === true && cliente.rgpd_version === RGPD_VERSION
+  if (!consentido) {
+    return (
+      <ConsentimientoRGPD
+        token={token}
+        empresaNombre={cliente.empresa_nombre}
+        empresaEmail={cliente.empresa_email}
+        version={RGPD_VERSION}
+      />
+    )
+  }
 
   // Extraer permisos del chat_config
   const cfg      = (cliente.chat_config as any) || {}
