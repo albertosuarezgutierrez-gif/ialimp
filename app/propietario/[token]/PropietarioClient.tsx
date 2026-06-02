@@ -9,6 +9,7 @@ import ContabilidadTab from '@/components/ContabilidadTab'
 import AccesoPropiedad from '@/components/AccesoPropiedad'
 import EscanerDocumento from '@/components/EscanerDocumento'
 import MisGastos from './MisGastos'
+import CalendarioIcal from './CalendarioIcal'
 
 const C = {
   primary:'#4f46e5', brand:'#6366f1', light:'#eef2ff',
@@ -24,12 +25,13 @@ const ESTADO_CFG: Record<string,any> = {
   pendiente: { label:'⏳ Pendiente',  bg:C.bg,     color:C.muted,border:C.border,      dot:'#94a3b8' },
 }
 const MENU_ITEMS = [
-  { id:'hoy',      icon:'🏠', label:'Hoy' },
-  { id:'reservas', icon:'📆', label:'Reservas' },
-  { id:'finanzas', icon:'📊', label:'Finanzas' },
-  { id:'docs',     icon:'📄', label:'Documentos' },
-  { id:'acceso',   icon:'🔑', label:'Acceso' },
-  { id:'chat',     icon:'💬', label:'Chat' },
+  { id:'hoy',        icon:'🏠', label:'Hoy' },
+  { id:'reservas',   icon:'📆', label:'Reservas' },
+  { id:'calendario', icon:'🔗', label:'Calendario iCal' },
+  { id:'finanzas',   icon:'📊', label:'Finanzas' },
+  { id:'docs',       icon:'📄', label:'Documentos' },
+  { id:'acceso',     icon:'🔑', label:'Acceso' },
+  { id:'chat',       icon:'💬', label:'Chat' },
 ]
 const ESTADO_FILTROS = [
   { id:'todas', label:'Todas' },
@@ -534,7 +536,7 @@ function FiltrosBarra({ propiedades, filtroProp, setFiltroProp, filtroEstado, se
 
 // ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
 export default function PropietarioClient({ cliente, propiedades, historial, token, permisos }: any) {
-  const [tab, setTab]     = useState<'hoy'|'reservas'|'finanzas'|'docs'|'acceso'|'chat'>('hoy')
+  const [tab, setTab]     = useState<'hoy'|'reservas'|'calendario'|'finanzas'|'docs'|'acceso'|'chat'>('hoy')
   const [menuOpen, setMenu] = useState(false)
   const [quejaModal, setQueja]          = useState<any>(null)
   const [firmaModal, setFirma]          = useState<any>(null)
@@ -816,6 +818,10 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
               </>
             )}
           </div>
+        )}
+
+        {tab==='calendario' && (
+          <CalendarioIcal token={token} />
         )}
 
         {tab==='finanzas' && (
