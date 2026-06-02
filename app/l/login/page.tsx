@@ -62,9 +62,13 @@ export default function LLoginPage() {
         }
         
         
+        .ll-title {
+          font-size: clamp(18px, 5vw, 22px); font-weight: 900;
+          color: #1e1b4b; margin-top: 14px;
+        }
         .ll-sub {
-          font-size: 11px; color: #94a3b8;
-          letter-spacing: .12em; text-transform: uppercase;
+          font-size: 13px; color: #64748b; font-weight: 600;
+          margin-top: 4px;
           margin-bottom: clamp(28px, 6vw, 44px);
         }
         .ll-card {
@@ -156,7 +160,8 @@ export default function LLoginPage() {
         <div className="ll-blob" />
         <div className="ll-wrap">
           <LogoIalimp size={28} color="#4f46e5" />
-          <div className="ll-sub">Acceso equipo de limpieza</div>
+          <div className="ll-title">App de limpiadoras</div>
+          <div className="ll-sub">Entra solo con tu PIN</div>
 
           <div className="ll-card">
             <form onSubmit={handleSubmit}>
