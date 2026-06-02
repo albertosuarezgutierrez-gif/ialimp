@@ -8,6 +8,7 @@ import ChecklistPropietario from '@/components/ChecklistPropietario'
 import ContabilidadTab from '@/components/ContabilidadTab'
 import AccesoPropiedad from '@/components/AccesoPropiedad'
 import EscanerDocumento from '@/components/EscanerDocumento'
+import DocumentosPropiedad from '@/components/DocumentosPropiedad'
 import CalendarioIcal from './CalendarioIcal'
 
 const C = {
@@ -829,8 +830,22 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
 
         {tab==='docs' && (
           <div>
+            {/* Escáner de facturas con IA → genera apunte contable */}
             <p style={{ fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.5 }}>Fotografía o sube facturas. La IA los analiza y genera el apunte contable.</p>
             <EscanerDocumento token={token} onGuardado={()=>{}} />
+
+            {/* Archivador de documentos del piso (contrato, licencia VFT, seguro…) */}
+            <div style={{ marginTop:24, paddingTop:20, borderTop:`1px solid ${C.border}` }}>
+              <h3 style={{ fontSize:16, fontWeight:800, color:C.text, margin:'0 0 4px' }}>🗂️ Documentos del piso</h3>
+              <p style={{ fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.5 }}>
+                Guarda aquí cualquier documento de cada piso: contrato de alquiler/explotación, licencia turística (VFT),
+                seguro, escritura, IBI… Puedes ponerle fecha de caducidad y elegir si lo compartes con la empresa de limpieza.
+              </p>
+              {propiedades.map((p:any) => (
+                <DocumentosPropiedad key={p.id} propiedadId={p.id} propiedadNombre={p.nombre} token={token}
+                  documentosIniciales={p.documentos||[]} />
+              ))}
+            </div>
           </div>
         )}
 

@@ -1,5 +1,6 @@
 'use client'
 import CaracteristicasApartamento from '@/components/CaracteristicasApartamento'
+import DocumentosPropiedad from '@/components/DocumentosPropiedad'
 import { useState, useRef } from 'react'
 
 const TIPO_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
@@ -322,6 +323,14 @@ export default function PropiedadesClient({ cliente, propiedadesIniciales, conex
                       className="text-xs border border-gray-200 text-gray-400 rounded-lg px-3 py-1.5">⊘</button>
                   )}
                 </div>
+
+                {/* Documentos que el propietario ha compartido con la empresa (solo lectura) */}
+                {Array.isArray(p.documentos) && p.documentos.some((d: any) => d?.compartido) && (
+                  <div className="mt-3">
+                    <DocumentosPropiedad propiedadId={p.id} propiedadNombre={p.nombre}
+                      documentosIniciales={p.documentos} soloLectura />
+                  </div>
+                )}
               </div>
             </div>
           )

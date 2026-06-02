@@ -44,6 +44,7 @@ export async function loadPortalData(cliente: any) {
       p.hora_checkin_habitual::text  AS hora_checkin_siguiente,
       p.instrucciones_acceso,
       p.archivos_acceso,
+      p.documentos,
       p.tipo_acceso,
       p.codigo_acceso,
       cs_hoy.sesion_id,
