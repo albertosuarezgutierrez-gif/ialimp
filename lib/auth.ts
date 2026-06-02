@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose'
 import bcrypt from 'bcryptjs'
+import { randomBytes, createHash } from 'crypto'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'ialimp-dev-secret-change-in-prod'
@@ -11,6 +12,16 @@ export async function hashPassword(password: string): Promise<string> {
 
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash)
+}
+
+// ── Recuperación de contraseña ───────────────────────────────────────
+// El token en claro se envía por email; en BD guardamos solo su hash.
+export function genResetToken(): string {
+  return randomBytes(32).toString('hex')
+}
+
+export function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex')
 }
 
 // ── Empresa dueña (cuenta master) ────────────────────────────────────

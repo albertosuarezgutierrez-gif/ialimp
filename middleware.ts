@@ -4,6 +4,7 @@ import { verifySessionToken } from '@/lib/auth'
 
 const PUBLIC_PATHS = [
   '/login', '/register', '/registro', '/cotizador', '/manual',
+  '/recuperar',
   '/api/auth', '/api/pms/sync', '/api/empresas/register',
   '/api/leads', '/api/propietario', '/propietario',
   '/api/superadmin/login', '/superadmin',
