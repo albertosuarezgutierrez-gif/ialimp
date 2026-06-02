@@ -42,10 +42,10 @@ export default function CookiesPage() {
       </div>
 
       <h2 style={h2}>3. Recursos de terceros</h2>
-      <p style={p}>La aplicación carga la tipografía Nunito desde <strong>Google Fonts</strong>, lo que puede
-        implicar la comunicación de tu dirección IP a Google al cargar la página. No se instalan cookies de
-        seguimiento por este motivo. Puedes ampliar la información en nuestra
-        <a href="/legal/privacidad" style={{ color: '#4f46e5' }}> Política de privacidad</a>.</p>
+      <p style={p}>La tipografía de la aplicación se sirve <strong>auto-alojada</strong> desde nuestro propio
+        dominio, por lo que <strong>no se realizan peticiones a servidores de terceros</strong> (como Google
+        Fonts) ni se transfiere tu dirección IP a proveedores externos al cargar la página. Puedes ampliar la
+        información en nuestra <a href="/legal/privacidad" style={{ color: '#4f46e5' }}> Política de privacidad</a>.</p>
 
       <h2 style={h2}>4. Cómo gestionar las cookies</h2>
       <ul style={{ margin: '8px 0 8px 20px' }}>

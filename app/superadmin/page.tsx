@@ -124,7 +124,6 @@ export default function SuperadminPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Nunito', sans-serif", color: C.text }}>
-      <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
       {/* Header */}
       <header style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: '16px 28px', display: 'flex', alignItems: 'center', gap: 16 }}>

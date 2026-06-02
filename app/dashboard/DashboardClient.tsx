@@ -302,8 +302,6 @@ export default function DashboardClient({
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap');
-
         .dash-root {
           min-height: 100dvh;
           background: #f1f5f9;

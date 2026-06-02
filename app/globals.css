@@ -2,7 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap');
+/* Fuente Nunito AUTO-ALOJADA (sin Google Fonts → no se transfiere la IP del
+   visitante a terceros). Los .woff2 se descargan a /public/fonts en el build
+   (scripts/fetch-fonts.mjs, ejecutado antes de `next build`). Si faltaran, el
+   stack degrada a la fuente del sistema (no rompe nada). */
+@font-face{font-family:'Nunito';font-style:normal;font-weight:300;font-display:swap;src:url('/fonts/nunito-300.woff2') format('woff2')}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/nunito-400.woff2') format('woff2')}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:500;font-display:swap;src:url('/fonts/nunito-500.woff2') format('woff2')}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:600;font-display:swap;src:url('/fonts/nunito-600.woff2') format('woff2')}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:700;font-display:swap;src:url('/fonts/nunito-700.woff2') format('woff2')}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:800;font-display:swap;src:url('/fonts/nunito-800.woff2') format('woff2')}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:900;font-display:swap;src:url('/fonts/nunito-900.woff2') format('woff2')}
 
 :root {
   /* IALIMP es tema CLARO siempre: evita que el navegador/Android aplique

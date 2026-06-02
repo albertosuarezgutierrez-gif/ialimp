@@ -32,8 +32,6 @@ function fmtTime(t: string|null): string|null {
 
 // ── CSS global de la app ─────────────────────────────────────────────────
 const APP_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap');
-
 .l-app * { box-sizing: border-box; }
 .l-app {
   min-height: 100dvh;

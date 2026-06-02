@@ -39,7 +39,6 @@ export default function LLoginPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap');
         .ll-root {
           min-height: 100dvh;
           display: flex; flex-direction: column;
