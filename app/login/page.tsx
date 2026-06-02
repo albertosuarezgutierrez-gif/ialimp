@@ -191,6 +191,13 @@ export default function LoginPage() {
               <a href="/register">Registrar empresa</a>
             </div>
           </div>
+          <div className="login-footer" style={{ marginTop: 14 }}>
+            <a href="/legal/aviso-legal">Aviso legal</a>
+            {' · '}
+            <a href="/legal/privacidad">Privacidad</a>
+            {' · '}
+            <a href="/legal/cookies">Cookies</a>
+          </div>
         </div>
       </div>
     </>
