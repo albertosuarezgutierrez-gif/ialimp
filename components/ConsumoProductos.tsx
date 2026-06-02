@@ -91,11 +91,6 @@ export default function ConsumoProductos({ sessionId, limpadoraId, onGuardado, o
     onGuardado?.()
   }
 
-  const costeEstimado = productos.reduce((acc, p) => {
-    const qty = lineas[p.id] || 0
-    return acc + (p.precio_unitario ? qty * p.precio_unitario : 0)
-  }, 0)
-
   const hayProductosUsados = Object.values(lineas).some(v => v > 0)
   const categorias = [...new Set(productos.map(p => p.categoria))]
 
@@ -112,11 +107,6 @@ export default function ConsumoProductos({ sessionId, limpadoraId, onGuardado, o
       <div style={{ padding: '20px 16px', textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
         <div style={{ fontWeight: 700, fontSize: 16, color: C.ok }}>Consumo registrado</div>
-        {costeEstimado > 0 && (
-          <div style={{ marginTop: 8, fontSize: 13, color: C.muted }}>
-            Coste estimado: <strong style={{ color: C.text }}>€{costeEstimado.toFixed(2)}</strong>
-          </div>
-        )}
       </div>
     )
   }
@@ -168,7 +158,6 @@ export default function ConsumoProductos({ sessionId, limpadoraId, onGuardado, o
                       <div style={{ fontWeight: 600, fontSize: 14, color: C.text }}>{p.nombre}</div>
                       <div style={{ fontSize: 11, color: C.muted }}>
                         Unidad: {p.unidad}
-                        {p.precio_unitario ? ` · €${p.precio_unitario}/${p.unidad}` : ''}
                         {p.stock_actual !== undefined ? ` · Stock: ${p.stock_actual}` : ''}
                       </div>
                     </div>
@@ -193,14 +182,6 @@ export default function ConsumoProductos({ sessionId, limpadoraId, onGuardado, o
           </div>
         )
       })}
-
-      {/* Resumen coste */}
-      {costeEstimado > 0 && (
-        <div style={{ margin: '0 16px 16px', background: C.okBg, border: `1px solid #86efac`, borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 13, color: C.text }}>Coste estimado productos</span>
-          <span style={{ fontWeight: 800, fontSize: 16, color: C.ok }}>€{costeEstimado.toFixed(2)}</span>
-        </div>
-      )}
 
       {/* Acciones */}
       <div style={{ padding: '0 16px 24px', display: 'flex', gap: 10 }}>

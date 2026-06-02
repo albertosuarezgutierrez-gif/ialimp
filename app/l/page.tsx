@@ -256,6 +256,9 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
   const [saving, setSaving]           = useState(false)
   const [sesion, setSesion]           = useState(s)
   const [showConsumo, setShowConsumo] = useState(false)
+  const [botesOk, setBotesOk]         = useState(false)
+  const [analizandoBotes, setAnalizandoBotes] = useState(false)
+  const fotoBotesRef                  = useRef<HTMLInputElement>(null)
 
   const hecho    = !!sesion.completed_at
   const enCurso  = !hecho && !!sesion.started_at
