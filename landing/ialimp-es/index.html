@@ -4,7 +4,39 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IALIMP · El sistema operativo de tu empresa de limpieza</title>
-<meta name="description" content="IALIMP — el sistema operativo de tu empresa de limpieza.">
+<meta name="description" content="IALIMP es el software para gestionar tu empresa de limpieza: programación automática, app para tu equipo con fotos, control de calidad, portal del propietario, informes y facturación. Pensado para empresas de limpieza de pisos turísticos.">
+<link rel="canonical" href="https://ialimp.es/">
+<meta name="theme-color" content="#4f46e5">
+
+<!-- Open Graph / Twitter (para que el enlace se vea bien al compartirlo) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="IALIMP">
+<meta property="og:title" content="IALIMP · El sistema operativo de tu empresa de limpieza">
+<meta property="og:description" content="Programación automática, app para tu equipo, control de calidad, portal del propietario, informes y facturación. Menos caos, más control.">
+<meta property="og:url" content="https://ialimp.es/">
+<meta property="og:image" content="https://ialimp.es/og.png">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="IALIMP · El sistema operativo de tu empresa de limpieza">
+<meta name="twitter:description" content="Software para empresas de limpieza: organiza, controla la calidad y factura sin esfuerzo.">
+<meta name="twitter:image" content="https://ialimp.es/og.png">
+
+<!-- Favicon (SVG inline: la "i" de ialimp) -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234f46e5'/%3E%3Ctext x='32' y='46' font-family='Arial,sans-serif' font-size='40' font-weight='900' fill='white' text-anchor='middle'%3Ei%3C/text%3E%3C/svg%3E">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "IALIMP",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "description": "Software de gestión para empresas de limpieza: programación, app para el equipo, control de calidad, portal del propietario, informes y facturación.",
+  "url": "https://ialimp.es",
+  "offers": { "@type": "Offer", "price": "49", "priceCurrency": "EUR" },
+  "provider": { "@type": "Organization", "name": "IALIMP", "email": "hola@ialimp.es", "address": "C/ San Juan de la Palma 28, 41003 Sevilla" }
+}
+</script>
 <style>
   /* Fuente auto-alojada (Nunito). Sin Google Fonts: ningún dato del visitante
      sale a terceros. Los .woff2 se generan con fetch-fonts.sh antes de desplegar. */
@@ -17,7 +49,7 @@
 
   :root{
     --primary:#4f46e5;--brand:#6366f1;--soft:#eef2ff;--ink:#1e1b4b;
-    --bg:#f1f5f9;--white:#fff;--muted:#64748b;--line:#e2e8f0;--ok:#16a34a;--warn:#d97706;
+    --bg:#f1f5f9;--white:#fff;--muted:#64748b;--line:#e2e8f0;--ok:#16a34a;--warn:#d97706;--wa:#25d366;
     --shadow:0 24px 60px -24px rgba(30,27,75,.32);--shadow-sm:0 8px 22px -12px rgba(30,27,75,.22);--r:18px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -34,10 +66,15 @@
   .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 38px -12px rgba(79,70,229,.6)}
   .btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:var(--shadow-sm)}
   .btn-ghost:hover{transform:translateY(-2px);border-color:var(--brand)}
+  .btn-wa{background:var(--wa);color:#fff;box-shadow:0 10px 26px -10px rgba(37,211,102,.5)}
+  .btn-wa:hover{transform:translateY(-2px)}
 
   header{position:sticky;top:0;z-index:100;backdrop-filter:saturate(1.4) blur(12px);background:rgba(255,255,255,.78);border-bottom:1px solid rgba(226,232,240,.8)}
   .nav{display:flex;align-items:center;justify-content:space-between;height:70px}
-  .nav .right{display:flex;gap:12px;align-items:center}
+  .nav .links{display:flex;gap:22px;align-items:center}
+  .nav .links a{font-weight:600;font-size:14px;color:var(--muted)}
+  .nav .links a:hover{color:var(--primary)}
+  @media(max-width:720px){.nav .links{display:none}}
 
   .hero{position:relative;padding:96px 0 72px;overflow:hidden}
   .hero::before{content:"";position:absolute;inset:0;z-index:0;background:radial-gradient(680px 420px at 78% 8%,#dfe3ff 0,transparent 60%),radial-gradient(560px 380px at 8% 92%,#e9edff 0,transparent 55%)}
@@ -82,7 +119,9 @@
   section.block{padding:72px 0}
   .eyebrow{display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);margin-bottom:16px}
   h2.sec{font-family:'Nunito';font-weight:700;font-size:clamp(30px,4vw,46px);line-height:1.04;letter-spacing:-.025em}
+  .sub{font-size:17px;color:var(--muted);margin-top:14px;max-width:60ch}
   .center{text-align:center}
+  .center .sub{margin-left:auto;margin-right:auto}
   .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
   .reveal.in{opacity:1;transform:none}
 
@@ -93,26 +132,87 @@
   .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:14px}
   @media(max-width:900px){.feat-grid{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:560px){.feat-grid{grid-template-columns:1fr}}
-  .feat{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:30px 24px;box-shadow:var(--shadow-sm);transition:transform .18s ease,box-shadow .18s ease;display:flex;align-items:center;gap:16px}
+  .feat{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:26px 22px;box-shadow:var(--shadow-sm);transition:transform .18s ease,box-shadow .18s ease}
   .feat:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
-  .feat .ic{width:48px;height:48px;border-radius:13px;background:var(--soft);color:var(--primary);display:grid;place-items:center;flex:none}
+  .feat .ic{width:48px;height:48px;border-radius:13px;background:var(--soft);color:var(--primary);display:grid;place-items:center;flex:none;margin-bottom:14px}
   .feat .ic svg{width:24px;height:24px}
-  .feat h3{font-family:'Nunito';font-weight:700;font-size:18px;letter-spacing:-.01em}
+  .feat h3{font-family:'Nunito';font-weight:700;font-size:18px;letter-spacing:-.01em;margin-bottom:6px}
+  .feat p{font-size:14px;color:var(--muted);line-height:1.5}
+
+  /* Beneficios (cifras) */
+  .bene{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:14px}
+  @media(max-width:640px){.bene{grid-template-columns:1fr}}
+  .bene .b{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:28px;text-align:center;box-shadow:var(--shadow-sm)}
+  .bene .b .big{font-size:40px;font-weight:900;color:var(--primary);line-height:1}
+  .bene .b .t{font-weight:700;margin-top:8px}
+  .bene .b .d{font-size:13.5px;color:var(--muted);margin-top:6px}
+
+  /* Pasos */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:14px}
+  @media(max-width:760px){.steps{grid-template-columns:1fr}}
+  .step{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:28px;box-shadow:var(--shadow-sm)}
+  .step .num{width:38px;height:38px;border-radius:11px;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:900;margin-bottom:14px}
+  .step h3{font-size:18px;font-weight:700;margin-bottom:6px}
+  .step p{font-size:14px;color:var(--muted)}
+
+  /* Precios */
+  .price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:14px;align-items:stretch}
+  @media(max-width:820px){.price-grid{grid-template-columns:1fr}}
+  .plan{background:#fff;border:1px solid var(--line);border-radius:20px;padding:30px 26px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column}
+  .plan.feat-plan{border:2px solid var(--primary);box-shadow:var(--shadow)}
+  .plan .name{font-weight:800;font-size:18px}
+  .plan .price{font-size:40px;font-weight:900;color:var(--primary);margin:10px 0 2px;line-height:1}
+  .plan .price small{font-size:15px;color:var(--muted);font-weight:600}
+  .plan ul{list-style:none;margin:18px 0;display:flex;flex-direction:column;gap:9px}
+  .plan li{font-size:14px;color:var(--ink);padding-left:24px;position:relative}
+  .plan li::before{content:"✓";position:absolute;left:0;color:var(--primary);font-weight:900}
+  .plan .tagp{font-size:13px;color:var(--muted);margin-top:auto}
+  .badge-pop{display:inline-block;background:var(--soft);color:var(--primary);font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em}
+
+  /* FAQ */
+  .faq{max-width:780px;margin:14px auto 0}
+  .faq details{background:#fff;border:1px solid var(--line);border-radius:14px;padding:0 22px;margin-bottom:12px;box-shadow:var(--shadow-sm)}
+  .faq summary{cursor:pointer;font-weight:700;font-size:16px;padding:18px 0;list-style:none;display:flex;justify-content:space-between;align-items:center}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+";color:var(--primary);font-weight:900;font-size:22px}
+  .faq details[open] summary::after{content:"–"}
+  .faq p{font-size:14.5px;color:var(--muted);padding:0 0 18px;line-height:1.6}
+
+  /* Testimonio */
+  .quote{background:var(--soft);border-radius:24px;padding:48px;text-align:center}
+  .quote p{font-size:clamp(20px,2.6vw,28px);font-weight:700;line-height:1.4;letter-spacing:-.01em;max-width:24ch;margin:0 auto 18px}
+  .quote .who{font-size:14px;color:var(--muted);font-weight:600}
+
+  /* Sección Sevilla (coherencia con el mailing) */
+  .sevilla{background:linear-gradient(135deg,#4f46e5 0,#6366f1 100%);border-radius:28px;padding:56px 48px;color:#fff;text-align:center}
+  .sevilla h2{color:#fff;margin-bottom:14px}
+  .sevilla p{color:#dfe1ff;max-width:52ch;margin:0 auto 26px;font-size:16px}
+  @media(max-width:640px){.sevilla{padding:40px 26px}}
+
+  /* Formulario */
+  .form-card{background:#fff;border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);overflow:hidden;display:grid;grid-template-columns:1fr 1fr}
+  @media(max-width:820px){.form-card{grid-template-columns:1fr}}
+  .form-card .info{background:var(--ink);color:#fff;padding:44px}
+  .form-card .info h2{color:#fff;font-size:30px;font-weight:800;letter-spacing:-.02em;margin-bottom:14px}
+  .form-card .info p{color:#c7cbe8;font-size:15px;line-height:1.6;margin-bottom:24px}
+  .form-card .info .wa{margin-top:8px}
+  .form-card form{padding:44px;display:flex;flex-direction:column;gap:14px}
+  .field label{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+  .field input,.field textarea{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#f8fafc;font-family:'Nunito';font-size:15px;color:var(--ink)}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--primary);background:#fff}
+  .consent{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--muted)}
+  .consent input{margin-top:3px;accent-color:var(--primary)}
+  .consent a{color:var(--primary);font-weight:600}
+  .form-msg{font-size:14px;font-weight:700;padding:10px 0}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 
   .ai{position:relative;border-radius:28px;overflow:hidden;padding:56px 48px;color:#fff;background:linear-gradient(135deg,#4f46e5 0,#6366f1 55%,#7c7af0 100%);text-align:center}
   .ai::after{content:"";position:absolute;inset:0;background:radial-gradient(420px 240px at 88% 12%,rgba(255,255,255,.18),transparent 60%);pointer-events:none}
   .ai .inner{position:relative}
-  .ai h2{color:#fff;margin-bottom:30px}
+  .ai h2{color:#fff;margin-bottom:14px}
+  .ai .sub{color:#dfe1ff;margin-bottom:24px}
   .ai .chips{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
   .chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:12px 20px;font-family:'Nunito';font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:9px}
-
-  .cta-final{background:var(--ink);border-radius:28px;padding:64px 48px;text-align:center;color:#fff;position:relative;overflow:hidden}
-  .cta-final::before{content:"";position:absolute;inset:0;background:radial-gradient(520px 280px at 50% -10%,rgba(99,102,241,.5),transparent 60%)}
-  .cta-final .inner{position:relative}
-  .cta-final h2{color:#fff;margin-bottom:28px}
-  .cta-final .ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-  .cta-final .btn-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.3)}
-  .cta-final .fine{margin-top:20px;font-size:13px;color:#9aa0c4}
 
   footer{padding:44px 0 36px;border-top:1px solid var(--line);margin-top:36px}
   .foot{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
@@ -120,6 +220,10 @@
   .foot-legal{display:flex;gap:18px;flex-wrap:wrap}
   .foot-legal a{font-size:13px;color:var(--muted);font-weight:600}
   .foot-legal a:hover{color:var(--primary)}
+
+  /* WhatsApp flotante */
+  .wa-float{position:fixed;right:20px;bottom:20px;z-index:200;background:var(--wa);color:#fff;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;box-shadow:0 12px 30px -8px rgba(37,211,102,.6);font-size:28px}
+  .wa-float:hover{transform:scale(1.06)}
 </style>
 </head>
 <body>
@@ -127,9 +231,13 @@
 <header>
   <div class="wrap nav">
     <div class="logo"><span class="ia">ia</span><span class="l2">limp</span></div>
-    <div class="right">
-      <a class="btn btn-primary" href="#contacto">Solicitar demo</a>
+    <div class="links">
+      <a href="#funciones">Funciones</a>
+      <a href="#como">Cómo funciona</a>
+      <a href="#precios">Precios</a>
+      <a href="#faq">FAQ</a>
     </div>
+    <a class="btn btn-primary" href="#contacto">Solicitar demo</a>
   </div>
 </header>
 
@@ -142,7 +250,7 @@
         <a class="btn btn-primary" href="#contacto">Solicitar demo
           <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
-        <a class="btn btn-ghost" href="https://ialimp.vercel.app" target="_blank">Ver la app</a>
+        <a class="btn btn-ghost" href="https://app.ialimp.es" target="_blank" rel="noopener">Ver la app</a>
       </div>
     </div>
     <div class="mock reveal">
@@ -180,29 +288,73 @@
   </div>
 </section>
 
+<!-- Beneficios -->
 <section class="block">
+  <div class="wrap center">
+    <span class="eyebrow">Por qué IALIMP</span>
+    <h2 class="sec">Recupera tu tiempo.</h2>
+    <p class="sub">Deja de coordinar limpiezas por WhatsApp, Excel y llamadas. IALIMP lo ordena por ti.</p>
+  </div>
+  <div class="wrap">
+    <div class="bene">
+      <div class="b reveal"><div class="big">5h</div><div class="t">menos a la semana</div><div class="d">en organizar y repartir el trabajo de tu equipo.</div></div>
+      <div class="b reveal"><div class="big">0</div><div class="t">limpiezas olvidadas</div><div class="d">asignación automática según turnos y entradas de huéspedes.</div></div>
+      <div class="b reveal"><div class="big">100%</div><div class="t">trazabilidad</div><div class="d">fotos, checklist y partes de cada limpieza, listos para facturar.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Funciones -->
+<section class="block" id="funciones">
   <div class="wrap center">
     <span class="eyebrow">Todo en un sitio</span>
     <h2 class="sec">Tu operación, ordenada.</h2>
   </div>
   <div class="wrap">
     <div class="feat-grid">
-      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.2-8.5"/><path d="M21 4v5h-5"/></svg></div><h3>Programación automática</h3></div>
-      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></div><h3>App para tu equipo</h3></div>
-      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div><h3>Control de calidad</h3></div>
-      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div><h3>Portal del propietario</h3></div>
-      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg></div><h3>Informes al instante</h3></div>
-      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M9 13h6M9 17h6"/></svg></div><h3>Facturación lista</h3></div>
+      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.2-8.5"/><path d="M21 4v5h-5"/></svg></div><h3>Programación automática</h3><p>Crea las limpiezas solas a partir de las salidas de tus huéspedes y las reparte a tu equipo.</p></div>
+      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></div><h3>App para tu equipo</h3><p>Cada limpiadora ve su agenda, su acceso al piso y completa el checklist con fotos desde el móvil.</p></div>
+      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div><h3>Control de calidad</h3><p>Fotos antes/después y revisión con IA para asegurar que cada piso queda perfecto.</p></div>
+      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div><h3>Portal del propietario</h3><p>Tus clientes ven sus limpiezas, fotos e informes en su propio portal. Menos llamadas para ti.</p></div>
+      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg></div><h3>Informes al instante</h3><p>Resumen mensual de servicios, incidencias y valoraciones, generado y enviado solo.</p></div>
+      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M9 13h6M9 17h6"/></svg></div><h3>Facturación lista</h3><p>De cada limpieza a la factura del propietario y a la nómina de tu equipo, sin recontar.</p></div>
     </div>
   </div>
 </section>
 
+<!-- Cómo funciona -->
+<section class="block" id="como">
+  <div class="wrap center">
+    <span class="eyebrow">Empezar es fácil</span>
+    <h2 class="sec">En marcha en 3 pasos.</h2>
+  </div>
+  <div class="wrap">
+    <div class="steps">
+      <div class="step reveal"><div class="num">1</div><h3>Conecta tus pisos</h3><p>Damos de alta tus propiedades y tu equipo. Si gestionas turísticos, conectamos los calendarios para crear las limpiezas solas.</p></div>
+      <div class="step reveal"><div class="num">2</div><h3>El equipo trabaja desde el móvil</h3><p>Cada limpiadora recibe su agenda, hace el checklist y sube las fotos. Tú lo ves todo en tiempo real.</p></div>
+      <div class="step reveal"><div class="num">3</div><h3>Factura e informa</h3><p>Al cerrar cada mes, los informes y las facturas salen solos. Tus clientes reciben su resumen sin que muevas un dedo.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonio -->
+<section class="block">
+  <div class="wrap">
+    <div class="quote reveal">
+      <p>"Antes coordinaba todo por WhatsApp y Excel. Ahora abro IALIMP y sé qué pasa en cada piso."</p>
+      <div class="who">— Empresa de limpieza de pisos turísticos (Sevilla)</div>
+    </div>
+  </div>
+</section>
+
+<!-- IA -->
 <section class="block">
   <div class="wrap">
     <div class="ai reveal">
       <div class="inner">
         <span class="eyebrow" style="color:#dfe1ff">Inteligencia artificial</span>
         <h2 class="sec">Agentes que trabajan contigo.</h2>
+        <p class="sub">IALIMP incluye asistentes que asignan limpiezas, revisan la calidad de las fotos y redactan los informes por ti.</p>
         <div class="chips">
           <span class="chip">🎯 Asignación</span>
           <span class="chip">📸 Calidad de fotos</span>
@@ -214,19 +366,95 @@
   </div>
 </section>
 
+<!-- Precios -->
+<section class="block" id="precios">
+  <div class="wrap center">
+    <span class="eyebrow">Precios claros</span>
+    <h2 class="sec">Sin permanencia.</h2>
+    <p class="sub">Empiezas con lo que necesitas y creces cuando quieras. Te ayudamos a configurarlo gratis.</p>
+  </div>
+  <div class="wrap">
+    <div class="price-grid">
+      <div class="plan reveal">
+        <div class="name">Inicio</div>
+        <div class="price">49€<small>/mes</small></div>
+        <ul><li>Programación y agenda</li><li>App para tu equipo</li><li>Checklist con fotos</li><li>Hasta 3 limpiadoras</li></ul>
+        <div class="tagp">Para empezar a ordenar tu día a día.</div>
+      </div>
+      <div class="plan feat-plan reveal">
+        <span class="badge-pop">Más elegido</span>
+        <div class="name">Profesional</div>
+        <div class="price">49€<small> + 12€/limpiadora</small></div>
+        <ul><li>Todo lo de Inicio</li><li>Portal del propietario</li><li>Control de calidad con IA</li><li>Informes y facturación</li></ul>
+        <div class="tagp">Para empresas que quieren crecer con control total.</div>
+      </div>
+      <div class="plan reveal">
+        <div class="name">A medida</div>
+        <div class="price">Hablamos</div>
+        <ul><li>Varios equipos y zonas</li><li>Integraciones a medida</li><li>Soporte prioritario</li><li>Onboarding acompañado</li></ul>
+        <div class="tagp">Cuéntanos tu caso y lo ajustamos.</div>
+      </div>
+    </div>
+    <p class="center sub" style="margin-top:24px">¿No sabes qué plan te encaja? <a href="#contacto" style="color:var(--primary);font-weight:700">Pídenos una demo</a> y te asesoramos.</p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="block" id="faq">
+  <div class="wrap center">
+    <span class="eyebrow">Dudas frecuentes</span>
+    <h2 class="sec">Preguntas frecuentes.</h2>
+  </div>
+  <div class="wrap">
+    <div class="faq">
+      <details reveal><summary>¿Sirve si no gestiono pisos turísticos?</summary><p>Sí. IALIMP organiza limpiezas de cualquier tipo (turísticos, oficinas, comunidades, particulares). La conexión con calendarios de reservas es opcional.</p></details>
+      <details><summary>¿Mi equipo necesita instalar algo?</summary><p>No. Acceden desde el navegador del móvil con un enlace o un PIN. Sin instalar apps ni crear cuentas complicadas.</p></details>
+      <details><summary>¿Cuánto tardo en empezar?</summary><p>En el mismo día. Te ayudamos a dar de alta tus pisos y tu equipo en la demo.</p></details>
+      <details><summary>¿Hay permanencia?</summary><p>No. Pagas mes a mes y puedes cancelar cuando quieras.</p></details>
+      <details><summary>¿Mis datos están seguros?</summary><p>Sí. Cumplimos el RGPD, cada empresa ve solo sus datos y las fotos se guardan de forma privada.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- Sección Sevilla (coherencia con el mailing) -->
+<section class="block" id="sevilla">
+  <div class="wrap">
+    <div class="sevilla reveal">
+      <span class="eyebrow" style="color:#dfe1ff">Empresas de limpieza de Sevilla</span>
+      <h2 class="sec">Hecho para vosotras.</h2>
+      <p>Si tienes una empresa de limpieza en Sevilla y coordinar el equipo se te come el día, IALIMP es para ti. Te enseñamos cómo funciona en una demo de 15 minutos, sin compromiso.</p>
+      <a class="btn btn-ghost" href="#contacto" style="background:#fff;color:var(--ink)">Quiero la demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- Contacto / Formulario -->
 <section class="block" id="contacto">
   <div class="wrap">
-    <div class="cta-final reveal">
-      <div class="inner">
-        <h2 class="sec">Empieza hoy.</h2>
-        <div class="ctas">
-          <a class="btn btn-primary" href="mailto:hola@ialimp.es?subject=Quiero%20probar%20IALIMP">Solicitar demo
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </a>
-          <a class="btn btn-ghost" href="https://ialimp.vercel.app" target="_blank">Ver la app</a>
-        </div>
-        <div class="fine">hola@ialimp.es</div>
+    <div class="form-card reveal">
+      <div class="info">
+        <h2>Solicita tu demo gratis</h2>
+        <p>Déjanos tus datos y te llamamos para enseñarte IALIMP adaptado a tu empresa. Sin compromiso.</p>
+        <p>¿Prefieres WhatsApp? Escríbenos directamente:</p>
+        <a class="btn btn-wa wa" href="https://wa.me/34600000000?text=Hola,%20quiero%20información%20de%20IALIMP" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.7.8-2.7-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.2-.4.2-.4.6-1.2.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.8.8-1 1.9-.6 3.1a10 10 0 0 0 4.6 4.6c1.9.8 2.7.7 3.6.6.5-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1z"/></svg>
+          WhatsApp
+        </a>
       </div>
+      <form id="lead-form" novalidate>
+        <div class="field"><label for="empresa">Empresa *</label><input id="empresa" name="empresa" required placeholder="Nombre de tu empresa de limpieza"></div>
+        <div class="field"><label for="nombre">Tu nombre</label><input id="nombre" name="nombre" placeholder="Con quién hablamos"></div>
+        <div class="field"><label for="email">Email *</label><input id="email" name="email" type="email" required placeholder="tucorreo@empresa.com"></div>
+        <div class="field"><label for="telefono">Teléfono</label><input id="telefono" name="telefono" type="tel" placeholder="Para llamarte"></div>
+        <div class="field"><label for="pisos">Nº de pisos / personas en el equipo</label><input id="pisos" name="pisos" placeholder="Ej.: 20 pisos, 4 limpiadoras"></div>
+        <input class="hp" type="text" name="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <label class="consent"><input type="checkbox" id="consent" required>
+          He leído y acepto la <a href="/privacidad.html" target="_blank">política de privacidad</a> y que IALIMP me contacte sobre el servicio.</label>
+        <button class="btn btn-primary" type="submit" style="justify-content:center">Solicitar demo
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <div class="form-msg" id="form-msg"></div>
+      </form>
     </div>
   </div>
 </section>
@@ -246,9 +474,35 @@
   </div>
 </footer>
 
+<a class="wa-float" href="https://wa.me/34600000000?text=Hola,%20quiero%20información%20de%20IALIMP" target="_blank" rel="noopener" aria-label="WhatsApp">
+  <svg viewBox="0 0 24 24" width="28" height="28" fill="#fff"><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.7.8-2.7-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.2-.4.2-.4.6-1.2.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.8.8-1 1.9-.6 3.1a10 10 0 0 0 4.6 4.6c1.9.8 2.7.7 3.6.6.5-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1z"/></svg>
+</a>
+
 <script>
+  // Scroll reveal
   const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:.14});
   document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+  // Formulario de contacto → API de la app (otro dominio, con CORS).
+  const API='https://app.ialimp.es/api/lead-saas';
+  const form=document.getElementById('lead-form');
+  const out=document.getElementById('form-msg');
+  form.addEventListener('submit',async(e)=>{
+    e.preventDefault();
+    out.style.color='var(--muted)';out.textContent='Enviando…';
+    if(!document.getElementById('consent').checked){out.style.color='var(--warn)';out.textContent='Marca la casilla de privacidad para continuar.';return;}
+    const data={
+      empresa:form.empresa.value.trim(),nombre:form.nombre.value.trim(),
+      email:form.email.value.trim(),telefono:form.telefono.value.trim(),
+      pisos:form.pisos.value.trim(),hp:form.hp.value
+    };
+    if(!data.empresa||!data.email){out.style.color='var(--warn)';out.textContent='Indica al menos la empresa y un email.';return;}
+    try{
+      const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      if(r.ok){out.style.color='var(--ok)';out.textContent='¡Gracias! Te contactamos muy pronto.';form.reset();}
+      else{const d=await r.json().catch(()=>({}));out.style.color='var(--warn)';out.textContent=d.error||'No se pudo enviar. Escríbenos a hola@ialimp.es';}
+    }catch(_){out.style.color='var(--warn)';out.textContent='No se pudo enviar. Escríbenos a hola@ialimp.es';}
+  });
 </script>
 </body>
 </html>

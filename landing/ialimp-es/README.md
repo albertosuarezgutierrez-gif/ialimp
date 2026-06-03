@@ -12,6 +12,12 @@ git; este directorio es la fuente de verdad versionada.
 - `fetch-fonts.sh` — descarga Nunito (woff2) a `fonts/` para auto-alojar la tipografía.
 - `fonts/` — tipografías auto-alojadas (los `.woff2` se generan con el script; no van en git).
 
+## Formulario de contacto
+- El formulario de `index.html` hace `fetch` POST a `https://app.ialimp.es/api/lead-saas` (endpoint en la
+  app, con CORS para `ialimp.es`). Crea un prospecto (`origen='landing'`) y avisa a Alberto por email.
+- Botones de **WhatsApp**: el número está hardcodeado en `index.html` (placeholder `34600000000`) — cambiarlo
+  por el real. (En los correos del mailing se usa la env `IALIMP_WHATSAPP`.)
+
 ## Cumplimiento
 - La web **no instala cookies de seguimiento ni analítica** → no requiere banner de consentimiento.
 - La tipografía se sirve **auto-alojada** (sin Google Fonts) → no se transfieren datos a terceros.
