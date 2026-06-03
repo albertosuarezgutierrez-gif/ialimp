@@ -33,24 +33,32 @@ function parseCSV(text: string): any[] {
     out.push(cur); return out
   }
   const head = split(lines[0]).map(h => h.trim().toLowerCase())
-  const idx = (names: string[]) => head.findIndex(h => names.includes(h))
-  const iE = idx(['empresa_nombre', 'empresa', 'nombre', 'name'])
-  const iM = idx(['email', 'correo', 'mail', 'e-mail'])
-  const iT = idx(['telefono', 'teléfono', 'phone', 'tel', 'movil', 'móvil'])
-  const iC = idx(['ciudad', 'city', 'localidad'])
-  const iW = idx(['web', 'website', 'url'])
-  const iN = idx(['notas', 'notes', 'observaciones'])
+  // Detección por subcadena: tolera cabeceras como "Email / Contacto", "Teléfono móvil"...
+  const idx = (subs: string[]) => head.findIndex(h => subs.some(s => h.includes(s)))
+  const iE = idx(['empresa', 'nombre', 'name', 'negocio', 'razon'])
+  const iM = idx(['email', 'correo', 'mail'])
+  const iT = idx(['telefono', 'teléfono', 'phone', 'tel', 'movil', 'móvil', 'whatsapp'])
+  const iC = idx(['ciudad', 'localidad', 'city', 'poblacion', 'municipio'])
+  const iW = idx(['web', 'website', 'url', 'sitio'])
+  // Columnas con info útil que guardamos como notas (especialidad, zona, puntuación...).
+  const iExtra = head.map((h, k) => (/especialidad|servicio|zona|barrio|punt|nota|observ|direccion|dirección/.test(h) ? k : -1)).filter(k => k >= 0)
+  const esEmail = (v: string) => /.+@.+\..+/.test(v)
   return lines.slice(1).map(l => {
     const c = split(l)
+    const emailRaw = iM >= 0 ? (c[iM] || '').trim() : ''
+    const extra = iExtra.map(k => (c[k] || '').trim()).filter(Boolean)
+    // Si el "email" no es un email real (p.ej. "Formulario web"), va a notas.
+    if (emailRaw && !esEmail(emailRaw)) extra.unshift(emailRaw)
     return {
       empresa_nombre: iE >= 0 ? (c[iE] || '').trim() : '',
-      email: iM >= 0 ? (c[iM] || '').trim() : '',
+      email: esEmail(emailRaw) ? emailRaw : '',
       telefono: iT >= 0 ? (c[iT] || '').trim() : '',
       ciudad: iC >= 0 ? (c[iC] || '').trim() : '',
       web: iW >= 0 ? (c[iW] || '').trim() : '',
-      notas: iN >= 0 ? (c[iN] || '').trim() : '',
+      notas: extra.join(' · '),
     }
-  }).filter(r => r.empresa_nombre && r.email)
+    // Acepta filas con email O teléfono O web (las de solo teléfono = para llamar).
+  }).filter(r => r.empresa_nombre && (r.email || r.telefono || r.web))
 }
 
 export default function MailingPage() {
