@@ -27,10 +27,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const empresa_id = await requireEmpresaId()
   const b = await req.json()
   const row: any[] = await prisma.$queryRaw(Prisma.sql`
-    INSERT INTO proveedores (nombre, empresa, telefono, email, web, whatsapp, categoria, notas)
-    VALUES (${b.nombre}, ${b.empresa||null}, ${b.telefono||null}, ${b.email||null},
+    INSERT INTO proveedores (empresa_id, nombre, empresa, telefono, email, web, whatsapp, categoria, notas)
+    VALUES (${empresa_id}::uuid, ${b.nombre}, ${b.empresa||null}, ${b.telefono||null}, ${b.email||null},
             ${b.web||null}, ${b.whatsapp||null}, ${b.categoria||'general'}, ${b.notas||null})
     RETURNING *
   `)
@@ -38,18 +39,20 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const empresa_id = await requireEmpresaId()
   const b = await req.json()
   await prisma.$executeRaw(Prisma.sql`
     UPDATE proveedores SET nombre=${b.nombre}, empresa=${b.empresa||null}, telefono=${b.telefono||null},
       email=${b.email||null}, web=${b.web||null}, whatsapp=${b.whatsapp||null},
       categoria=${b.categoria||'general'}, notas=${b.notas||null}, activo=${b.activo??true}
-    WHERE id = ${b.id}::uuid
+    WHERE id = ${b.id}::uuid AND empresa_id = ${empresa_id}::uuid
   `)
   return NextResponse.json({ ok: true })
 }
 
 export async function DELETE(req: NextRequest) {
+  const empresa_id = await requireEmpresaId()
   const { id } = await req.json()
-  await prisma.$executeRaw(Prisma.sql`UPDATE proveedores SET activo=false WHERE id=${id}::uuid`)
+  await prisma.$executeRaw(Prisma.sql`UPDATE proveedores SET activo=false WHERE id=${id}::uuid AND empresa_id = ${empresa_id}::uuid`)
   return NextResponse.json({ ok: true })
 }

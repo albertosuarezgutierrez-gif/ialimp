@@ -4,21 +4,28 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
 export async function GET(req: NextRequest) {
+  const empresa_id = await requireEmpresaId()
   const lid = new URL(req.url).searchParams.get('limpiadora_id')
-  const cond = lid ? Prisma.sql`WHERE f.limpiadora_id = ${lid}::uuid` : Prisma.sql``
+  const cond = lid ? Prisma.sql`AND f.limpiadora_id = ${lid}::uuid` : Prisma.empty
   const facturas = await prisma.$queryRaw<any[]>(Prisma.sql`
     SELECT f.*, l.nombre as limpiadora_nombre
     FROM facturas_limpiadoras f
     JOIN limpiadoras l ON l.id = f.limpiadora_id
-    ${cond}
+    WHERE f.empresa_id = ${empresa_id}::uuid ${cond}
     ORDER BY f.periodo_inicio DESC
   `)
   return NextResponse.json({ facturas })
 }
 
 export async function POST(req: NextRequest) {
+  const empresa_id = await requireEmpresaId()
   const b = await req.json()
   const { limpiadora_id, desde, hasta } = b
+  // La limpiadora debe ser de esta empresa.
+  const own = await prisma.$queryRaw<any[]>(Prisma.sql`
+    SELECT id FROM limpiadoras WHERE id = ${limpiadora_id}::uuid AND empresa_id = ${empresa_id}::uuid LIMIT 1
+  `)
+  if (!own.length) return NextResponse.json({ error: 'Limpiadora no válida' }, { status: 403 })
 
   // Obtener sesiones del período
   const sessions = await prisma.$queryRaw<any[]>(Prisma.sql`
@@ -65,8 +72,8 @@ export async function POST(req: NextRequest) {
   const num = `FAC-${Date.now().toString().slice(-6)}`
   const factura = await prisma.$queryRaw<any[]>(Prisma.sql`
     INSERT INTO facturas_limpiadoras
-      (limpiadora_id, numero, periodo_inicio, periodo_fin, num_sesiones, total_horas, importe_total)
-    VALUES (${limpiadora_id}::uuid, ${num}, ${desde}::date, ${hasta}::date,
+      (empresa_id, limpiadora_id, numero, periodo_inicio, periodo_fin, num_sesiones, total_horas, importe_total)
+    VALUES (${empresa_id}::uuid, ${limpiadora_id}::uuid, ${num}, ${desde}::date, ${hasta}::date,
             ${sessions.length}, ${Math.round(totalH*100)/100}, ${Math.round(totalImporte*100)/100})
     RETURNING *
   `)
@@ -84,7 +91,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const empresa_id = await requireEmpresaId()
   const { id, estado } = await req.json()
-  await prisma.$executeRaw(Prisma.sql`UPDATE facturas_limpiadoras SET estado=${estado} WHERE id=${id}::uuid`)
+  await prisma.$executeRaw(Prisma.sql`UPDATE facturas_limpiadoras SET estado=${estado} WHERE id=${id}::uuid AND empresa_id = ${empresa_id}::uuid`)
   return NextResponse.json({ ok: true })
 }

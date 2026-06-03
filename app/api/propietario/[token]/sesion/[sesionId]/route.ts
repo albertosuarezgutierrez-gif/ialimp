@@ -82,6 +82,7 @@ export async function GET(
           ON sc.item_id = ci.id AND sc.session_id = ${sesionId}::uuid
         WHERE ci.active = true
           AND ct.property_id = ${sesion.propiedad_id.toString()}
+          AND ct.empresa_id = ${cliente.empresa_id}::uuid
         ORDER BY ci.sort_order ASC NULLS LAST
       `)
     }
