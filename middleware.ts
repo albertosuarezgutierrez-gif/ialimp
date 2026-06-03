@@ -38,6 +38,11 @@ const MODULO_MAP: Record<string, string> = {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
+  // Alias amigables → app de la limpiadora (/l decide login o app según sesión)
+  if (pathname === '/limpiadoras' || pathname === '/equipo') {
+    return NextResponse.redirect(new URL('/l', req.url))
+  }
+
   // Rutas públicas — sin auth
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.next()
