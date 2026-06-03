@@ -105,6 +105,23 @@ export default function MailingPage() {
     } finally { setBusy(false) }
   }
 
+  // ── Buscar leads en Google ──
+  const [gq, setGq] = useState('empresas de limpieza')
+  const [gciudad, setGciudad] = useState('Sevilla')
+  const [gmax, setGmax] = useState(20)
+  async function buscarGoogle() {
+    setBusy(true)
+    try {
+      const r = await fetch('/api/superadmin/mailing/buscar-google', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: gq, ciudad: gciudad, max: gmax, buscarEmail: true }),
+      })
+      const d = await r.json()
+      if (r.ok) { flash(`Google: ${d.encontrados} encontrados · ${d.insertados} nuevos · ${d.con_email} con email.${d.aviso ? ' ⚠ ' + d.aviso : ''}`); cargarProspectos() }
+      else flash(d.error || 'Error en la búsqueda')
+    } finally { setBusy(false) }
+  }
+
   async function patchProspecto(id: string, body: any) {
     await fetch(`/api/superadmin/mailing/prospectos/${id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -204,6 +221,16 @@ export default function MailingPage() {
                 ))}
               </div>
             )}
+
+            {/* Recolector de Google */}
+            <div style={{ background: C.light, border: `1px solid ${C.accent}30`, borderRadius: 12, padding: 14, marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontWeight: 800, fontSize: 13, color: C.accent }}>🔎 Buscar leads en Google</span>
+              <input value={gq} onChange={e => setGq(e.target.value)} placeholder="qué buscar" style={{ ...inp, maxWidth: 220, padding: '8px 10px' }} />
+              <input value={gciudad} onChange={e => setGciudad(e.target.value)} placeholder="ciudad" style={{ ...inp, maxWidth: 140, padding: '8px 10px' }} />
+              <input type="number" value={gmax} onChange={e => setGmax(Number(e.target.value))} min={1} max={40} style={{ ...inp, maxWidth: 80, padding: '8px 10px' }} />
+              <button onClick={buscarGoogle} disabled={busy} style={{ ...btn(true), background: busy ? '#c7d2fe' : C.accent }}>{busy ? 'Buscando…' : 'Buscar e importar'}</button>
+              <span style={{ fontSize: 11, color: C.muted }}>Trae nombre, teléfono y web (e intenta el email). Requiere clave de Google Places.</span>
+            </div>
 
             <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
               <input placeholder="Buscar empresa / email / teléfono" value={q}
