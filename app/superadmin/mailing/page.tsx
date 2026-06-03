@@ -122,6 +122,31 @@ export default function MailingPage() {
     } finally { setBusy(false) }
   }
 
+  // ── Analizar un listado web con IA ──
+  const [urlIA, setUrlIA] = useState('')
+  async function analizarWeb() {
+    if (!urlIA.trim()) { flash('Pega la URL de un listado de empresas.'); return }
+    setBusy(true)
+    try {
+      const r = await fetch('/api/superadmin/mailing/analizar-web', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: urlIA.trim() }),
+      })
+      const d = await r.json()
+      if (r.ok) { flash(`IA: ${d.encontrados} encontrados · ${d.insertados} nuevos · ${d.con_email} con email.${d.aviso ? ' ⚠ ' + d.aviso : ''}`); cargarProspectos() }
+      else flash(d.error || 'No se pudo analizar la web')
+    } finally { setBusy(false) }
+  }
+  async function buscarEmails() {
+    setBusy(true)
+    try {
+      const r = await fetch('/api/superadmin/mailing/buscar-emails', { method: 'POST' })
+      const d = await r.json()
+      if (r.ok) { flash(`Emails: ${d.encontrados} encontrados de ${d.revisados} revisados.`); cargarProspectos() }
+      else flash(d.error || 'Error')
+    } finally { setBusy(false) }
+  }
+
   async function patchProspecto(id: string, body: any) {
     await fetch(`/api/superadmin/mailing/prospectos/${id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -230,6 +255,15 @@ export default function MailingPage() {
               <input type="number" value={gmax} onChange={e => setGmax(Number(e.target.value))} min={1} max={40} style={{ ...inp, maxWidth: 80, padding: '8px 10px' }} />
               <button onClick={buscarGoogle} disabled={busy} style={{ ...btn(true), background: busy ? '#c7d2fe' : C.accent }}>{busy ? 'Buscando…' : 'Buscar e importar'}</button>
               <span style={{ fontSize: 11, color: C.muted }}>Trae nombre, teléfono y web (e intenta el email). Requiere clave de Google Places.</span>
+            </div>
+
+            {/* Analizar listado web con IA (gratis, sin Google) */}
+            <div style={{ background: '#f5f3ff', border: `1px solid ${C.accent}30`, borderRadius: 12, padding: 14, marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontWeight: 800, fontSize: 13, color: C.accent }}>🤖 Analizar web con IA</span>
+              <input value={urlIA} onChange={e => setUrlIA(e.target.value)} placeholder="Pega la URL de un listado de empresas (directorio)" style={{ ...inp, flex: 1, minWidth: 220, padding: '8px 10px' }} />
+              <button onClick={analizarWeb} disabled={busy} style={{ ...btn(true), background: busy ? '#c7d2fe' : C.accent }}>{busy ? 'Analizando…' : 'Analizar e importar'}</button>
+              <button onClick={buscarEmails} disabled={busy} style={btn(false)} title="Rastrea la web de los prospectos sin email">🔍 Buscar emails que faltan</button>
+              <span style={{ fontSize: 11, color: C.muted, width: '100%' }}>Gratis, sin tarjeta. La IA lee la página y saca empresas + contacto. Funciona con directorios HTML (no Google Maps).</span>
             </div>
 
             <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>

@@ -2,6 +2,7 @@
 // Busca empresas por texto+zona y devuelve nombre, teléfono, web y dirección.
 // Places NO da email → si la empresa tiene web, intentamos extraerlo (best-effort).
 // Requiere GOOGLE_PLACES_API_KEY (clave de Google Cloud con facturación + "Places API (New)").
+import { aiComplete } from '@/lib/ai-client'
 
 export interface LeadGoogle {
   place_id: string
@@ -97,4 +98,58 @@ export async function extraerEmailDeWeb(web: string): Promise<string | null> {
     } catch { /* siguiente candidata */ }
   }
   return null
+}
+
+export interface LeadWeb { empresa: string; email: string | null; telefono: string | null; web: string | null }
+
+// Descarga una URL (un listado/directorio de empresas) y usa la IA de NVIDIA para
+// extraer las empresas con sus datos de contacto. Gratis (sin Google Places).
+// OJO: solo sirve para páginas servidas como HTML (no Google Maps/JS-only).
+export async function analizarListadoWeb(url: string): Promise<{ leads: LeadWeb[]; error?: string }> {
+  let html = ''
+  try {
+    const u = new URL(url)
+    if (!/^https?:$/.test(u.protocol)) return { leads: [], error: 'URL no válida' }
+    const ctrl = new AbortController()
+    const t = setTimeout(() => ctrl.abort(), 9000)
+    const res = await fetch(u.toString(), { signal: ctrl.signal, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; IALIMP-bot/1.0)' } })
+    clearTimeout(t)
+    if (!res.ok) return { leads: [], error: `La web respondió ${res.status}` }
+    html = await res.text()
+  } catch (e: any) {
+    return { leads: [], error: 'No se pudo descargar la página: ' + String(e?.message || e).slice(0, 120) }
+  }
+
+  // Conservar mailto/tel antes de limpiar etiquetas (la IA los aprovecha).
+  const mailtos = Array.from(html.matchAll(/mailto:([^"'>\s?]+)/gi)).map(m => m[1]).slice(0, 50).join(' ')
+  const texto = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ').trim()
+    .slice(0, 12000)
+
+  const prompt = `Del siguiente contenido de una página web que lista empresas (probablemente de ` +
+    `limpieza), extrae TODAS las empresas con sus datos de contacto. Devuelve SOLO un array JSON ` +
+    `válido, sin texto adicional, con objetos {"empresa","email","telefono","web"}. Si un dato no ` +
+    `aparece, ponlo null. No inventes datos.\n\nEmails en enlaces mailto: ${mailtos || 'ninguno'}\n\n` +
+    `CONTENIDO:\n${texto}`
+  let out = ''
+  try { out = await aiComplete(prompt, 20000) } catch (e: any) { return { leads: [], error: 'IA: ' + String(e?.message || e).slice(0, 120) } }
+
+  const a = out.indexOf('['), b = out.lastIndexOf(']')
+  if (a < 0 || b < 0) return { leads: [], error: 'La IA no devolvió una lista' }
+  let arr: any[]
+  try { arr = JSON.parse(out.slice(a, b + 1)) } catch { return { leads: [], error: 'Respuesta de la IA no parseable' } }
+
+  const leads: LeadWeb[] = (Array.isArray(arr) ? arr : [])
+    .map(o => ({
+      empresa: String(o?.empresa || o?.nombre || '').trim(),
+      email: o?.email ? String(o.email).trim().toLowerCase() : null,
+      telefono: o?.telefono ? String(o.telefono).trim() : null,
+      web: o?.web ? String(o.web).trim() : null,
+    }))
+    .filter(l => l.empresa && (!l.email || /.+@.+\..+/.test(l.email)))
+  return { leads }
 }
