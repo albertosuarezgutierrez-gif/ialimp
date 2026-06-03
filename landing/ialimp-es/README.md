@@ -18,6 +18,17 @@ git; este directorio es la fuente de verdad versionada.
 - Incluye aviso legal, política de privacidad y política de cookies, enlazados en el footer.
 
 ## Desplegar a ialimp.es
+
+### Automático (GitHub Actions) — recomendado
+El workflow `.github/workflows/deploy-landing.yml` despliega esta carpeta al proyecto
+Vercel `ialimp-landing` en cada push a `main` que toque `landing/ialimp-es/` (o a mano
+desde la pestaña **Actions → Deploy landing → Run workflow**).
+
+Requisito (una vez): añadir el secreto **`VERCEL_TOKEN`** en
+GitHub → Settings → Secrets and variables → Actions. El token se crea en
+Vercel → Account Settings → Tokens. (Los IDs de equipo/proyecto ya van fijos en el workflow.)
+
+### Manual (tu terminal)
 1. Generar las fuentes (una vez, con red):
    ```bash
    bash fetch-fonts.sh
@@ -27,6 +38,3 @@ git; este directorio es la fuente de verdad versionada.
    npx vercel deploy --prod
    ```
    (Vincula este directorio al proyecto `ialimp-landing` la primera vez con `npx vercel link`.)
-
-> Alternativa: conectar el proyecto `ialimp-landing` a este repo en Vercel y fijar el
-> *Root Directory* a `landing/ialimp-es/` para que despliegue automáticamente con cada push.
