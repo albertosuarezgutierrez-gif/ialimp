@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { getLimpiadoraSession } from '@/lib/limpiadora-auth'
 
 // GET /api/l/consumo?session_id=xxx
 // Devuelve los productos disponibles + consumos ya registrados para esta sesión
 export async function GET(req: NextRequest) {
+  const sess = await getLimpiadoraSession()
+  if (!sess) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
   const { searchParams } = new URL(req.url)
   const session_id = searchParams.get('session_id')
   if (!session_id) return NextResponse.json({ error: 'session_id requerido' }, { status: 400 })
 
   try {
-    // Obtener empresa_id de la sesión
+    // La sesión debe ser de la empresa de la limpiadora.
     const sesRows = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT cs.empresa_id, cs.property_name, cs.tipo_servicio
       FROM cleaning_sessions cs
-      WHERE cs.id = ${session_id}::uuid
+      WHERE cs.id = ${session_id}::uuid AND cs.empresa_id = ${sess.empresa_id}::uuid
       LIMIT 1
     `)
     if (!sesRows.length) return NextResponse.json({ error: 'Sesión no encontrada' }, { status: 404 })
@@ -47,19 +50,22 @@ export async function GET(req: NextRequest) {
 // Guarda o actualiza el consumo de un producto en una sesión
 export async function POST(req: NextRequest) {
   try {
-    const { session_id, lineas, limpiadora_id } = await req.json()
+    const sess = await getLimpiadoraSession()
+    if (!sess) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    const { session_id, lineas } = await req.json()
     // lineas: [{ producto_id, cantidad, notas? }]
 
     if (!session_id || !Array.isArray(lineas)) {
       return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 })
     }
 
-    // Obtener empresa_id de la sesión
+    // La sesión debe ser de la empresa de la limpiadora.
     const sesRows = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT empresa_id FROM cleaning_sessions WHERE id = ${session_id}::uuid LIMIT 1
+      SELECT empresa_id FROM cleaning_sessions WHERE id = ${session_id}::uuid AND empresa_id = ${sess.empresa_id}::uuid LIMIT 1
     `)
     if (!sesRows.length) return NextResponse.json({ error: 'Sesión no encontrada' }, { status: 404 })
-    const { empresa_id } = sesRows[0]
+    const empresa_id = sess.empresa_id
+    const limpiadora_id = sess.limpiadora_id
 
     const resultados: any[] = []
 
@@ -69,10 +75,11 @@ export async function POST(req: NextRequest) {
       const qty = Number(cantidad)
       if (isNaN(qty) || qty < 0) continue
 
-      // Obtener precio actual del producto (snapshot)
+      // Obtener precio actual del producto (snapshot) — debe ser de la empresa.
       const prod = await prisma.$queryRaw<any[]>(Prisma.sql`
-        SELECT precio_unitario FROM productos_stock WHERE id = ${producto_id}::uuid LIMIT 1
+        SELECT precio_unitario FROM productos_stock WHERE id = ${producto_id}::uuid AND empresa_id = ${empresa_id}::uuid LIMIT 1
       `)
+      if (!prod.length) continue   // producto de otra empresa → ignorar
       const coste_unitario = prod[0]?.precio_unitario ?? null
 
       if (qty === 0) {
@@ -111,7 +118,7 @@ export async function POST(req: NextRequest) {
       await prisma.$executeRaw(Prisma.sql`
         UPDATE productos_stock
         SET stock_actual = GREATEST(0, stock_actual - ${qty})
-        WHERE id = ${producto_id}::uuid
+        WHERE id = ${producto_id}::uuid AND empresa_id = ${empresa_id}::uuid
       `)
     }
 
