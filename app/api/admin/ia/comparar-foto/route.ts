@@ -91,6 +91,13 @@ Responde UNICAMENTE con JSON valido, sin markdown:
 // La IA NUNCA bloquea una limpieza: solo deja aviso para que la coordinadora decida.
 export async function POST(req: NextRequest) {
   try {
+    // Ruta INTERNA (la llama upload-photo server-to-server). Exigir CRON_SECRET
+    // evita que un admin la invoque con el empresa_id de otra empresa (IDOR).
+    const secret = process.env.CRON_SECRET
+    if (!secret || req.headers.get('authorization') !== 'Bearer ' + secret) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
     const { referencia_url, foto_url, contexto, empresa_id, property_name } = await req.json()
     if (!referencia_url) return NextResponse.json({ error: 'referencia_url requerida' }, { status: 400 })
     if (!foto_url)       return NextResponse.json({ error: 'foto_url requerida' }, { status: 400 })

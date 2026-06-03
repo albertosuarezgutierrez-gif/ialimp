@@ -140,6 +140,13 @@ async function enviarPushCoordinadora(
 // Llamado automáticamente desde upload-photo tras subir la imagen
 export async function POST(req: NextRequest) {
   try {
+    // Ruta INTERNA (la llama upload-photo server-to-server). Exigir CRON_SECRET
+    // evita que un admin la invoque con el empresa_id de otra empresa (IDOR).
+    const secret = process.env.CRON_SECRET
+    if (!secret || req.headers.get('authorization') !== 'Bearer ' + secret) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
     const { foto_url, session_id, empresa_id, propiedad_id, property_name } = await req.json()
 
     if (!foto_url)    return NextResponse.json({ error: 'foto_url requerida' }, { status: 400 })
