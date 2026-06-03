@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import SuperHeader, { BrandMark } from '@/components/SuperHeader'
 
 const C = {
   primary: '#1e1b4b', accent: '#4f46e5', light: '#eef2ff',
@@ -245,8 +246,8 @@ export default function MailingPage() {
   if (authErr) return (
     <div style={{ minHeight: '100vh', background: C.bg, display: 'grid', placeItems: 'center', fontFamily: "'Nunito',sans-serif", color: C.text }}>
       <div style={{ background: C.card, borderRadius: 16, padding: 40, textAlign: 'center', maxWidth: 380, border: `1px solid ${C.border}` }}>
-        <div style={{ fontSize: 28, fontWeight: 900, color: C.accent }}>IALIMP</div>
-        <p style={{ color: C.muted, margin: '12px 0 20px' }}>Inicia sesión como superadmin para ver el mailing.</p>
+        <div style={{ display: 'flex', justifyContent: 'center' }}><BrandMark size={26} /></div>
+        <p style={{ color: C.muted, margin: '16px 0 20px' }}>Inicia sesión como superadmin para ver el mailing.</p>
         <a href="/superadmin" style={{ background: C.accent, color: '#fff', padding: '11px 22px', borderRadius: 10, fontWeight: 800, textDecoration: 'none' }}>Ir al login →</a>
       </div>
     </div>
@@ -260,12 +261,7 @@ export default function MailingPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Nunito',sans-serif", color: C.text }}>
-      <header style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: '16px 28px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-        <div style={{ fontSize: 20, fontWeight: 900, color: C.accent, letterSpacing: '-0.02em', flex: 1 }}>
-          IALIMP <span style={{ color: C.muted, fontWeight: 400, fontSize: 14 }}>/ Captación (mailing en frío)</span>
-        </div>
-        <a href="/superadmin" style={{ fontSize: 13, color: C.muted, fontWeight: 700 }}>← Superadmin</a>
-      </header>
+      <SuperHeader activo="mailing" />
 
       <div style={{ padding: 28, maxWidth: 1100, margin: '0 auto' }}>
         {msg && <div style={{ background: C.light, border: `1px solid ${C.accent}40`, color: C.accent, borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontWeight: 700, fontSize: 14 }}>{msg}</div>}
