@@ -53,28 +53,29 @@ export function enHorarioLaboral(d: Date = new Date()): boolean {
 export async function aiOpener(p: ProspectoLite): Promise<string> {
   const prompt = `Eres comercial de IALIMP, un software para gestionar empresas de limpieza ` +
     `(apartamentos turísticos y limpiezas profesionales). Escribe UNA sola frase breve ` +
-    `(máx. 22 palabras, en español, tono cercano y profesional, sin comillas ni emojis) ` +
+    `(máx. 18 palabras, en español, cercana e **intrigante**, que despierte curiosidad y ` +
+    `conecte con el día a día de coordinar limpiezas; sin comillas ni emojis) ` +
     `para abrir un email en frío dirigido a la empresa de limpieza "${p.empresa_nombre}"` +
-    `${p.ciudad ? ` de ${p.ciudad}` : ''}. No inventes datos concretos que no tienes. ` +
-    `No saludes ("Hola"), solo la frase de apertura personalizada.`
+    `${p.ciudad ? ` de ${p.ciudad}` : ''}. No vendas todavía, solo engancha. ` +
+    `No saludes ("Hola"), no inventes datos concretos; solo la frase de apertura.`
   try {
     const out = (await aiComplete(prompt)).trim().replace(/^["'\s]+|["'\s]+$/g, '')
     return out.split('\n')[0].slice(0, 240)
   } catch {
-    return `En ${p.empresa_nombre} sabéis que coordinar limpiezas a mano consume horas cada semana.`
+    return `Imagino que en ${p.empresa_nombre} cuadrar quién limpia cada piso se lleva más horas de las que te gustaría.`
   }
 }
 
 // ── Generación del cuerpo de una campaña con IA (lo edita el superadmin) ──
 export async function aiGenerarCuerpo(brief: string): Promise<string> {
-  const prompt = `Redacta el CUERPO (solo HTML simple: párrafos <p>, <ul>/<li>, <strong>; ` +
-    `sin <html>, <head>, <style> ni imágenes) de un email en frío B2B en español, dirigido a ` +
-    `empresas de limpieza de Sevilla, para presentar IALIMP (software de gestión de limpiezas: ` +
-    `programación automática, app para el equipo con fotos, control de calidad, portal del ` +
-    `propietario, informes y facturación, agentes de IA). Tono profesional y cercano, directo, ` +
-    `sin exagerar. 3-4 párrafos cortos + una lista de 3-4 beneficios. Usa los marcadores ` +
-    `{{empresa}} (nombre de la empresa) y {{opener}} (frase de apertura personalizada, ponla la ` +
-    `primera). NO incluyas botones ni enlaces (se añaden automáticamente). ${brief || ''}`
+  const prompt = `Redacta el CUERPO (solo HTML simple: párrafos <p> y <strong>; sin <html>, <head>, ` +
+    `<style>, listas ni imágenes) de un email en frío B2B en español, dirigido a empresas de ` +
+    `limpieza, para presentar IALIMP (software de gestión de limpiezas). Tiene que ser **MUY ` +
+    `CORTO (máx. 3 párrafos breves), intrigante y que invite a pedir información** (responder al ` +
+    `correo o pedir una demo, sin compromiso). Deja claro que **nos adaptamos a su forma de ` +
+    `trabajar, no al revés**. Tono cercano, sin tecnicismos ni exageraciones. Empieza por el ` +
+    `marcador {{opener}} (frase de apertura personalizada) y usa {{empresa}} para el nombre. ` +
+    `NO incluyas botones ni enlaces (se añaden automáticamente). ${brief || ''}`
   return (await aiComplete(prompt)).trim()
 }
 
