@@ -23,7 +23,7 @@ export async function GET() {
       `)
       for (const c of clientes) {
         await fetch(new URL('/api/admin/informes/generar',
-          process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app').toString(),
+          process.env.NEXTAUTH_URL || 'https://app.ialimp.es').toString(),
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-empresa-id': emp.id },

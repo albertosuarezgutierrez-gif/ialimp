@@ -3,7 +3,7 @@ import { requireEmpresaId, requireSession } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
-const APP_URL = process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app'
+const APP_URL = process.env.NEXTAUTH_URL || 'https://app.ialimp.es'
 
 // POST /api/admin/escanear
 // Receives image, saves doc as "pendiente", fires background analysis, returns immediately

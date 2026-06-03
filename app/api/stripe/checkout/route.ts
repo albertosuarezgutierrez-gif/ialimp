@@ -33,8 +33,8 @@ export async function POST(req: Request) {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { empresa_id },
-      success_url: (process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app') + '/dashboard?plan=ok',
-      cancel_url:  (process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app') + '/admin/planes',
+      success_url: (process.env.NEXTAUTH_URL || 'https://app.ialimp.es') + '/dashboard?plan=ok',
+      cancel_url:  (process.env.NEXTAUTH_URL || 'https://app.ialimp.es') + '/admin/planes',
       allow_promotion_codes: true,
     })
 

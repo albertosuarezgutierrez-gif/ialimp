@@ -45,7 +45,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const d       = datos[0]
     const hora    = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
     const fecha   = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-    const urlProp = `${process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app'}/propietario/${d.access_token}`
+    const urlProp = `${process.env.NEXTAUTH_URL || 'https://app.ialimp.es'}/propietario/${d.access_token}`
     const propNombre = sesion.property_name || d.propiedad_nombre || 'su propiedad'
 
     // 3. Enviar email

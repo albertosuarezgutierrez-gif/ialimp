@@ -76,7 +76,7 @@ export default function SetPasswordClient({ token }: { token: string }) {
           </div>
           <div className="sp-card">
             <h1 className="sp-title">Crea tu contraseña</h1>
-            <p className="sp-sub">Con ella entrarás a tu portal desde <strong>ialimp.es/propietario</strong>.</p>
+            <p className="sp-sub">Con ella entrarás a tu portal desde <strong>app.ialimp.es/propietario</strong>.</p>
 
             {error && <div className="sp-error">⚠ {error}</div>}
 
