@@ -130,6 +130,7 @@ export default function SuperadminPage() {
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 20, fontWeight: 900, color: C.accent, letterSpacing: '-0.02em' }}>IALIMP <span style={{ color: C.muted, fontWeight: 400, fontSize: 14 }}>/ Superadmin</span></div>
         </div>
+        <a href="/superadmin/mailing" style={{ background: C.accent, color: '#fff', padding: '8px 16px', borderRadius: 8, fontWeight: 800, fontSize: 13, textDecoration: 'none' }}>📣 Captación / Mailing</a>
         <div style={{ fontSize: 12, color: C.muted }}>Alberto Suarez · {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
       </header>
 
