@@ -14,7 +14,7 @@ export const MAILING_FROM = process.env.MAILING_FROM || MAIL_FROM
 export const MAILING_FROM_NAME = process.env.MAILING_FROM_NAME || 'IALIMP'
 
 // Número de WhatsApp de IALIMP para los CTAs wa.me (solo dígitos, con prefijo país).
-export const IALIMP_WHATSAPP = (process.env.IALIMP_WHATSAPP || '34600000000').replace(/\D/g, '')
+export const IALIMP_WHATSAPP = (process.env.IALIMP_WHATSAPP || '34637349990').replace(/\D/g, '')
 
 // Tamaño de lote y ritmo de envío del agente (cabe en el timeout serverless y
 // respeta los límites de Resend → goteo natural).
@@ -115,7 +115,7 @@ export function construirEmail({ asunto, cuerpoHtml, prospecto, token, landingUr
 
   const r = RGPD_RESPONSABLE
   const html = `<!DOCTYPE html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="es"><head><meta charset="utf-8">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:Arial,Helvetica,sans-serif;background:#f1f5f9;color:#1e1b4b;line-height:1.6}
