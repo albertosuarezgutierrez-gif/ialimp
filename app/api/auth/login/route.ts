@@ -2,10 +2,17 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { verifyPassword, createSessionToken } from '@/lib/auth'
+import { rateLimitHit, rateLimitClear, clientIp } from '@/lib/rate-limit-db'
 import { cookies } from 'next/headers'
 
 export async function POST(req: Request) {
   try {
+    const rlKey = 'admin:' + clientIp(req)
+    const rl = await rateLimitHit(rlKey)
+    if (!rl.allowed) {
+      return NextResponse.json({ error: `Demasiados intentos. Espera ${Math.ceil((rl.retryAfter || 900) / 60)} min.` }, { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } })
+    }
+
     const { email, password } = await req.json()
     if (!email || !password) return NextResponse.json({ error: 'Faltan datos' }, { status: 400 })
 
@@ -22,7 +29,9 @@ export async function POST(req: Request) {
     const ok = await verifyPassword(password, empresa.password_hash)
     if (!ok) return NextResponse.json({ error: 'Email o contraseña incorrectos' }, { status: 401 })
 
-    const token = await createSessionToken(empresa.id, empresa.email)
+    await rateLimitClear(rlKey)
+    const { token, jti } = await createSessionToken(empresa.id, empresa.email)
+    await prisma.$executeRaw(Prisma.sql`UPDATE empresas SET session_jti = ${jti} WHERE id = ${empresa.id}::uuid`)
     const cookieStore = await cookies()
     cookieStore.set('ialimp_session', token, {
       httpOnly: true,

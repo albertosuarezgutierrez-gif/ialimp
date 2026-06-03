@@ -43,9 +43,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: GENERIC }, { status: 401 })
     }
 
-    await prisma.$executeRaw(Prisma.sql`UPDATE clientes SET ultimo_login_at = now() WHERE id = ${c.id}::uuid`)
-
-    const token = await createPropietarioToken(c.id, c.empresa_id, c.login_email || norm)
+    const { token, jti } = await createPropietarioToken(c.id, c.empresa_id, c.login_email || norm)
+    await prisma.$executeRaw(Prisma.sql`UPDATE clientes SET ultimo_login_at = now(), session_jti = ${jti} WHERE id = ${c.id}::uuid`)
     const store = await cookies()
     store.set('ialimp_prop', token, {
       httpOnly: true,

@@ -13,25 +13,42 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash)
 }
 
+// Identificador de sesión (jti) para "sesión única": se guarda en la fila del
+// usuario y se incrusta en el JWT; al entrar en otro dispositivo se rota y el
+// token anterior deja de valer.
+export function genJti(): string {
+  const a = new Uint8Array(16)
+  crypto.getRandomValues(a)
+  return Array.from(a).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
 // ── Empresa dueña (cuenta master) ────────────────────────────────────
-export async function createSessionToken(empresa_id: string, email: string): Promise<string> {
-  return new SignJWT({ empresa_id, email, rol: 'owner' })
+// Devuelve { token, jti }: el jti hay que guardarlo en empresas.session_jti.
+export async function createSessionToken(empresa_id: string, email: string): Promise<{ token: string; jti: string }> {
+  const jti = genJti()
+  const token = await new SignJWT({ empresa_id, email, rol: 'owner' })
     .setProtectedHeader({ alg: 'HS256' })
+    .setJti(jti)
     .setIssuedAt()
     .setExpirationTime('30d')
     .sign(JWT_SECRET)
+  return { token, jti }
 }
 
 // ── Usuario empresa (creado por la dueña) ────────────────────────────
+// Devuelve { token, jti }: guardar el jti en usuarios_empresa.session_jti.
 export async function createUsuarioToken(
   usuario_id: string, empresa_id: string, email: string,
   rol: string, modulos: string[]
-): Promise<string> {
-  return new SignJWT({ usuario_id, empresa_id, email, rol, modulos, type: 'usuario' })
+): Promise<{ token: string; jti: string }> {
+  const jti = genJti()
+  const token = await new SignJWT({ usuario_id, empresa_id, email, rol, modulos, type: 'usuario' })
     .setProtectedHeader({ alg: 'HS256' })
+    .setJti(jti)
     .setIssuedAt()
     .setExpirationTime('30d')
     .sign(JWT_SECRET)
+  return { token, jti }
 }
 
 // ── Superadmin ───────────────────────────────────────────────────────
@@ -48,12 +65,15 @@ export async function createSuperadminToken(id: string, email: string): Promise<
 // panel admin nunca trata a un propietario como usuario interno.
 export async function createPropietarioToken(
   cliente_id: string, empresa_id: string, email: string
-): Promise<string> {
-  return new SignJWT({ cliente_id, empresa_id, email, rol: 'propietario', type: 'propietario' })
+): Promise<{ token: string; jti: string }> {
+  const jti = genJti()
+  const token = await new SignJWT({ cliente_id, empresa_id, email, rol: 'propietario', type: 'propietario' })
     .setProtectedHeader({ alg: 'HS256' })
+    .setJti(jti)
     .setIssuedAt()
     .setExpirationTime('30d')
     .sign(JWT_SECRET)
+  return { token, jti }
 }
 
 // Política de contraseña: ≥8, mayúscula, minúscula, número y símbolo.

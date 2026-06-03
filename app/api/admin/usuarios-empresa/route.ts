@@ -199,6 +199,20 @@ export async function PATCH(req: NextRequest) {
       WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
     `)
 
+    // Revocar accesos: al desactivar el usuario o quitarle el módulo limpiadora,
+    // cortar las sesiones de su limpiadora vinculada al instante.
+    if (activo === false || !tieneModuloLimpiadora) {
+      await prisma.$executeRaw(Prisma.sql`
+        DELETE FROM limpiadora_sessions WHERE limpiadora_id = (
+          SELECT limpiadora_id FROM usuarios_empresa WHERE id = ${id}::uuid
+        )
+      `)
+    }
+    // Al desactivar el usuario, rotar su jti → invalida su sesión del panel (JWT).
+    if (activo === false) {
+      await prisma.$executeRaw(Prisma.sql`UPDATE usuarios_empresa SET session_jti = gen_random_uuid()::text WHERE id = ${id}::uuid`)
+    }
+
     return NextResponse.json({ ok: true })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
