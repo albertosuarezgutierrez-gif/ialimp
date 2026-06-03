@@ -36,6 +36,7 @@ Next.js `^15.5` · React 19 · Prisma `^5.22` · **JWT (jose + bcryptjs, SIN Nex
 ## Multi-tenant (CRÍTICO — frontera de seguridad)
 - **Scoping por `empresa_id` en TODA query y route.** Nunca consultes ni asignes datos sin filtrar por empresa. Una fuga entre empresas es un fallo grave de RGPD.
 - Middleware: 401 a `/api/*` no público sin cookie `ialimp_session`. Eximidos: `/api/auth`, `/api/pms`, `/api/leads`, `/api/propietario`, `/api/cotizador`, `/api/catastro`, `/l`, `/api/l`.
+- **Estáticos servidos en la raíz que se necesiten ANTES del login** (login, `/superadmin` pre-sesión): si NO los excluye el `matcher` por extensión (imágenes `svg|png|…` y fuentes `woff2|woff|ttf|otf` están excluidas) deben ir en `PUBLIC_PATHS`, o el middleware los redirige a `/login` y no cargan. Caso típico: **`public/manifest.json`** (PWA) → está en `PUBLIC_PATHS` (su `.json` no lo excluye el matcher). El manifest declara nombre/iconos/colores ialimp genéricos (como el login); el icono es `app/icon.svg`.
 - Crons y llamadas servidor→servidor a `/api/admin/*` DEBEN enviar `Authorization: Bearer CRON_SECRET`, o devuelven **401 silencioso**.
 
 ## Diseño (FIJO — nunca cambiar ni mezclar paletas)
