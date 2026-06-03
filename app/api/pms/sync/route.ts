@@ -78,24 +78,24 @@ async function syncSmoobuApi(conn: any, propMap: Map<string, any>): Promise<{ sy
       const limp: string | null = null
       const num_huespedes = (b.adults || 0) + (b.children || 0)
 
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRaw(Prisma.sql`
         INSERT INTO cleaning_sessions (
           empresa_id, cliente_id, pms_connection_id,
           property_id, propiedad_id, property_name,
           session_date, external_reservation_id,
           guest_name, num_huespedes, tipo_servicio, origen, hora_checkout, limpiadora_id
         ) VALUES (
-          '${conn.empresa_id}'::uuid,
-          ${conn.cliente_id ? `'${conn.cliente_id}'::uuid` : 'NULL'},
-          '${conn.id}'::uuid,
-          '${propDef.uuid}',
-          '${propDef.uuid}'::uuid,
-          '${propDef.name}',
-          '${b.departure}'::date,
-          '${external_id}',
-          ${b['guest-name'] ? `'${String(b['guest-name']).replace(/'/g, "''")}'` : 'NULL'},
+          ${conn.empresa_id}::uuid,
+          ${conn.cliente_id || null}::uuid,
+          ${conn.id}::uuid,
+          ${propDef.uuid},
+          ${propDef.uuid}::uuid,
+          ${propDef.name},
+          ${b.departure}::date,
+          ${external_id},
+          ${b['guest-name'] || null},
           ${num_huespedes}, 'rotacion', 'smoobu_api', '11:00',
-          ${limp ? `'${limp}'::uuid` : 'NULL'}
+          ${limp}::uuid
         )
         ON CONFLICT (external_reservation_id)
         DO UPDATE SET

@@ -37,7 +37,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ token:
         alerta_dias       = COALESCE(${alerta_dias ? Number(alerta_dias) : null}, alerta_dias),
         alerta_enviada    = false,
         updated_at        = NOW()
-      WHERE id = ${id}::uuid AND cliente_id = ${cliente.id}::uuid
+      WHERE id = ${id}::uuid AND cliente_id = ${cliente.id}::uuid AND empresa_id = ${cliente.empresa_id}::uuid
     `)
     return NextResponse.json({ ok: true })
   } catch (e: any) {
@@ -54,7 +54,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ token
 
     await prisma.$executeRaw(Prisma.sql`
       UPDATE propietario_gastos SET activo = false, updated_at = NOW()
-      WHERE id = ${id}::uuid AND cliente_id = ${cliente.id}::uuid
+      WHERE id = ${id}::uuid AND cliente_id = ${cliente.id}::uuid AND empresa_id = ${cliente.empresa_id}::uuid
     `)
     return NextResponse.json({ ok: true })
   } catch (e: any) {

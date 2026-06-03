@@ -30,7 +30,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
     // ── Propiedades del cliente ──
     const propiedades = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT id::text, nombre FROM propiedades
-      WHERE cliente_id = ${cliente.id}::uuid AND activa = true ORDER BY nombre
+      WHERE cliente_id = ${cliente.id}::uuid AND empresa_id = ${cliente.empresa_id}::uuid AND activa = true ORDER BY nombre
     `)
 
     // ── Gastos del año por mes y categoría ──
@@ -51,7 +51,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
         END AS estado_vencimiento
       FROM propietario_gastos g
       LEFT JOIN propiedades p ON p.id = g.propiedad_id
-      WHERE g.cliente_id = ${cliente.id}::uuid
+      WHERE g.cliente_id = ${cliente.id}::uuid AND g.empresa_id = ${cliente.empresa_id}::uuid
         AND g.activo = true
         AND (g.anio = ${parseInt(anio)} OR g.anio IS NULL)
         AND g.es_ingreso = false
@@ -69,7 +69,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
         EXTRACT(YEAR FROM i.fecha)::int AS anio
       FROM propietario_ingresos i
       LEFT JOIN propiedades p ON p.id = i.propiedad_id
-      WHERE i.cliente_id = ${cliente.id}::uuid
+      WHERE i.cliente_id = ${cliente.id}::uuid AND i.empresa_id = ${cliente.empresa_id}::uuid
         AND EXTRACT(YEAR FROM i.fecha) = ${parseInt(anio)}
         ${propFiltroI}
       ORDER BY i.fecha DESC
@@ -85,7 +85,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
              f.iva_importe::float, f.total::float,
              f.dest_razon_social, f.dest_nif
       FROM facturas_clientes f
-      WHERE f.cliente_id = ${cliente.id}::uuid
+      WHERE f.cliente_id = ${cliente.id}::uuid AND f.empresa_id = ${cliente.empresa_id}::uuid
         AND f.estado <> 'borrador'
         AND EXTRACT(YEAR FROM f.periodo_desde) = ${parseInt(anio)}
       ORDER BY f.periodo_desde DESC, f.numero_factura DESC
@@ -100,7 +100,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
       FROM factura_clientes_lineas fl
       JOIN facturas_clientes f ON f.id = fl.factura_id
       LEFT JOIN propiedades p ON p.id = fl.propiedad_id
-      WHERE f.cliente_id = ${cliente.id}::uuid
+      WHERE f.cliente_id = ${cliente.id}::uuid AND f.empresa_id = ${cliente.empresa_id}::uuid
         AND f.estado <> 'borrador'
         AND EXTRACT(YEAR FROM f.periodo_desde) = ${parseInt(anio)}
         ${propiedad_id ? Prisma.sql`AND fl.propiedad_id = ${propiedad_id}::uuid` : Prisma.sql``}
