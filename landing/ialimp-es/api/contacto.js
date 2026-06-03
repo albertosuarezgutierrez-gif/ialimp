@@ -56,6 +56,7 @@ module.exports = async function handler(req, res) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     // Sin credenciales no podemos enviar; el formulario muestra el fallback.
+    console.error('contacto: falta la variable de entorno RESEND_API_KEY');
     return res.status(502).json({ ok: false, error: 'Envío no disponible.' });
   }
 
@@ -93,10 +94,13 @@ module.exports = async function handler(req, res) {
       }),
     });
     if (!r.ok) {
+      const detalle = await r.text().catch(() => '');
+      console.error('contacto: Resend rechazó el envío', r.status, detalle);
       return res.status(502).json({ ok: false, error: 'No se pudo enviar.' });
     }
     return res.status(200).json({ ok: true });
-  } catch {
+  } catch (e) {
+    console.error('contacto: excepción al llamar a Resend', e && e.message);
     return res.status(502).json({ ok: false, error: 'No se pudo enviar.' });
   }
 };
