@@ -441,7 +441,7 @@ function TabDisponibilidad() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <span style={{ fontWeight: 700, fontSize: 14 }}>Ausencias programadas</span>
           <button onClick={() => setShowAusForm(v => !v)}
-            style={{ background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            style={{ background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
             + Añadir
           </button>
         </div>
@@ -465,7 +465,7 @@ function TabDisponibilidad() {
             <input placeholder="Notas opcionales" value={newAus.notas} onChange={e => setNewAus(p => ({ ...p, notas: e.target.value }))}
               style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: 8, padding: '7px 10px', fontSize: 12, marginBottom: 8, boxSizing: 'border-box' }} />
             <button onClick={addAusencia}
-              style={{ background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              style={{ background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
               Guardar ausencia
             </button>
           </div>
@@ -540,7 +540,7 @@ function TabProveedores() {
         {['proveedores', 'productos'].map(v => (
           <button key={v} onClick={() => setView(v as any)}
             style={{ padding: '7px 18px', borderRadius: 9, border: '1px solid #e5e7eb', fontWeight: 600, fontSize: 13, cursor: 'pointer',
-              background: view === v ? '#4f46e5' : '#fff', color: view === v ? '#fff' : '#374151' }}>
+              background: view === v ? 'var(--brand-primary)' : '#fff', color: view === v ? '#fff' : '#374151' }}>
             {v === 'proveedores' ? `🏢 Proveedores (${proveedores.length})` : `📦 Catálogo (${productos.length})`}
           </button>
         ))}
@@ -550,7 +550,7 @@ function TabProveedores() {
         <div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
             <button onClick={() => setShowForm(v => !v)}
-              style={{ background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              style={{ background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
               + Nuevo proveedor
             </button>
           </div>
@@ -569,7 +569,7 @@ function TabProveedores() {
               <textarea placeholder="Notas" value={form.notas || ''} onChange={e => setForm((p: any) => ({ ...p, notas: e.target.value }))} rows={2}
                 style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: 8, padding: '7px 10px', fontSize: 12, resize: 'none', marginBottom: 8, boxSizing: 'border-box' }} />
               <button onClick={saveProveedor}
-                style={{ background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                style={{ background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                 Guardar
               </button>
             </div>
@@ -581,7 +581,7 @@ function TabProveedores() {
                   <div style={{ fontWeight: 700, fontSize: 14 }}>{p.nombre}</div>
                   {p.empresa && <div style={{ fontSize: 12, color: '#6b7280' }}>{p.empresa}</div>}
                   <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-                    <Badge label={p.categoria} color="#4f46e5" bg="#eef2ff" />
+                    <Badge label={p.categoria} color="var(--brand-primary)" bg="var(--brand-light)" />
                     {p.num_productos > 0 && <Badge label={`${p.num_productos} productos`} color="#2563eb" bg="#eff6ff" />}
                   </div>
                 </div>
@@ -602,7 +602,7 @@ function TabProveedores() {
         <div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
             <button onClick={() => setShowFormProd(v => !v)}
-              style={{ background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              style={{ background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
               + Nuevo producto
             </button>
           </div>
@@ -625,7 +625,7 @@ function TabProveedores() {
                 ))}
               </div>
               <button onClick={saveProducto}
-                style={{ background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                style={{ background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                 Guardar
               </button>
             </div>
@@ -642,7 +642,7 @@ function TabProveedores() {
                     <div style={{ fontWeight: 600, fontSize: 13 }}>{p.nombre}</div>
                     <div style={{ fontSize: 11, color: '#9ca3af' }}>{p.proveedor_nombre || 'Sin proveedor'} · {p.unidad}{p.referencia ? ` · Ref: ${p.referencia}` : ''}</div>
                   </div>
-                  {p.precio_unitario && <div style={{ fontWeight: 700, fontSize: 14, color: '#4f46e5' }}>{Number(p.precio_unitario).toFixed(2)} €</div>}
+                  {p.precio_unitario && <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--brand-primary)' }}>{Number(p.precio_unitario).toFixed(2)} €</div>}
                 </div>
               ))}
             </div>
@@ -707,7 +707,7 @@ function TabLenceria() {
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
         <button onClick={() => setSelProp('all')}
-          style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: selProp === 'all' ? '#4f46e5' : '#fff', color: selProp === 'all' ? '#fff' : '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+          style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: selProp === 'all' ? 'var(--brand-primary)' : '#fff', color: selProp === 'all' ? '#fff' : '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
           Todos
         </button>
         {PROPS.map(p => (
@@ -719,7 +719,7 @@ function TabLenceria() {
           </button>
         ))}
         <button onClick={() => setShowForm(v => !v)}
-          style={{ marginLeft: 'auto', padding: '6px 14px', borderRadius: 8, background: '#4f46e5', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+          style={{ marginLeft: 'auto', padding: '6px 14px', borderRadius: 8, background: 'var(--brand-primary)', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
           + Añadir
         </button>
       </div>
@@ -745,7 +745,7 @@ function TabLenceria() {
               style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '7px 10px', fontSize: 12 }} />
           </div>
           <button onClick={saveItem}
-            style={{ background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            style={{ background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
             Guardar
           </button>
         </div>
@@ -830,7 +830,7 @@ function TabLimpiadoras() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
         <button onClick={() => setShowForm(v => !v)}
-          style={{ background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+          style={{ background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
           + Nueva limpiadora
         </button>
       </div>
@@ -863,7 +863,7 @@ function TabLimpiadoras() {
             </div>
           </div>
           <button onClick={saveForm}
-            style={{ background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+            style={{ background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
             Crear limpiadora
           </button>
         </div>
@@ -932,7 +932,7 @@ function TabStock() {
       )}
       <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
         <button onClick={() => setSelProp('all')}
-          style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #e5e7eb', background: selProp === 'all' ? '#4f46e5' : '#fff', color: selProp === 'all' ? '#fff' : '#374151', fontSize: 12, cursor: 'pointer' }}>
+          style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #e5e7eb', background: selProp === 'all' ? 'var(--brand-primary)' : '#fff', color: selProp === 'all' ? '#fff' : '#374151', fontSize: 12, cursor: 'pointer' }}>
           Todos
         </button>
         {PROPS.map(p => (
@@ -983,7 +983,7 @@ export default function AdminLimpiadoras() {
   return (
     <div style={{ fontFamily: "'Nunito', sans-serif", minHeight: '100vh', background: '#f1f5f9' }}>
       {/* Header */}
-      <header style={{ background: '#4f46e5', padding: '0 24px' }}>
+      <header style={{ background: 'var(--brand-primary)', padding: '0 24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 0 0' }}>
           <a href="/dashboard" style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, textDecoration: 'none' }}>← Dashboard</a>
           <LogoIalimp size={13} style={{ opacity: 0.8 }} />

@@ -2,7 +2,7 @@
 'use client';
 import { useRef, useState } from 'react';
 
-const C = { indigo:'#4f46e5', soft:'#eef2ff', text:'#1e1b4b', bg:'#f1f5f9', card:'#fff', border:'#e2e8f0', muted:'#64748b' };
+const C = { indigo: 'var(--brand-primary)', soft: 'var(--brand-light)', text:'#1e1b4b', bg:'#f1f5f9', card:'#fff', border:'#e2e8f0', muted:'#64748b' };
 const FONT = 'Nunito, system-ui, sans-serif';
 type Msg = { de:'tu'|'ia'; texto:string };
 

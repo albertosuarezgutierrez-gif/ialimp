@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 const C = {
-  indigo: '#4f46e5', brand: '#6366f1', soft: '#eef2ff', text: '#1e1b4b',
+  indigo: 'var(--brand-primary)', brand: 'var(--brand-secondary)', soft: 'var(--brand-light)', text: '#1e1b4b',
   bg: '#f1f5f9', card: '#ffffff', border: '#e2e8f0',
   ok: '#16a34a', warn: '#f59e0b', bad: '#dc2626', muted: '#64748b',
 };

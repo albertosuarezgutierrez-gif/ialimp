@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { validarNifCif, validarIban } from '@/lib/fiscal'
 
 const C = {
-  primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff',
+  primary: 'var(--brand-primary)', brand: 'var(--brand-secondary)', light: 'var(--brand-light)',
   text: '#1e293b', muted: '#64748b', border: '#e2e8f0', bg: '#f8fafc',
   danger: '#dc2626',
 }

@@ -138,19 +138,19 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all"
                 style={{
-                  background: paso === p.n ? '#4f46e5' : p.done ? '#6366f1' : '#e5e7eb',
+                  background: paso === p.n ? 'var(--brand-primary)' : p.done ? 'var(--brand-secondary)' : '#e5e7eb',
                   color:      paso === p.n || p.done ? 'white' : '#9ca3af',
                 }}>
                 {p.done && paso !== p.n ? '✓' : p.n}
               </div>
               <span className="text-xs mt-0.5 font-medium"
-                style={{ color: paso === p.n ? '#4f46e5' : p.done ? '#6366f1' : '#9ca3af' }}>
+                style={{ color: paso === p.n ? 'var(--brand-primary)' : p.done ? 'var(--brand-secondary)' : '#9ca3af' }}>
                 {p.label}
               </span>
             </div>
             {i < pasos.length - 1 && (
               <div className="h-0.5 flex-1 mb-4 mx-1 transition-all"
-                style={{ background: p.done ? '#6366f1' : '#e5e7eb' }} />
+                style={{ background: p.done ? 'var(--brand-secondary)' : '#e5e7eb' }} />
             )}
           </div>
         ))}
@@ -197,11 +197,11 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
                       onClick={() => setClienteId(c.id)}
                       className="w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition"
                       style={{
-                        borderColor: clienteId === c.id ? '#4f46e5' : '#e5e7eb',
-                        background:  clienteId === c.id ? '#eef2ff' : 'white',
+                        borderColor: clienteId === c.id ? 'var(--brand-primary)' : '#e5e7eb',
+                        background:  clienteId === c.id ? 'var(--brand-light)' : 'white',
                       }}>
                       <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                        style={{ background: '#eef2ff', color: '#4f46e5' }}>
+                        style={{ background: 'var(--brand-light)', color: 'var(--brand-primary)' }}>
                         {c.nombre.charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -231,7 +231,7 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
                   disabled={!clienteId}
                   onClick={() => setPaso(2)}
                   className="flex-1 py-3 rounded-xl text-sm font-bold transition disabled:opacity-40"
-                  style={{ background: '#4f46e5', color: 'white' }}>
+                  style={{ background: 'var(--brand-primary)', color: 'white' }}>
                   Siguiente →
                 </button>
               </div>
@@ -258,7 +258,7 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
                     <p className="text-sm text-gray-400">Este cliente no tiene propiedades creadas</p>
                     <a href="/admin/clientes"
                       className="inline-block text-sm font-semibold px-4 py-2 rounded-xl transition"
-                      style={{ background: '#4f46e5', color: 'white' }}>
+                      style={{ background: 'var(--brand-primary)', color: 'white' }}>
                       + Crear propiedad
                     </a>
                   </div>
@@ -269,11 +269,11 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
                         onClick={() => setPropiedadId(p.id)}
                         className="w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition"
                         style={{
-                          borderColor: propiedadId === p.id ? '#4f46e5' : '#e5e7eb',
-                          background:  propiedadId === p.id ? '#eef2ff' : 'white',
+                          borderColor: propiedadId === p.id ? 'var(--brand-primary)' : '#e5e7eb',
+                          background:  propiedadId === p.id ? 'var(--brand-light)' : 'white',
                         }}>
                         <div className="w-9 h-9 rounded-full flex items-center justify-center text-base flex-shrink-0"
-                          style={{ background: '#eef2ff' }}>
+                          style={{ background: 'var(--brand-light)' }}>
                           🏠
                         </div>
                         <div>
@@ -298,7 +298,7 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
                   disabled={!propiedadId}
                   onClick={() => setPaso(3)}
                   className="flex-1 py-3 rounded-xl text-sm font-bold transition disabled:opacity-40"
-                  style={{ background: '#4f46e5', color: 'white' }}>
+                  style={{ background: 'var(--brand-primary)', color: 'white' }}>
                   Siguiente →
                 </button>
               </div>
@@ -329,12 +329,12 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
                       onClick={() => f('tipo_servicio', t.id)}
                       className="p-2.5 rounded-xl border-2 text-center transition"
                       style={{
-                        borderColor: form.tipo_servicio === t.id ? '#6366f1' : '#e5e7eb',
-                        background:  form.tipo_servicio === t.id ? '#eef2ff' : 'white',
+                        borderColor: form.tipo_servicio === t.id ? 'var(--brand-secondary)' : '#e5e7eb',
+                        background:  form.tipo_servicio === t.id ? 'var(--brand-light)' : 'white',
                       }}>
                       <div className="text-xl mb-0.5">{t.icon}</div>
                       <div className="text-xs font-semibold"
-                        style={{ color: form.tipo_servicio === t.id ? '#6366f1' : '#374151' }}>
+                        style={{ color: form.tipo_servicio === t.id ? 'var(--brand-secondary)' : '#374151' }}>
                         {t.label}
                       </div>
                       <div className="text-xs text-gray-400 leading-tight">{t.desc}</div>
@@ -433,7 +433,7 @@ export default function NuevaLimpiezaModal({ clientes, limpiadoras, onCreada, on
                   disabled={loading || !form.session_date}
                   onClick={submit}
                   className="flex-1 py-3 rounded-xl text-sm font-bold transition disabled:opacity-50"
-                  style={{ background: '#4f46e5', color: 'white' }}>
+                  style={{ background: 'var(--brand-primary)', color: 'white' }}>
                   {loading ? 'Guardando…' : '✓ Crear limpieza'}
                 </button>
               </div>
