@@ -7,6 +7,60 @@
 <meta name="description" content="IALIMP — el sistema operativo de tu empresa de limpieza. Programación automática, app para tu equipo, control de calidad, portal del propietario, informes y facturación.">
 <meta name="theme-color" content="#4f46e5">
 <meta name="color-scheme" content="light">
+<link rel="canonical" href="https://ialimp.es/">
+<meta name="robots" content="index,follow">
+<meta name="author" content="IALIMP">
+
+<!-- Favicon (SVG, marca IALIMP). Sin assets binarios. -->
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/favicon.svg">
+
+<!-- Open Graph (cómo se ve el enlace al compartir en WhatsApp, redes, etc.) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="IALIMP">
+<meta property="og:locale" content="es_ES">
+<meta property="og:url" content="https://ialimp.es/">
+<meta property="og:title" content="IALIMP · El sistema operativo de tu empresa de limpieza">
+<meta property="og:description" content="Programación automática, app para tu equipo, control de calidad con IA, portal del propietario, informes y facturación. Menos caos. Más control.">
+<meta property="og:image" content="https://ialimp.es/og-image.svg">
+<meta property="og:image:type" content="image/svg+xml">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="IALIMP — el sistema operativo de tu empresa de limpieza">
+
+<!-- Twitter / X Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="IALIMP · El sistema operativo de tu empresa de limpieza">
+<meta name="twitter:description" content="Menos caos. Más control. Programación automática, app para tu equipo, control de calidad con IA, portal del propietario, informes y facturación.">
+<meta name="twitter:image" content="https://ialimp.es/og-image.svg">
+
+<!-- Datos estructurados (SEO) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://ialimp.es/#org",
+      "name": "IALIMP",
+      "url": "https://ialimp.es/",
+      "logo": "https://ialimp.es/favicon.svg",
+      "email": "hola@ialimp.es",
+      "description": "El sistema operativo de tu empresa de limpieza de pisos turísticos."
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "IALIMP",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "url": "https://ialimp.es/",
+      "publisher": { "@id": "https://ialimp.es/#org" },
+      "description": "Software de gestión de limpiezas para empresas de apartamentos turísticos: programación automática, app para el equipo, control de calidad con IA, portal del propietario, informes y facturación.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR", "description": "Solicita una demo" }
+    }
+  ]
+}
+</script>
 <style>
   /* Fuente auto-alojada (Nunito). Sin Google Fonts: ningún dato del visitante
      sale a terceros. Los .woff2 se generan con fetch-fonts.sh antes de desplegar. */
@@ -189,6 +243,26 @@
   .form-msg.ok{display:block;background:#f0fdf4;color:var(--ok);border:1px solid #bbf7d0}
   .form-msg.err{display:block;background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
 
+  /* Cómo funciona — pasos numerados */
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:18px}
+  @media(max-width:880px){.steps{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:520px){.steps{grid-template-columns:1fr}}
+  .step{position:relative;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:28px 22px;box-shadow:var(--shadow-sm);transition:transform .18s ease,box-shadow .18s ease}
+  .step:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+  .step .num{width:42px;height:42px;border-radius:12px;background:var(--soft);color:var(--primary);font-family:'Nunito';font-weight:900;font-size:18px;display:grid;place-items:center;margin-bottom:14px}
+  .step h3{font-family:'Nunito';font-weight:800;font-size:17px;letter-spacing:-.01em;margin-bottom:6px}
+  .step p{font-size:13.5px;color:var(--muted);font-weight:500;line-height:1.45}
+
+  /* FAQ — acordeón accesible (details/summary, sin JS) */
+  .faq{max-width:760px;margin:18px auto 0}
+  .faq details{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:12px;box-shadow:var(--shadow-sm);overflow:hidden}
+  .faq summary{cursor:pointer;list-style:none;padding:18px 22px;font-family:'Nunito';font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+";font-size:24px;color:var(--primary);font-weight:700;line-height:1;transition:transform .2s ease}
+  .faq details[open] summary::after{transform:rotate(45deg)}
+  .faq .a{padding:0 22px 20px;color:var(--muted);font-weight:500;font-size:14.5px;line-height:1.55}
+  .faq .a a{color:var(--primary);font-weight:600}
+
   footer{padding:44px 0 36px;border-top:1px solid var(--line);margin-top:36px}
   .foot{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
   .foot .muted{font-size:13px;color:var(--muted);margin-top:8px}
@@ -305,6 +379,22 @@
   </div>
 </section>
 
+<section class="block" id="como-funciona">
+  <div class="wrap center">
+    <span class="eyebrow">Cómo funciona</span>
+    <h2 class="sec">De la salida del huésped a la <span class="grad">factura</span>.</h2>
+    <p class="lead">Cuatro pasos. IALIMP conecta el calendario de reservas con tu equipo y tus propietarios.</p>
+  </div>
+  <div class="wrap">
+    <div class="steps">
+      <div class="step reveal"><div class="num">1</div><h3>Llega la salida</h3><p>Sincroniza el calendario del piso (Smoobu / iCal) y se crea la sesión de limpieza sola.</p></div>
+      <div class="step reveal"><div class="num">2</div><h3>Se asigna</h3><p>El sistema reparte cada limpieza a la persona idónea según turno, carga y cercanía.</p></div>
+      <div class="step reveal"><div class="num">3</div><h3>Se limpia</h3><p>La limpiadora abre su app, sigue el checklist y sube las fotos. Tú lo ves en directo.</p></div>
+      <div class="step reveal"><div class="num">4</div><h3>Se factura</h3><p>Informe al propietario y factura listos. Las nóminas del equipo, calculadas solas.</p></div>
+    </div>
+  </div>
+</section>
+
 <section class="block">
   <div class="wrap">
     <div class="stats">
@@ -330,6 +420,41 @@
           <span class="chip">💬 Briefing diario</span>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="faq">
+  <div class="wrap center">
+    <span class="eyebrow">Preguntas frecuentes</span>
+    <h2 class="sec">Lo que sueles <span class="grad">querer saber</span>.</h2>
+  </div>
+  <div class="wrap">
+    <div class="faq reveal">
+      <details>
+        <summary>¿Sirve si gestiono pisos de varios propietarios?</summary>
+        <div class="a">Sí. IALIMP está pensado justo para eso: cada propietario tiene su portal con el estado de su piso, sus documentos y sus facturas, y tú lo gestionas todo desde un único panel.</div>
+      </details>
+      <details>
+        <summary>¿La limpiadora tiene que instalar algo?</summary>
+        <div class="a">No. Entra desde el móvil con un enlace o un PIN, sin instalar ninguna app ni crear cuentas. Ve su día, hace el checklist y sube las fotos.</div>
+      </details>
+      <details>
+        <summary>¿Puedo ponerle mi marca?</summary>
+        <div class="a">Sí. El portal del propietario y la app del equipo se muestran con el nombre, el logo y los colores de tu empresa.</div>
+      </details>
+      <details>
+        <summary>¿Se conecta con mi calendario de reservas?</summary>
+        <div class="a">Sí. Se sincroniza con Smoobu y con cualquier calendario iCal (Airbnb, Booking, etc.), así las limpiezas se crean solas con cada salida.</div>
+      </details>
+      <details>
+        <summary>¿Cumple con la protección de datos (RGPD)?</summary>
+        <div class="a">Sí. Tratamos los datos conforme al RGPD y la LSSI. Puedes consultar el <a href="/aviso-legal.html">aviso legal</a>, la <a href="/privacidad.html">política de privacidad</a> y la <a href="/cookies.html">política de cookies</a>.</div>
+      </details>
+      <details>
+        <summary>¿Cómo empiezo?</summary>
+        <div class="a">Rellena el formulario de aquí abajo y te contactamos para montarte tu cuenta y enseñarte IALIMP con tus pisos.</div>
+      </details>
     </div>
   </div>
 </section>
