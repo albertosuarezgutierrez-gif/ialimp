@@ -210,7 +210,7 @@ export default function DashboardClient({
       }}>
         <div style={{
           fontFamily:"'Nunito',sans-serif", fontSize: collapsed ? 18 : 20,
-          fontWeight:800, color:'#4f46e5', letterSpacing:'-.01em',
+          fontWeight:800, color:'var(--brand-primary)', letterSpacing:'-.01em',
         }}>
           {collapsed ? 'ia' : 'ialimp'}
         </div>
@@ -219,7 +219,7 @@ export default function DashboardClient({
             <div style={{fontSize:10,color:'#94a3b8',letterSpacing:'.1em',textTransform:'uppercase',marginTop:2}}>
               Gestión limpieza
             </div>
-            <div style={{fontSize:11,color:'#6366f1',fontWeight:600,marginTop:6}}>
+            <div style={{fontSize:11,color:'var(--brand-secondary)',fontWeight:600,marginTop:6}}>
               {empresa.nombre}
             </div>
           </>
@@ -243,11 +243,11 @@ export default function DashboardClient({
             fontSize:13, fontWeight:500, textDecoration:'none',
             marginBottom:1, transition:'all .15s',
           }}
-          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='#eef2ff';(e.currentTarget as HTMLElement).style.color='#4f46e5'}}
+          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='var(--brand-light)';(e.currentTarget as HTMLElement).style.color='var(--brand-primary)'}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='transparent';(e.currentTarget as HTMLElement).style.color='#475569'}}>
             <div style={{
               width:28,height:28,borderRadius:8,
-              background:'#eef2ff',
+              background:'var(--brand-light)',
               display:'flex',alignItems:'center',justifyContent:'center',
               fontSize:14,flexShrink:0,
             }}>
@@ -269,7 +269,7 @@ export default function DashboardClient({
         {!collapsed && (
           <div style={{display:'flex',alignItems:'center',gap:8}}>
             <div style={{
-              width:30,height:30,borderRadius:9,background:'#4f46e5',
+              width:30,height:30,borderRadius:9,background:'var(--brand-primary)',
               display:'flex',alignItems:'center',justifyContent:'center',
               fontSize:13,fontWeight:800,color:'white',flexShrink:0,
             }}>
@@ -413,7 +413,7 @@ export default function DashboardClient({
         }
 
         .add-btn {
-          background: #4f46e5; color: white; border: none;
+          background: var(--brand-primary); color: white; border: none;
           border-radius: 10px; padding: 8px 14px;
           font-family: inherit; font-size: 13px; font-weight: 700;
           cursor: pointer; white-space: nowrap;
@@ -421,7 +421,7 @@ export default function DashboardClient({
           display: flex; align-items: center; gap: 6px;
           transition: all .15s;
         }
-        .add-btn:hover { background: #3730a3; transform: translateY(-1px); }
+        .add-btn:hover { background: var(--brand-primary); transform: translateY(-1px); }
         .add-btn-label { display: none; }
         @media (min-width: 480px) { .add-btn-label { display: inline; } }
 
@@ -483,9 +483,9 @@ export default function DashboardClient({
           color: #94a3b8; cursor: pointer; transition: all .15s;
           display: flex; align-items: center; gap: 6px;
         }
-        .tab-btn.active { border-bottom-color: #4f46e5; color: #4f46e5; font-weight: 700; }
+        .tab-btn.active { border-bottom-color: var(--brand-primary); color: var(--brand-primary); font-weight: 700; }
         .tab-count {
-          background: #eef2ff; color: #4f46e5;
+          background: var(--brand-light); color: var(--brand-primary);
           font-size: 10px; font-weight: 800;
           padding: 1px 6px; border-radius: 20px;
         }
@@ -508,7 +508,7 @@ export default function DashboardClient({
         .ses-icon {
           width: 42px; height: 42px; border-radius: 11px;
           flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px;
-          background: #eef2ff;
+          background: var(--brand-light);
         }
         .ses-title { font-size: clamp(13px, 2.5vw, 15px); font-weight: 700; color: #0f172a; margin-bottom: 2px; }
         .ses-sub   { font-size: 11px; color: #64748b; margin-bottom: 6px; }
@@ -545,7 +545,7 @@ export default function DashboardClient({
           border-radius: 10px; padding: 11px 12px; font-size: 14px; font-weight: 600;
           color: #1e293b; cursor: pointer; font-family: inherit;
         }
-        .sheet-item:hover { background: #eef2ff; }
+        .sheet-item:hover { background: var(--brand-light); }
         .sheet-item:disabled { opacity: .6; cursor: default; }
         .sheet-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
         .sheet-check { color: #16a34a; font-weight: 800; }
@@ -593,7 +593,7 @@ export default function DashboardClient({
           cursor: pointer; color: #94a3b8; font-family: inherit; transition: color .15s;
           min-width: 48px;
         }
-        .bottom-nav-item.active { color: #4f46e5; }
+        .bottom-nav-item.active { color: var(--brand-primary); }
         .bottom-nav-item span:first-child { font-size: 20px; }
         .bottom-nav-item span:last-child  { font-size: 9px; font-weight: 700; letter-spacing: .02em; }
 
@@ -639,7 +639,7 @@ export default function DashboardClient({
                   fontSize:22, fontWeight:800, letterSpacing:'-.02em',
                   color:'#1e1b4b', lineHeight:1,
                 }}>
-                  ia<span style={{ color:'#4f46e5' }}>limp</span>
+                  ia<span style={{ color:'var(--brand-primary)' }}>limp</span>
                 </div>
                 <div style={{ width:1, height:16, background:'#e2e8f0' }} />
                 <div style={{ fontSize:11, color:'#94a3b8', fontWeight:500 }}>{empresa.nombre}</div>
@@ -658,7 +658,7 @@ export default function DashboardClient({
 
             {/* Widget Briefing IA */}
             <div style={{
-              background: briefing ? '#eef2ff' : 'white',
+              background: briefing ? 'var(--brand-light)' : 'white',
               border: '1px solid #c7d2fe',
               borderRadius: 14,
               padding: '14px 18px',
@@ -672,7 +672,7 @@ export default function DashboardClient({
               <div style={{ flex: 1, minWidth: 0 }}>
                 {briefing ? (
                   <>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#4f46e5', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand-primary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                       Briefing del día ✨
                     </div>
                     <p style={{ fontSize: 13, color: '#1e1b4b', lineHeight: 1.6, margin: 0 }}>{briefing}</p>
@@ -705,7 +705,7 @@ export default function DashboardClient({
                       style={{
                         marginLeft: 'auto', flexShrink: 0,
                         padding: '7px 14px', borderRadius: 8, border: 'none',
-                        background: loadingBriefing ? '#e2e8f0' : '#4f46e5',
+                        background: loadingBriefing ? '#e2e8f0' : 'var(--brand-primary)',
                         color: loadingBriefing ? '#94a3b8' : 'white',
                         fontSize: 12, fontWeight: 700,
                         cursor: loadingBriefing ? 'not-allowed' : 'pointer'
@@ -718,7 +718,7 @@ export default function DashboardClient({
                   <button
                     onClick={cargarBriefing}
                     disabled={loadingBriefing}
-                    style={{ marginTop: 8, background: 'none', border: 'none', color: '#6366f1', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+                    style={{ marginTop: 8, background: 'none', border: 'none', color: 'var(--brand-secondary)', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
                     {loadingBriefing ? '⏳ Actualizando...' : '🔄 Actualizar'}
                   </button>
                 )}
@@ -729,7 +729,7 @@ export default function DashboardClient({
             <div className="kpi-grid">
               {[
                 { key:'pendiente' as const, count:pendientes.length,  color:'#f59e0b', label:'Pendientes' },
-                { key:'en_curso'  as const, count:enCurso.length,     color:'#4f46e5', label:'En curso'   },
+                { key:'en_curso'  as const, count:enCurso.length,     color:'var(--brand-primary)', label:'En curso'   },
                 { key:'hecha'     as const, count:completadas.length, color:'#10b981', label:'Hechas'     },
               ].map(({ key, count, color, label }) => {
                 const active = filtroEstado === key
@@ -762,7 +762,7 @@ export default function DashboardClient({
 
             {/* Asignación automática */}
             <div style={{
-              background:'linear-gradient(135deg,#4f46e5 0%,#6366f1 100%)',
+              background:'linear-gradient(135deg,var(--brand-primary) 0%,var(--brand-secondary) 100%)',
               borderRadius:16, padding:'15px 16px', marginBottom:14,
               boxShadow:'0 8px 22px -6px rgba(79,70,229,.5)', position:'relative', overflow:'hidden',
             }}>
@@ -778,7 +778,7 @@ export default function DashboardClient({
                 disabled={asignando}
                 style={{
                   marginTop:11, width:'100%', background: asignando ? '#e0e7ff' : '#fff',
-                  color:'#4f46e5', fontFamily:"'Nunito',sans-serif", fontSize:14, fontWeight:800,
+                  color:'var(--brand-primary)', fontFamily:"'Nunito',sans-serif", fontSize:14, fontWeight:800,
                   border:'none', borderRadius:11, padding:'11px 0',
                   cursor: asignando ? 'default' : 'pointer',
                   boxShadow:'0 2px 6px rgba(0,0,0,.12)', position:'relative', zIndex:1,
@@ -797,7 +797,7 @@ export default function DashboardClient({
                     )}
                     {resAsign.detalle.length > 0 && (
                       <button onClick={() => setVerDetAsign(v => !v)}
-                        style={{ marginLeft:'auto', background:'none', border:'none', color:'#4f46e5', fontFamily:"'Nunito',sans-serif", fontSize:12, fontWeight:700, textDecoration:'underline', cursor:'pointer' }}>
+                        style={{ marginLeft:'auto', background:'none', border:'none', color:'var(--brand-primary)', fontFamily:"'Nunito',sans-serif", fontSize:12, fontWeight:700, textDecoration:'underline', cursor:'pointer' }}>
                         {verDetAsign ? 'Ocultar' : 'Ver detalle'}
                       </button>
                     )}
@@ -808,7 +808,7 @@ export default function DashboardClient({
                         <li key={d.sesion_id} style={{ background:'#f8fafc', borderRadius:8, padding:'7px 9px', fontSize:12 }}>
                           <span style={{ fontWeight:800, color:'#1e1b4b' }}>{d.limpiadora}</span>
                           <span style={{ color:'#1e1b4b' }}> → {d.propiedad} </span>
-                          <span style={{ color:'#6366f1' }}>· {d.fecha}</span>
+                          <span style={{ color:'var(--brand-secondary)' }}>· {d.fecha}</span>
                           {d.justificacion && <div style={{ color:'#94a3b8', fontSize:11 }}>{d.justificacion}</div>}
                         </li>
                       ))}
@@ -845,13 +845,13 @@ export default function DashboardClient({
               <>
                 {filtroEstado !== 'all' && (
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                    background:'#eef2ff', borderRadius:10, padding:'8px 12px', marginBottom:8 }}>
-                    <span style={{ fontSize:12, color:'#4f46e5', fontWeight:600 }}>
+                    background:'var(--brand-light)', borderRadius:10, padding:'8px 12px', marginBottom:8 }}>
+                    <span style={{ fontSize:12, color:'var(--brand-primary)', fontWeight:600 }}>
                       Mostrando: {filtroEstado === 'pendiente' ? '⏳ Pendientes' : filtroEstado === 'en_curso' ? '⟳ En curso' : '✓ Hechas'}
                       {' '}({sesionesFiltradas.length})
                     </span>
                     <button onClick={() => setFiltroEstado('all')}
-                      style={{ fontSize:11, color:'#6366f1', background:'none', border:'none', cursor:'pointer', fontWeight:700 }}>
+                      style={{ fontSize:11, color:'var(--brand-secondary)', background:'none', border:'none', cursor:'pointer', fontWeight:700 }}>
                       Ver todas ✕
                     </button>
                   </div>
@@ -861,7 +861,7 @@ export default function DashboardClient({
                     <div style={{ fontSize:40, marginBottom:12 }}>🧹</div>
                     <div style={{ fontWeight:700, color:'#334155', marginBottom:4 }}>Sin limpiezas para este día</div>
                     <button onClick={() => setShowNueva(true)}
-                      style={{ marginTop:8, color:'#4f46e5', background:'none', border:'none', cursor:'pointer', fontSize:13, fontWeight:700 }}>
+                      style={{ marginTop:8, color:'var(--brand-primary)', background:'none', border:'none', cursor:'pointer', fontSize:13, fontWeight:700 }}>
                       + Añadir limpieza manualmente
                     </button>
                   </div>
@@ -873,7 +873,7 @@ export default function DashboardClient({
                   </div>
                 )}
                 {sesionesFiltradas.map(s => {
-                  const color  = TIPO_COLOR[s.tipo_servicio] || '#4f46e5'
+                  const color  = TIPO_COLOR[s.tipo_servicio] || 'var(--brand-primary)'
                   const icon   = TIPO_ICON[s.tipo_servicio]  || '🧹'
                   const manual = s.origen === 'manual'
                   return (
@@ -893,7 +893,7 @@ export default function DashboardClient({
                                 disabled={busyId === s.id}
                                 title="Tocar para cambiar la limpiadora"
                                 style={s.limpiadora_nombre
-                                  ? { background:'#eef2ff', color:'#4f46e5', borderColor:'#c7d2fe' }
+                                  ? { background:'var(--brand-light)', color:'var(--brand-primary)', borderColor:'#c7d2fe' }
                                   : { background:'#fff7ed', color:'#c2410c', borderColor:'#fdba74', borderStyle:'dashed' }}>
                                 {s.limpiadora_nombre ? `👤 ${s.limpiadora_nombre}` : '➕ Asignar'}
                                 <span style={{ marginLeft:3, opacity:.7, fontSize:9 }}>▾</span>
@@ -904,7 +904,7 @@ export default function DashboardClient({
                               </span>
                             ) : null}
                             {s.hora_inicio && (
-                              <span className="ses-chip" style={{ background:'#eef2ff', color:'#4f46e5' }}>
+                              <span className="ses-chip" style={{ background:'var(--brand-light)', color:'var(--brand-primary)' }}>
                                 🕐 {typeof s.hora_inicio === 'string' ? s.hora_inicio.slice(0,5) : s.hora_inicio}
                               </span>
                             )}
@@ -943,7 +943,7 @@ export default function DashboardClient({
             {tab === 'pms' && (
               <>
                 <a href="/pms/nuevo"
-                  style={{ display:'block', background:'#4f46e5', color:'white', textAlign:'center',
+                  style={{ display:'block', background:'var(--brand-primary)', color:'white', textAlign:'center',
                     fontWeight:700, padding:'12px', borderRadius:12, textDecoration:'none',
                     marginBottom:12, fontSize:14, boxShadow:'0 3px 10px rgba(79,70,229,.3)' }}>
                   + Conectar nuevo PMS
@@ -989,7 +989,7 @@ export default function DashboardClient({
               <span>💬</span><span>Chat</span>
             </button>
             <button className="bottom-nav-item" onClick={() => router.push('/admin/materiales?tab=documentos')}>
-              <span style={{ background:'#4f46e5', borderRadius:12, width:42, height:42, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, color:'white', boxShadow:'0 3px 10px rgba(79,70,229,.4)' }}>📸</span>
+              <span style={{ background:'var(--brand-primary)', borderRadius:12, width:42, height:42, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, color:'white', boxShadow:'0 3px 10px rgba(79,70,229,.4)' }}>📸</span>
               <span>Escanear</span>
             </button>
             <button className="bottom-nav-item" onClick={() => router.push('/admin/negocio')}>
@@ -1039,7 +1039,7 @@ export default function DashboardClient({
                 .map((l: any) => (
                 <button key={l.id} className="sheet-item" disabled={busyId === sheet.id}
                   onClick={() => reasignar(sheet.id, l.id)}>
-                  <span><span className="sheet-dot" style={{ background: l.color || '#6366f1' }} />{l.nombre}</span>
+                  <span><span className="sheet-dot" style={{ background: l.color || 'var(--brand-secondary)' }} />{l.nombre}</span>
                   {sheet.limpiadora_id === l.id && <span className="sheet-check">✓</span>}
                 </button>
               ))}

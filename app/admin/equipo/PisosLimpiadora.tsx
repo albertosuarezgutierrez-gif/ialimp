@@ -3,7 +3,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 
-const C = { indigo:'#4f46e5', soft:'#eef2ff', text:'#1e1b4b', card:'#fff', border:'#e2e8f0', muted:'#64748b', ok:'#16a34a' };
+const C = { indigo: 'var(--brand-primary)', soft: 'var(--brand-light)', text:'#1e1b4b', card:'#fff', border:'#e2e8f0', muted:'#64748b', ok:'#16a34a' };
 const FONT = 'Nunito, system-ui, sans-serif';
 
 export default function PisosLimpiadora({ limpiadoraId }: { limpiadoraId: string }) {

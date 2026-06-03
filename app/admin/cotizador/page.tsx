@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 
 const C = {
-  primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff',
+  primary: 'var(--brand-primary)', brand: 'var(--brand-secondary)', light: 'var(--brand-light)',
   bg: '#f1f5f9', text: '#1e293b', muted: '#64748b', border: '#e2e8f0',
   ok: '#16a34a', okBg: '#f0fdf4', red: '#dc2626', redBg: '#fef2f2',
   warn: '#d97706', warnBg: '#fffbeb',
