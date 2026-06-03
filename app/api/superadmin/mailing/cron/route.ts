@@ -25,6 +25,13 @@ async function procesar(forzar: boolean) {
   const transporter = getTransporter()
   const resumen = { campanas: 0, encolados: 0, enviados: 0, fallidos: 0, horario: enHorarioLaboral() }
 
+  // Recuperar envíos atascados en 'enviando' (de una pasada previa que murió a
+  // medias, p.ej. la IA colgada) → vuelven a 'pendiente' para reintentarse.
+  await prisma.$executeRaw(Prisma.sql`
+    UPDATE mailing_envios SET estado = 'pendiente'
+    WHERE estado = 'enviando' AND (claimed_at IS NULL OR claimed_at < now() - interval '5 minutes')
+  `)
+
   const campanas = await prisma.$queryRaw<any[]>(Prisma.sql`
     SELECT id, landing_url, max_dia FROM mailing_campanas WHERE activa = true AND estado = 'activa'
   `)
@@ -93,7 +100,7 @@ async function procesar(forzar: boolean) {
         LIMIT ${cupo}
         FOR UPDATE OF e SKIP LOCKED
       )
-      UPDATE mailing_envios e SET estado = 'enviando', intentos = intentos + 1
+      UPDATE mailing_envios e SET estado = 'enviando', intentos = intentos + 1, claimed_at = now()
       FROM sel WHERE e.id = sel.id
       RETURNING e.id, e.token, e.prospecto_id, e.paso
     `)
