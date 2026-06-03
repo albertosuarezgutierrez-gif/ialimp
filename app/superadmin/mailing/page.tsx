@@ -139,6 +139,32 @@ export default function MailingPage() {
     } finally { setBusy(false) }
   }
 
+  // ── Buscar en Google Maps vía Apify ──
+  const [apq, setApq] = useState('empresa de limpieza')
+  const [apciudad, setApciudad] = useState('Sevilla')
+  const [apmax, setApmax] = useState(50)
+  async function buscarApify() {
+    setBusy(true)
+    try {
+      const r = await fetch('/api/superadmin/mailing/apify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: apq, ciudad: apciudad, max: apmax }),
+      })
+      const d = await r.json()
+      if (!r.ok || !d.runId) { flash(d.error || 'No se pudo iniciar Apify'); return }
+      flash('Buscando en Google Maps… puede tardar 1-2 min, no cierres la página.')
+      const runId = d.runId, ciudad = d.ciudad || apciudad
+      for (let i = 0; i < 40; i++) {
+        await new Promise(res => setTimeout(res, 5000))
+        const sr = await fetch(`/api/superadmin/mailing/apify?runId=${runId}&ciudad=${encodeURIComponent(ciudad)}`)
+        const sd = await sr.json().catch(() => ({}))
+        if (sd.status === 'SUCCEEDED') { flash(`Apify: ${sd.encontrados} encontrados · ${sd.insertados} nuevos · ${sd.con_email} con email.`); cargarProspectos(); return }
+        if (['ERROR', 'FAILED', 'ABORTED', 'TIMED-OUT'].includes(sd.status)) { flash('Apify: ' + (sd.error || sd.status)); return }
+      }
+      flash('Apify sigue trabajando; en un par de minutos vuelve a darle a Buscar para importar el resultado.')
+    } finally { setBusy(false) }
+  }
+
   // ── Analizar un listado web con IA ──
   const [urlIA, setUrlIA] = useState('')
   async function analizarWeb() {
@@ -272,6 +298,16 @@ export default function MailingPage() {
               <input type="number" value={gmax} onChange={e => setGmax(Number(e.target.value))} min={1} max={40} style={{ ...inp, maxWidth: 80, padding: '8px 10px' }} />
               <button onClick={buscarGoogle} disabled={busy} style={{ ...btn(true), background: busy ? '#c7d2fe' : C.accent }}>{busy ? 'Buscando…' : 'Buscar e importar'}</button>
               <span style={{ fontSize: 11, color: C.muted }}>Trae nombre, teléfono y web (e intenta el email). Requiere clave de Google Places.</span>
+            </div>
+
+            {/* Apify — scraper de Google Maps (sin tarjeta de Google) */}
+            <div style={{ background: '#ecfeff', border: `1px solid ${C.accent}30`, borderRadius: 12, padding: 14, marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontWeight: 800, fontSize: 13, color: C.accent }}>🗺️ Buscar en Google Maps (Apify)</span>
+              <input value={apq} onChange={e => setApq(e.target.value)} placeholder="qué buscar" style={{ ...inp, maxWidth: 220, padding: '8px 10px' }} />
+              <input value={apciudad} onChange={e => setApciudad(e.target.value)} placeholder="ciudad" style={{ ...inp, maxWidth: 140, padding: '8px 10px' }} />
+              <input type="number" value={apmax} onChange={e => setApmax(Number(e.target.value))} min={1} max={120} style={{ ...inp, maxWidth: 80, padding: '8px 10px' }} />
+              <button onClick={buscarApify} disabled={busy} style={{ ...btn(true), background: busy ? '#c7d2fe' : C.accent }}>{busy ? 'Buscando…' : 'Buscar (1-2 min)'}</button>
+              <span style={{ fontSize: 11, color: C.muted, width: '100%' }}>Saca empresas con teléfono y web de Google Maps (servidor, sin tu tarjeta de Google) y rellena emails. Requiere APIFY_TOKEN en Vercel.</span>
             </div>
 
             {/* Analizar listado web con IA (gratis, sin Google) */}

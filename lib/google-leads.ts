@@ -160,3 +160,50 @@ export async function analizarListadoWeb(url: string): Promise<{ leads: LeadWeb[
     .filter(l => l.empresa && (!l.email || /.+@.+\..+/.test(l.email)))
   return { leads }
 }
+
+// ── Apify: scraper de Google Maps (servidor, sin tarjeta de Google) ──────────
+// Requiere APIFY_TOKEN. El actor de Maps tarda 1-3 min → modelo asíncrono:
+// apifyStart() lanza el run y devuelve runId; apifyResults(runId) consulta el
+// estado y, cuando termina, devuelve los leads.
+const APIFY = 'https://api.apify.com/v2'
+const APIFY_ACTOR = process.env.APIFY_ACTOR || 'compass~crawler-google-places'
+
+export async function apifyStart(query: string, max: number): Promise<{ runId?: string; error?: string }> {
+  const token = process.env.APIFY_TOKEN
+  if (!token) return { error: 'Falta APIFY_TOKEN' }
+  try {
+    const res = await fetch(`${APIFY}/acts/${APIFY_ACTOR}/runs?token=${token}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        searchStringsArray: [query],
+        maxCrawledPlacesPerSearch: Math.min(Math.max(max, 1), 120),
+        language: 'es', countryCode: 'es', skipClosedPlaces: false,
+      }),
+    })
+    if (!res.ok) return { error: `Apify ${res.status}: ${(await res.text()).slice(0, 150)}` }
+    const d = await res.json()
+    return { runId: d?.data?.id }
+  } catch (e: any) { return { error: String(e?.message || e).slice(0, 150) } }
+}
+
+export async function apifyResults(runId: string): Promise<{ status: string; leads?: LeadWeb[]; error?: string }> {
+  const token = process.env.APIFY_TOKEN
+  if (!token) return { status: 'ERROR', error: 'Falta APIFY_TOKEN' }
+  try {
+    const r = await fetch(`${APIFY}/actor-runs/${runId}?token=${token}`)
+    if (!r.ok) return { status: 'ERROR', error: `Apify ${r.status}` }
+    const d = await r.json()
+    const status: string = d?.data?.status || 'UNKNOWN'
+    if (status !== 'SUCCEEDED') return { status } // READY|RUNNING|... → seguir esperando
+    const dsId = d?.data?.defaultDatasetId
+    const ir = await fetch(`${APIFY}/datasets/${dsId}/items?token=${token}&clean=true&format=json`)
+    const items: any[] = await ir.json().catch(() => [])
+    const leads: LeadWeb[] = (Array.isArray(items) ? items : []).map(it => ({
+      empresa: String(it?.title || it?.name || '').trim(),
+      email: Array.isArray(it?.emails) && it.emails[0] ? String(it.emails[0]).trim().toLowerCase() : null,
+      telefono: it?.phoneUnformatted || it?.phone || null,
+      web: it?.website || it?.url || null,
+    })).filter(l => l.empresa)
+    return { status, leads }
+  } catch (e: any) { return { status: 'ERROR', error: String(e?.message || e).slice(0, 150) } }
+}
