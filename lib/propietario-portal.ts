@@ -9,6 +9,7 @@ import { Prisma } from '@prisma/client'
 export async function getClienteByToken(token: string) {
   const rows = await prisma.$queryRaw<any[]>(Prisma.sql`
     SELECT c.*, e.nombre AS empresa_nombre, e.email AS empresa_email,
+           e.marca_nombre, e.logo_url, e.color_primario, e.color_secundario, e.color_light,
            COALESCE(c.chat_config, '{"ver_checklist":false,"ver_fotos":false}'::jsonb) AS chat_config
     FROM clientes c JOIN empresas e ON e.id = c.empresa_id
     WHERE c.access_token = ${token} AND c.notif_activa = true
@@ -20,6 +21,7 @@ export async function getClienteByToken(token: string) {
 export async function getClienteById(id: string) {
   const rows = await prisma.$queryRaw<any[]>(Prisma.sql`
     SELECT c.*, e.nombre AS empresa_nombre, e.email AS empresa_email,
+           e.marca_nombre, e.logo_url, e.color_primario, e.color_secundario, e.color_light,
            COALESCE(c.chat_config, '{"ver_checklist":false,"ver_fotos":false}'::jsonb) AS chat_config
     FROM clientes c JOIN empresas e ON e.id = c.empresa_id
     WHERE c.id = ${id}::uuid

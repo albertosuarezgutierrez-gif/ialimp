@@ -12,7 +12,7 @@ import DocumentosPropiedad from '@/components/DocumentosPropiedad'
 import CalendarioIcal from './CalendarioIcal'
 
 const C = {
-  primary:'#4f46e5', brand:'#6366f1', light:'#eef2ff',
+  primary:'var(--brand-primary)', brand:'var(--brand-secondary)', light:'var(--brand-light)',
   bg:'#f1f5f9', text:'#1e293b', muted:'#64748b', border:'#e2e8f0',
   ok:'#16a34a', okBg:'#f0fdf4', okBorder:'#bbf7d0',
   warn:'#d97706', warnBg:'#fffbeb', warnBorder:'#fcd34d',
@@ -127,7 +127,7 @@ function QuejaModal({ sesion, token, onClose, onSent }: any) {
           <div><label style={{ display:'block', fontSize:12, fontWeight:700, color:C.muted, marginBottom:6 }}>Teléfono del huésped</label>
             <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+34 6xx xxx xxx"
               style={{ width:'100%', border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', fontSize:14, fontFamily:'inherit', outline:'none' }} /></div>
-          <div style={{ background:C.light, borderRadius:10, padding:'10px 14px', fontSize:12, color:C.brand }}>💡 Sique Brilla recibirá un aviso inmediato.</div>
+          <div style={{ background:C.light, borderRadius:10, padding:'10px 14px', fontSize:12, color:C.brand }}>💡 Tu empresa de limpieza recibirá un aviso inmediato.</div>
           {error && <p style={{ color:C.red, fontSize:13 }}>{error}</p>}
           <div style={{ display:'flex', gap:10 }}>
             <button type="button" onClick={onClose} style={{ flex:1, padding:12, borderRadius:10, border:`1px solid ${C.border}`, background:'white', color:C.muted, fontSize:13, cursor:'pointer' }}>Cancelar</button>
@@ -225,7 +225,7 @@ function NuevaReservaModal({ token, propiedades, onClose, onCreated }: any) {
             <textarea value={notas} onChange={e=>setNotas(e.target.value)} rows={3} placeholder="Ej: dejar toallas extra, revisar terraza..."
               style={{ ...(inputStyle as any), resize:'none' }} /></div>
 
-          <div style={{ background:C.light, borderRadius:10, padding:'10px 14px', fontSize:12, color:C.brand }}>💡 Sique Brilla recibirá la solicitud y asignará una limpiadora.</div>
+          <div style={{ background:C.light, borderRadius:10, padding:'10px 14px', fontSize:12, color:C.brand }}>💡 Tu empresa de limpieza recibirá la solicitud y asignará una limpiadora.</div>
           {error && <p style={{ color:C.red, fontSize:13 }}>{error}</p>}
           <div style={{ display:'flex', gap:10 }}>
             <button type="button" onClick={onClose} style={{ flex:1, padding:12, borderRadius:10, border:`1px solid ${C.border}`, background:'white', color:C.muted, fontSize:13, cursor:'pointer' }}>Cancelar</button>
@@ -726,7 +726,7 @@ export default function PropietarioClient({ cliente, propiedades, historial, tok
             <style>{`@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
             <div style={{ background:C.primary, padding:'20px 20px 16px' }}>
               <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
-                <div style={{ fontFamily:"'Nunito',sans-serif", fontSize:18, fontWeight:800, color:'white' }}><LogoIalimp size={17} /></div>
+                <div style={{ fontFamily:"'Nunito',sans-serif", fontSize:18, fontWeight:800, color:'white' }}><LogoIalimp size={17} nombre={cliente.marca_nombre || cliente.empresa_nombre} logoUrl={cliente.logo_url} /></div>
                 <button onClick={()=>setMenu(false)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:6, width:28, height:28, color:'white', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
               </div>
               <div style={{ color:'white', fontWeight:700, fontSize:13 }}>{cliente.nombre.split(' ').slice(0,2).join(' ')}</div>

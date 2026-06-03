@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import CookieBanner from '@/components/CookieBanner'
+import BrandingStyle from '@/components/BrandingStyle'
+import { getEmpresaId } from '@/lib/tenant'
+import { getBranding } from '@/lib/branding'
 
 export const metadata: Metadata = {
   title: 'ialimp — Gestión de limpiezas',
@@ -20,11 +23,17 @@ export const viewport: Viewport = {
   themeColor: '#4f46e5',
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Marca del panel admin según la empresa de la sesión (ialimp_session).
+  // En login (sin sesión), /l y /propietario → default ialimp; esas superficies
+  // inyectan su propia marca por dentro (limpiadora/propietario).
+  const branding = await getBranding(await getEmpresaId())
   return (
     <html lang="es">
       <body>
-        {children}
+        <BrandingStyle branding={branding}>
+          {children}
+        </BrandingStyle>
         <CookieBanner />
       </body>
     </html>
