@@ -2,7 +2,10 @@ import { SignJWT, jwtVerify } from 'jose'
 import bcrypt from 'bcryptjs'
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'ialimp-dev-secret-change-in-prod'
+  process.env.JWT_SECRET
+  || (process.env.NODE_ENV === 'production'
+      ? (() => { throw new Error('JWT_SECRET no configurado en producción') })()
+      : 'ialimp-dev-secret-change-in-prod')
 )
 
 export async function hashPassword(password: string): Promise<string> {

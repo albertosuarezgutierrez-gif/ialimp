@@ -2,10 +2,18 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { verifyPassword, createSuperadminToken, hashPassword } from '@/lib/auth'
+import { rateLimitHit, rateLimitClear, clientIp } from '@/lib/rate-limit-db'
 import { cookies } from 'next/headers'
 
 export async function POST(req: Request) {
   try {
+    // La cuenta más privilegiada del sistema: rate-limit por IP contra fuerza bruta.
+    const rlKey = 'sa:' + clientIp(req)
+    const rl = await rateLimitHit(rlKey, 5, 15)
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Demasiados intentos, espera unos minutos' }, { status: 429 })
+    }
+
     const { email, password } = await req.json()
     if (!email || !password) return NextResponse.json({ error: 'Faltan datos' }, { status: 400 })
 
@@ -36,8 +44,10 @@ export async function POST(req: Request) {
       maxAge: 60 * 60 * 8, path: '/', sameSite: 'lax'
     })
 
+    await rateLimitClear(rlKey) // login correcto → resetea el contador
     return NextResponse.json({ ok: true, nombre: sa.nombre })
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 })
+    console.error('[superadmin/login]', e?.message)
+    return NextResponse.json({ error: 'Error al iniciar sesión' }, { status: 500 })
   }
 }

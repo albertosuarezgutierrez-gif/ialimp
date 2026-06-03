@@ -6,6 +6,40 @@
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { getTransporter, MAIL_FROM } from '@/lib/mailer'
+import dns from 'node:dns/promises'
+import net from 'node:net'
+
+// ── Guarda anti-SSRF ────────────────────────────────────────────────────────────
+// La URL iCal la configura el propietario → input no confiable. Antes de hacer
+// fetch server-side, exigimos http(s) y que el host NO resuelva a una IP interna
+// (loopback / link-local / privada / metadata cloud 169.254.169.254).
+function isPrivateIp(ip: string): boolean {
+  if (net.isIPv4(ip)) {
+    const p = ip.split('.').map(Number)
+    return p[0] === 10 || p[0] === 127 || p[0] === 0
+      || (p[0] === 169 && p[1] === 254)              // link-local + metadata
+      || (p[0] === 172 && p[1] >= 16 && p[1] <= 31)
+      || (p[0] === 192 && p[1] === 168)
+      || (p[0] === 100 && p[1] >= 64 && p[1] <= 127) // CGNAT
+  }
+  const low = ip.toLowerCase().replace(/^\[|\]$/g, '')
+  return low === '::1' || low === '::' || low.startsWith('fe80')
+    || low.startsWith('fc') || low.startsWith('fd')  // ULA
+    || low.startsWith('::ffff:')                     // IPv4-mapeada
+}
+async function isSafePublicUrl(raw: string): Promise<boolean> {
+  let u: URL
+  try { u = new URL(raw) } catch { return false }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return false
+  const host = u.hostname.toLowerCase()
+  if (host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.internal')) return false
+  if (net.isIP(host)) return !isPrivateIp(host)     // la URL ya trae una IP literal
+  try {
+    const addrs = await dns.lookup(host, { all: true })
+    if (!addrs.length) return false
+    return !addrs.some(a => isPrivateIp(a.address))
+  } catch { return false }
+}
 
 // ── iCal parser ───────────────────────────────────────────────────────────────
 export function parseIcal(text: string): any[] {
@@ -103,9 +137,12 @@ export async function syncPropertyIcal(prop: any): Promise<{ synced: number; urg
 
   for (const url of urls) {
     try {
+      if (!(await isSafePublicUrl(url))) {
+        errors.push('URL no permitida — ' + url.slice(0, 40)); continue
+      }
       const res = await fetch(url, {
         signal: AbortSignal.timeout(12000),
-        headers: { 'User-Agent': 'ialimp/1.0 calendar-sync' }
+        headers: { 'User-Agent': 'ialimp/1.0 calendar-sync' },
       })
       if (!res.ok) { errors.push('HTTP ' + res.status + ' — ' + url.slice(0, 40)); continue }
 
