@@ -4,9 +4,9 @@ Lee este archivo al empezar cualquier sesión. Son las reglas para trabajar en e
 
 ## Qué es
 IALIMP: SaaS **multi-tenant** de gestión de limpiezas de pisos turísticos (spin-off del módulo de limpieza de SIVRA). Flujo: salida de huésped (Smoobu) → sesión de limpieza → asignación a limpiadora → app móvil de la limpiadora (checklist + fotos) → facturación al propietario.
-- App: `ialimp.vercel.app` · Landing del SaaS: `ialimp.es`.
+- App: `app.ialimp.es` (proyecto Vercel `ialimp`; los alias `ialimp.vercel.app` e `ialimp.com` redirigen aquí) · Landing del SaaS: `ialimp.es`.
   - **Landing `ialimp.es` = proyecto Vercel SEPARADO `ialimp-landing`** (web estática, sin framework; hasta ahora se subía por CLI sin git). Su fuente versionada vive en **`landing/ialimp-es/`** de este repo (carpeta de nivel superior que Next NO compila). Cumple RGPD/LSSI: aviso legal + privacidad + cookies (footer), tipografía **auto-alojada** (`fetch-fonts.sh` → `fonts/*.woff2`, sin Google Fonts) y **sin cookies de seguimiento** (no necesita banner). Desplegar: `bash fetch-fonts.sh` y `npx vercel deploy --prod` al proyecto `ialimp-landing` (ver `landing/ialimp-es/README.md`).
-- White-label por host: `siquebrilla.vercel.app` muestra "Sique Brilla"; `ialimp.vercel.app` muestra "ialimp" (misma app, según `hostname`).
+- White-label por host: `siquebrilla.vercel.app` muestra "Sique Brilla"; `app.ialimp.es` (e `ialimp.vercel.app`) muestra "ialimp" (misma app, según `hostname`).
 - Cliente piloto: Sique Brilla SL (dueña: Vanessa Cruz).
 
 ## Fronteras (no mezclar)
@@ -25,7 +25,7 @@ Next.js `^15.5` · React 19 · Prisma `^5.22` · **JWT (jose + bcryptjs, SIN Nex
 - Commits/PR: prefijo **`fix:`** o **`feat:`**. Vercel ignora los que empiezan por `chore|trigger|rebuild`.
 
 ## Despliegue y producción (OJO — cliente en vivo)
-- **Producción = `ialimp.vercel.app` = rama `main`.** Vanessa (Sique Brilla) la usa en directo: **cualquier merge a `main` se ve al instante**. No mergear sin que el cambio esté validado (preview verde).
+- **Producción = `app.ialimp.es` = rama `main`** (alias `ialimp.vercel.app` / `ialimp.com` → redirigen a `app.ialimp.es`). El dominio canónico se controla con la env **`NEXTAUTH_URL` = `https://app.ialimp.es`** (los enlaces de emails, portal del propietario, Stripe, etc. salen de ahí). Vanessa (Sique Brilla) la usa en directo: **cualquier merge a `main` se ve al instante**. No mergear sin que el cambio esté validado (preview verde).
 - **Flujo:** desarrollar en rama `feat:`/`fix:` → PR (en borrador) → Vercel genera **preview** propia de la rama (misma BD de producción: lo que escribas en la preview se guarda de verdad) → validar ahí → mergear a `main` para publicar.
 - **Controlar qué está "Ready" en producción = panel de Vercel** (`vercel.com/.../ialimp`, filtro *Production*): muestra el deploy *Current* en vivo y los *rollback candidates* para volver atrás en 1 clic. GitHub/PR = el *qué cambió*; Vercel = el *qué está publicado*. (Conviene activar avisos de deploy a Slack/email en Settings → Notifications.)
 - Cada PR mergeado a `main` = un deploy de producción. Solo `main` despliega a producción.

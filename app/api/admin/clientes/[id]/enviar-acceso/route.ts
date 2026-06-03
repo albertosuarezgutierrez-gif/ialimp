@@ -50,7 +50,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     `)
     const empresaNombre = emp[0]?.nombre || 'IALIMP'
 
-    const base = process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app'
+    const base = process.env.NEXTAUTH_URL || 'https://app.ialimp.es'
     const urlPortal = `${base}/propietario`
     const nombreCorto = (c.nombre || '').split(' ')[0] || c.nombre || ''
     const asunto = `Crea tu contraseña de acceso · ${empresaNombre}`

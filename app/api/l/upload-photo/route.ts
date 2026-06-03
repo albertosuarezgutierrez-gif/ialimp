@@ -5,7 +5,7 @@ import { Prisma } from '@prisma/client'
 const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const BUCKET        = 'cleaning-photos'
-const APP_URL       = process.env.NEXTAUTH_URL || 'https://ialimp.vercel.app'
+const APP_URL       = process.env.NEXTAUTH_URL || 'https://app.ialimp.es'
 
 // Items que NO se analizan (fotos de referencia, no de estado real)
 const EXCLUIR_ANALISIS = ['referencia', 'ref', 'ejemplo', 'muestra']

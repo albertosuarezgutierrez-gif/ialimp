@@ -7,7 +7,7 @@ import PropietarioLogoutButton from './PropietarioLogoutButton'
 import { getPropietarioSession } from '@/lib/propietario-auth'
 import { getClienteById, loadPortalData } from '@/lib/propietario-portal'
 
-// URL fija del propietario: ialimp.es/propietario
+// URL fija del propietario: app.ialimp.es/propietario
 //  - sin sesión  → formulario de login (email+contraseña) / crear cuenta
 //  - con sesión  → su portal de siempre (el token queda interno, no se ve)
 export const dynamic = 'force-dynamic'
