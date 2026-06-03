@@ -3,6 +3,8 @@
 // route handlers y server components.
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
+import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'ialimp-dev-secret-change-in-prod'
@@ -22,6 +24,12 @@ export async function getPropietarioSession(): Promise<PropietarioSession | null
     if (!token) return null
     const { payload } = await jwtVerify(token, JWT_SECRET)
     if (payload.type !== 'propietario' || !payload.cliente_id) return null
+    // Sesión única: el jti debe coincidir con clientes.session_jti (si existe).
+    try {
+      const rows = await prisma.$queryRaw<any[]>(Prisma.sql`SELECT session_jti FROM clientes WHERE id = ${String(payload.cliente_id)}::uuid LIMIT 1`)
+      const dbJti = rows[0]?.session_jti
+      if (dbJti && (payload as any).jti !== dbJti) return null
+    } catch { /* fail-open */ }
     return {
       cliente_id: String(payload.cliente_id),
       empresa_id: String(payload.empresa_id || ''),

@@ -24,7 +24,8 @@ export async function POST(req: Request) {
     `)
 
     const empresa = result[0]
-    const token = await createSessionToken(empresa.id, empresa.email)
+    const { token, jti } = await createSessionToken(empresa.id, empresa.email)
+    await prisma.$executeRaw(Prisma.sql`UPDATE empresas SET session_jti = ${jti} WHERE id = ${empresa.id}::uuid`)
     const cookieStore = await cookies()
     cookieStore.set('ialimp_session', token, {
       httpOnly: true,

@@ -2,10 +2,17 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { verifyPassword, createUsuarioToken } from '@/lib/auth'
+import { rateLimitHit, rateLimitClear, clientIp } from '@/lib/rate-limit-db'
 import { cookies } from 'next/headers'
 
 export async function POST(req: Request) {
   try {
+    const rlKey = 'admin:' + clientIp(req)
+    const rl = await rateLimitHit(rlKey)
+    if (!rl.allowed) {
+      return NextResponse.json({ error: `Demasiados intentos. Espera ${Math.ceil((rl.retryAfter || 900) / 60)} min.` }, { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } })
+    }
+
     const { email, password } = await req.json()
     if (!email || !password) return NextResponse.json({ error: 'Faltan datos' }, { status: 400 })
 
@@ -28,7 +35,9 @@ export async function POST(req: Request) {
       UPDATE usuarios_empresa SET ultimo_acceso = now() WHERE id = ${u.id}::uuid
     `)
 
-    const token = await createUsuarioToken(u.id, u.empresa_id, u.email, u.rol, u.modulos || [])
+    await rateLimitClear(rlKey)
+    const { token, jti } = await createUsuarioToken(u.id, u.empresa_id, u.email, u.rol, u.modulos || [])
+    await prisma.$executeRaw(Prisma.sql`UPDATE usuarios_empresa SET session_jti = ${jti} WHERE id = ${u.id}::uuid`)
     const cookieStore = await cookies()
     cookieStore.set('ialimp_session', token, {
       httpOnly: true, secure: process.env.NODE_ENV === 'production',
