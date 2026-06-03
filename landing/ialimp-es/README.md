@@ -5,16 +5,31 @@ Es una web estática (HTML/CSS, sin framework). Hasta ahora se subía por CLI si
 git; este directorio es la fuente de verdad versionada.
 
 ## Contenido
-- `index.html` — landing principal.
+- `index.html` — landing principal (incluye el formulario de contacto).
+- `api/contacto.js` — función serverless del formulario (Vercel la despliega automáticamente).
 - `aviso-legal.html` — aviso legal (LSSI art. 10).
 - `privacidad.html` — política de privacidad (RGPD).
 - `cookies.html` — política de cookies.
 - `fetch-fonts.sh` — descarga Nunito (woff2) a `fonts/` para auto-alojar la tipografía.
 - `fonts/` — tipografías auto-alojadas (los `.woff2` se generan con el script; no van en git).
 
+## Formulario de contacto
+La landing **no da acceso a la app**; el único CTA es el formulario de contacto (nombre, email
+y teléfono obligatorios + aceptación de la política de privacidad). Al enviarlo, `api/contacto.js`
+manda un aviso por email vía **Resend** a `alberto.suarez.gutierrez@gmail.com` (remitente
+`hola@ialimp.es`, `reply_to` = email del visitante). Lleva honeypot anti-spam y validación en
+cliente y servidor.
+
+> **Requisito (una vez):** añadir la variable de entorno **`RESEND_API_KEY`** en el proyecto
+> Vercel `ialimp-landing` (Settings → Environment Variables → Production). El dominio `ialimp.es`
+> debe estar verificado en Resend. Sin esta variable el formulario no puede enviar y muestra el
+> fallback «escríbenos a hola@ialimp.es».
+
 ## Cumplimiento
 - La web **no instala cookies de seguimiento ni analítica** → no requiere banner de consentimiento.
 - La tipografía se sirve **auto-alojada** (sin Google Fonts) → no se transfieren datos a terceros.
+- El formulario exige aceptar la política de privacidad; el email se envía con Resend como
+  encargado del tratamiento (recogido en `privacidad.html`).
 - Incluye aviso legal, política de privacidad y política de cookies, enlazados en el footer.
 
 ## Desplegar a ialimp.es
