@@ -114,6 +114,10 @@ export async function syncPropertyIcal(prop: any): Promise<{ synced: number; urg
 
       for (const ev of events) {
         const checkout_date = icalToDate(ev.dtend)
+        // El propietario controla la URL iCal → el DTEND es input no confiable.
+        // Solo aceptamos fechas YYYY-MM-DD válidas (defensa en profundidad; además
+        // el INSERT va parametrizado con Prisma.sql, no por interpolación).
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(checkout_date)) continue
 
         // Ignorar pasados (más de 7 días)
         const limite = new Date(); limite.setDate(limite.getDate() - 7)
@@ -128,7 +132,7 @@ export async function syncPropertyIcal(prop: any): Promise<{ synced: number; urg
 
         // RETURNING (xmax = 0) = true sólo cuando fue un INSERT real (no un UPDATE):
         // así detectamos reservas NUEVAS sin re-avisar en cada pasada del cron.
-        const rows = await prisma.$queryRawUnsafe<any[]>(`
+        const rows = await prisma.$queryRaw<any[]>(Prisma.sql`
           INSERT INTO cleaning_sessions (
             empresa_id, cliente_id,
             property_id, propiedad_id, property_name,
@@ -136,16 +140,16 @@ export async function syncPropertyIcal(prop: any): Promise<{ synced: number; urg
             guest_name, tipo_servicio, origen,
             hora_checkout, limpiadora_id
           ) VALUES (
-            '${prop.empresa_id}'::uuid,
-            ${prop.cliente_id ? `'${prop.cliente_id}'::uuid` : 'NULL'},
-            '${prop.id}',
-            '${prop.id}'::uuid,
-            '${String(prop.nombre).replace(/'/g, "''")}',
-            '${checkout_date}'::date,
-            '${external_id.replace(/'/g, "''")}',
-            ${guest ? `'${guest.replace(/'/g, "''")}'` : 'NULL'},
+            ${prop.empresa_id}::uuid,
+            ${prop.cliente_id || null}::uuid,
+            ${prop.id},
+            ${prop.id}::uuid,
+            ${String(prop.nombre)},
+            ${checkout_date}::date,
+            ${external_id},
+            ${guest || null},
             'rotacion', 'ical', '11:00',
-            ${limp_id ? `'${limp_id}'::uuid` : 'NULL'}
+            ${limp_id}::uuid
           )
           ON CONFLICT (external_reservation_id)
           DO UPDATE SET
