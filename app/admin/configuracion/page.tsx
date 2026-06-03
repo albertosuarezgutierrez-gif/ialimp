@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 
 const C = {
-  primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff', bg: '#f1f5f9',
+  primary: 'var(--brand-primary)', brand: 'var(--brand-secondary)', light: 'var(--brand-light)', bg: '#f1f5f9',
   text: '#1e1b4b', muted: '#64748b', border: '#e2e8f0',
   ok: '#16a34a', okBg: '#f0fdf4', warn: '#d97706', warnBg: '#fffbeb',
   red: '#dc2626', redBg: '#fef2f2', white: '#ffffff'
@@ -11,6 +11,7 @@ const C = {
 const TABS_MAIN = [
   { id: 'catalogos', label: '📋 Catálogos' },
   { id: 'cotizador', label: '💰 Cotizador' },
+  { id: 'marca',     label: '🎨 Marca' },
 ]
 
 const SECCIONES = [
@@ -251,6 +252,85 @@ function TabCotizador() {
   )
 }
 
+function TabMarca() {
+  const [b, setB] = useState<any>(null)
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState('')
+  useEffect(() => { fetch('/api/admin/empresa/branding').then(r => r.json()).then(d => setB(d.branding || {})) }, [])
+  if (!b) return <div style={{ color: C.muted }}>Cargando…</div>
+  const set = (k: string, v: string) => setB((p: any) => ({ ...p, [k]: v }))
+  async function guardar() {
+    setSaving(true); setMsg('')
+    const r = await fetch('/api/admin/empresa/branding', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        marca_nombre: b.marca_nombre || null,
+        logo_url: b.logo_url || null,
+        color_primario: b.color_primario || '#4f46e5',
+        color_secundario: b.color_secundario || '#6366f1',
+        color_light: b.color_light || '#eef2ff',
+      }),
+    })
+    const d = await r.json(); setSaving(false)
+    setMsg(r.ok ? '✓ Guardado. Se ve en el portal del propietario y la app de la limpiadora.' : (d.error || 'Error al guardar'))
+  }
+  const prim = b.color_primario || '#4f46e5'
+  const light = b.color_light || '#eef2ff'
+  const nombre = b.marca_nombre || b.nombre || 'ialimp'
+  const lbl = { display: 'block', fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 6 } as const
+  const input = { width: '100%', border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none' } as const
+  const colorRow = (k: string, label: string, val: string) => (
+    <div style={{ flex: '1 1 160px', minWidth: 140 }}>
+      <label style={lbl}>{label}</label>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input type="color" value={val} onChange={e => set(k, e.target.value)} style={{ width: 40, height: 38, border: `1px solid ${C.border}`, borderRadius: 8, padding: 2, cursor: 'pointer', background: '#fff' }} />
+        <input value={val} onChange={e => set(k, e.target.value)} style={{ ...input, fontFamily: 'monospace' }} />
+      </div>
+    </div>
+  )
+  return (
+    <div style={{ background: '#fff', border: `1px solid ${C.border}`, borderRadius: 14, padding: 20, maxWidth: 720 }}>
+      <h2 style={{ fontSize: 16, fontWeight: 800, color: C.text, marginBottom: 4 }}>🎨 Tu marca</h2>
+      <p style={{ fontSize: 13, color: C.muted, marginBottom: 18 }}>
+        Personaliza cómo ven tu empresa tus propietarios y tu equipo. Con una sola dirección, cada
+        cliente ve su propia marca al iniciar sesión.
+      </p>
+
+      <label style={lbl}>Nombre de marca</label>
+      <input value={b.marca_nombre || ''} onChange={e => set('marca_nombre', e.target.value)} placeholder={b.nombre || 'Tu marca'} style={{ ...input, marginBottom: 16 }} />
+
+      <label style={lbl}>Logo (URL de imagen, opcional)</label>
+      <input value={b.logo_url || ''} onChange={e => set('logo_url', e.target.value)} placeholder="https://…/logo.png" style={{ ...input, marginBottom: 16 }} />
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 18 }}>
+        {colorRow('color_primario', 'Color principal', prim)}
+        {colorRow('color_secundario', 'Color secundario', b.color_secundario || '#6366f1')}
+        {colorRow('color_light', 'Color suave (fondos)', light)}
+      </div>
+
+      <label style={lbl}>Vista previa</label>
+      <div style={{ borderRadius: 12, overflow: 'hidden', border: `1px solid ${C.border}`, marginBottom: 18 }}>
+        <div style={{ background: prim, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          {b.logo_url
+            ? <img src={b.logo_url} alt="logo" style={{ height: 24 }} />
+            : <span style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>{nombre}</span>}
+        </div>
+        <div style={{ background: light, padding: '14px 16px' }}>
+          <button style={{ background: prim, color: '#fff', border: 'none', borderRadius: 10, padding: '10px 16px', fontWeight: 800, fontFamily: 'inherit', cursor: 'default' }}>Botón de ejemplo</button>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <button onClick={guardar} disabled={saving}
+          style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: 10, padding: '12px 22px', fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+          {saving ? 'Guardando…' : 'Guardar marca'}
+        </button>
+        {msg && <span style={{ fontSize: 13, color: msg.startsWith('✓') ? C.ok : C.red }}>{msg}</span>}
+      </div>
+    </div>
+  )
+}
+
 export default function ConfiguracionPage() {
   const [tab, setTab] = useState('catalogos')
 
@@ -277,6 +357,7 @@ export default function ConfiguracionPage() {
       <div style={{ padding: '20px 24px', maxWidth: 960, margin: '0 auto' }}>
         {tab === 'catalogos' && <TabCatalogos />}
         {tab === 'cotizador' && <TabCotizador />}
+        {tab === 'marca'     && <TabMarca />}
       </div>
     </div>
   )

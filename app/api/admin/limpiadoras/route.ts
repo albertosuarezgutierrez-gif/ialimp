@@ -88,6 +88,14 @@ export async function PATCH(req: NextRequest) {
       WHERE id = ${id}::uuid AND empresa_id = ${empresa_id}::uuid
     `)
 
+    // Al desactivar, cortar sus sesiones abiertas al instante (scope empresa).
+    if (activa === false) {
+      await prisma.$executeRaw(Prisma.sql`
+        DELETE FROM limpiadora_sessions WHERE limpiadora_id = ${id}::uuid
+          AND limpiadora_id IN (SELECT id FROM limpiadoras WHERE empresa_id = ${empresa_id}::uuid)
+      `)
+    }
+
     return NextResponse.json({ ok: true })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })

@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from 'react'
 
 const C = {
-  primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff',
+  primary: 'var(--brand-primary)', brand: 'var(--brand-secondary)', light: 'var(--brand-light)',
   bg: '#f1f5f9', text: '#1e293b', muted: '#64748b', border: '#e2e8f0',
   ok: '#16a34a', okBg: '#f0fdf4', okBorder: '#bbf7d0',
   warn: '#d97706', warnBg: '#fffbeb',
@@ -271,20 +271,20 @@ function Row({ lbl, val }: { lbl: string; val: any }) {
 const s: Record<string, React.CSSProperties> = {
   col:     { display: 'flex', flexDirection: 'column', gap: 14 },
   heroCard:{ background: '#fff', borderRadius: 14, padding: '24px 18px', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,.06)' },
-  btnCam:  { background: 'linear-gradient(135deg,#4f46e5,#6366f1)', color: '#fff', border: 'none', borderRadius: 14, padding: '20px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 18px rgba(79,70,229,.32)', width: '100%' },
+  btnCam:  { background: 'linear-gradient(135deg,var(--brand-primary),var(--brand-secondary))', color: '#fff', border: 'none', borderRadius: 14, padding: '20px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 18px rgba(79,70,229,.32)', width: '100%' },
   orRow:   { display: 'flex', alignItems: 'center', gap: 11 },
   orLine:  { flex: 1, height: 1, background: '#e2e8f0', display: 'block' },
-  btnSec:  { background: '#fff', border: '2px solid #4f46e5', color: '#4f46e5', padding: '12px 18px', borderRadius: 11, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', width: '100%' },
+  btnSec:  { background: '#fff', border: '2px solid var(--brand-primary)', color: 'var(--brand-primary)', padding: '12px 18px', borderRadius: 11, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', width: '100%' },
   tipBox:  { background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 9, padding: '10px 13px', fontSize: 13, color: '#92400e' },
   imgWrap: { borderRadius: 13, overflow: 'hidden', boxShadow: '0 4px 14px rgba(0,0,0,.11)', background: '#fff', maxHeight: 360, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   imgPrev: { width: '100%', height: 'auto', maxHeight: 360, objectFit: 'contain', display: 'block' },
   errBox:  { background: '#fef2f2', border: '1px solid #fca5a5', color: '#991b1b', borderRadius: 9, padding: '9px 13px', fontSize: 13 },
-  btnPri:  { background: 'linear-gradient(135deg,#4f46e5,#6366f1)', color: '#fff', border: 'none', padding: '13px 24px', borderRadius: 11, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', width: '100%', boxShadow: '0 4px 12px rgba(79,70,229,.28)' },
+  btnPri:  { background: 'linear-gradient(135deg,var(--brand-primary),var(--brand-secondary))', color: '#fff', border: 'none', padding: '13px 24px', borderRadius: 11, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', width: '100%', boxShadow: '0 4px 12px rgba(79,70,229,.28)' },
   btnLink: { background: 'transparent', border: 'none', color: '#6b7280', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline', alignSelf: 'center' },
-  spinner: { width: 52, height: 52, borderRadius: '50%', border: '4px solid #eef2ff', borderTop: '4px solid #4f46e5', animation: 'giro .85s linear infinite' },
+  spinner: { width: 52, height: 52, borderRadius: '50%', border: '4px solid var(--brand-light)', borderTop: '4px solid var(--brand-primary)', animation: 'giro .85s linear infinite' },
   tipCard: { background: '#fff', borderRadius: 13, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 4px rgba(0,0,0,.06)' },
   card:    { background: '#fff', borderRadius: 13, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 2, boxShadow: '0 1px 4px rgba(0,0,0,.06)' },
-  cardTit: { fontWeight: 700, fontSize: 11, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: '.05em', borderBottom: '1px solid #eef2ff', paddingBottom: 7, marginBottom: 6 },
+  cardTit: { fontWeight: 700, fontSize: 11, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '.05em', borderBottom: '1px solid var(--brand-light)', paddingBottom: 7, marginBottom: 6 },
   apRow:   { display: 'flex', padding: '6px 0', borderBottom: '1px solid #f8fafc', alignItems: 'center', fontSize: 13 },
   notaBox: { background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 9, padding: '9px 13px', fontSize: 13, color: '#92400e' },
 }

@@ -194,6 +194,10 @@ export default function LLoginPage() {
             </form>
 
             {error && <div className="ll-error">⚠ {error}</div>}
+
+            <div style={{ marginTop: 14, fontSize: 12, color: '#64748b', textAlign: 'center', lineHeight: 1.5 }}>
+              ¿Primera vez o cambiaste de móvil?<br/>Pide tu <strong style={{ color: '#4f46e5' }}>enlace de acceso</strong> a tu coordinadora.
+            </div>
           </div>
 
           <div className="ll-back-link">

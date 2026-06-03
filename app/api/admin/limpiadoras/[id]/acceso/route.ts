@@ -25,6 +25,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     `)
     if (!filas.length) return NextResponse.json({ error: 'Limpiadora no encontrada' }, { status: 404 })
 
+    // Al rotar el enlace, invalidar también las sesiones abiertas de esa limpiadora.
+    if (regenerate) {
+      await prisma.$executeRaw(Prisma.sql`DELETE FROM limpiadora_sessions WHERE limpiadora_id = ${id}::uuid`)
+    }
+
     return NextResponse.json({ ok: true, token: filas[0].acceso_token })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })

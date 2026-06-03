@@ -1,9 +1,32 @@
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
+import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'ialimp-dev-secret-change-in-prod'
 )
+
+// Sesión única: el jti del token debe coincidir con el guardado en la cuenta.
+// Si la cuenta aún no tiene jti (tokens previos a la función), se permite (no
+// desloguear a todos de golpe). Fail-open ante error de BD.
+async function sessionJtiOk(p: any): Promise<boolean> {
+  try {
+    let rows: any[]
+    if (p.type === 'usuario' && p.usuario_id) {
+      rows = await prisma.$queryRaw<any[]>(Prisma.sql`SELECT session_jti FROM usuarios_empresa WHERE id = ${p.usuario_id}::uuid LIMIT 1`)
+    } else if (p.empresa_id) {
+      rows = await prisma.$queryRaw<any[]>(Prisma.sql`SELECT session_jti FROM empresas WHERE id = ${p.empresa_id}::uuid LIMIT 1`)
+    } else {
+      return true
+    }
+    const dbJti = rows[0]?.session_jti
+    if (!dbJti) return true
+    return p.jti === dbJti
+  } catch {
+    return true
+  }
+}
 
 export interface SessionPayload {
   empresa_id?:   string
@@ -21,7 +44,11 @@ export async function getSession(): Promise<SessionPayload | null> {
     const token = cookieStore.get('ialimp_session')?.value
     if (!token) return null
     const { payload } = await jwtVerify(token, JWT_SECRET)
-    return payload as unknown as SessionPayload
+    const p = payload as any
+    // Superadmin: fuera del control de sesión única (por ahora).
+    if (p.rol === 'superadmin' || p.type === 'superadmin') return p as SessionPayload
+    if (!(await sessionJtiOk(p))) return null
+    return p as SessionPayload
   } catch {
     return null
   }

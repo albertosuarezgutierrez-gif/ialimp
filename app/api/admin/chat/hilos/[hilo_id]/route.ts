@@ -53,6 +53,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ hilo_id
     const { texto } = await req.json()
     if (!texto?.trim()) return NextResponse.json({ error: 'Texto vacío' }, { status: 400 })
 
+    // El hilo debe ser de esta empresa.
+    const own = await prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT id FROM chat_hilos WHERE id = ${hilo_id}::uuid AND empresa_id = ${empresa_id}::uuid LIMIT 1
+    `)
+    if (!own.length) return NextResponse.json({ error: 'Hilo no encontrado' }, { status: 404 })
+
     const emp = await prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT nombre FROM empresas WHERE id = ${empresa_id}::uuid LIMIT 1
     `)
@@ -64,7 +70,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ hilo_id
 
     // Actualizar ultimo_msg_at del hilo
     await prisma.$executeRaw(Prisma.sql`
-      UPDATE chat_hilos SET ultimo_msg_at = NOW() WHERE id = ${hilo_id}::uuid
+      UPDATE chat_hilos SET ultimo_msg_at = NOW() WHERE id = ${hilo_id}::uuid AND empresa_id = ${empresa_id}::uuid
     `)
 
     return NextResponse.json({ ok: true })

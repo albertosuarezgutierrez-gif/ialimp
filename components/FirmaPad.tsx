@@ -1,7 +1,7 @@
 'use client'
 import { useRef, useState, useEffect } from 'react'
 
-const C = { primary: '#4f46e5', ok: '#16a34a', okBg: '#f0fdf4', border: '#e2e8f0', muted: '#64748b', text: '#1e293b' }
+const C = { primary: 'var(--brand-primary)', ok: '#16a34a', okBg: '#f0fdf4', border: '#e2e8f0', muted: '#64748b', text: '#1e293b' }
 
 interface Props {
   onFirmar: (svg: string, nombre: string) => void

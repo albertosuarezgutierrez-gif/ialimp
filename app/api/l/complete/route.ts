@@ -1,18 +1,27 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { getLimpiadoraSession } from '@/lib/limpiadora-auth'
 
 export async function POST(req: Request) {
+  const sess = await getLimpiadoraSession()
+  if (!sess) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
   const body = await req.json()
   const { session_id, item_id, item_description, checked, photo_url, photo_url_2, photo_url_3, notes } = body
 
   try {
+    // La sesión debe ser de la empresa de la limpiadora.
+    const owns = await prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT 1 FROM cleaning_sessions WHERE id = ${session_id}::uuid AND empresa_id = ${sess.empresa_id}::uuid LIMIT 1
+    `)
+    if (!owns.length) return NextResponse.json({ error: 'Sesión no válida' }, { status: 403 })
+
     if (item_id === 'finish') {
       await prisma.$executeRaw(Prisma.sql`
         UPDATE cleaning_sessions
         SET completed_at = COALESCE(completed_at, now()),
             hora_salida = COALESCE(hora_salida, now())
-        WHERE id = ${session_id}::uuid
+        WHERE id = ${session_id}::uuid AND empresa_id = ${sess.empresa_id}::uuid
       `)
       return NextResponse.json({ ok: true, finished: true })
     }

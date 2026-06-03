@@ -4,6 +4,8 @@ import ConsentimientoRGPD from './ConsentimientoRGPD'
 import { RGPD_VERSION } from '@/lib/rgpd'
 import { serialize } from '@/lib/serialize'
 import { getClienteByToken, loadPortalData } from '@/lib/propietario-portal'
+import BrandingStyle from '@/components/BrandingStyle'
+import { brandingFrom } from '@/lib/branding'
 
 // Acceso por enlace/token (legacy). Sigue funcionando para los enlaces ya
 // enviados. La puerta de entrada nueva (email+contraseña) está en /propietario.
@@ -30,12 +32,14 @@ export default async function PropietarioPage({ params }: { params: Promise<{ to
   const { propiedades, historial, permisos } = await loadPortalData(cliente)
 
   return (
-    <PropietarioClient
-      cliente={serialize(cliente)}
-      propiedades={serialize(propiedades)}
-      historial={serialize(historial)}
-      token={token}
-      permisos={permisos}
-    />
+    <BrandingStyle branding={brandingFrom(cliente)}>
+      <PropietarioClient
+        cliente={serialize(cliente)}
+        propiedades={serialize(propiedades)}
+        historial={serialize(historial)}
+        token={token}
+        permisos={permisos}
+      />
+    </BrandingStyle>
   )
 }

@@ -66,7 +66,8 @@ export async function POST(req: Request) {
       WHERE cliente_id = ${t.cliente_id}::uuid AND used_at IS NULL
     `)
 
-    const jwt = await createPropietarioToken(cli.id, cli.empresa_id, cli.login_email)
+    const { token: jwt, jti } = await createPropietarioToken(cli.id, cli.empresa_id, cli.login_email)
+    await prisma.$executeRaw(Prisma.sql`UPDATE clientes SET session_jti = ${jti} WHERE id = ${cli.id}::uuid`)
     const store = await cookies()
     store.set('ialimp_prop', jwt, {
       httpOnly: true,

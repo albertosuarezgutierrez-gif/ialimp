@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireEmpresaId } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
@@ -6,18 +7,19 @@ import { Prisma } from '@prisma/client'
 // Devuelve el protocolo activo del piso con sus items y fotos.
 export async function GET(req: NextRequest) {
   try {
+    const empresa_id = await requireEmpresaId()
     const sp = req.nextUrl.searchParams
     let propiedad_id = sp.get('propiedad_id')
     const session_id = sp.get('session_id')
     if (!propiedad_id && session_id) {
       const s = await prisma.$queryRaw<any[]>(Prisma.sql`
-        SELECT propiedad_id::text AS propiedad_id FROM cleaning_sessions WHERE id = ${session_id}::uuid LIMIT 1`)
+        SELECT propiedad_id::text AS propiedad_id FROM cleaning_sessions WHERE id = ${session_id}::uuid AND empresa_id = ${empresa_id}::uuid LIMIT 1`)
       propiedad_id = s[0]?.propiedad_id || null
     }
     if (!propiedad_id) return NextResponse.json({ error: 'propiedad_id o session_id requerido' }, { status: 400 })
 
     const prot = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT id::text AS id, nombre, datos FROM protocolos WHERE propiedad_id = ${propiedad_id}::uuid AND activo LIMIT 1`)
+      SELECT id::text AS id, nombre, datos FROM protocolos WHERE propiedad_id = ${propiedad_id}::uuid AND activo AND empresa_id = ${empresa_id}::uuid LIMIT 1`)
     if (!prot.length) return NextResponse.json({ protocolo: null })
 
     const pid = prot[0].id

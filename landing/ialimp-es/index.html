@@ -4,39 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IALIMP · El sistema operativo de tu empresa de limpieza</title>
-<meta name="description" content="IALIMP es el software para gestionar tu empresa de limpieza: programación automática, app para tu equipo con fotos, control de calidad, portal del propietario, informes y facturación. Pensado para empresas de limpieza de pisos turísticos.">
-<link rel="canonical" href="https://ialimp.es/">
+<meta name="description" content="IALIMP — el sistema operativo de tu empresa de limpieza. Programación automática, app para tu equipo, control de calidad, portal del propietario, informes y facturación.">
 <meta name="theme-color" content="#4f46e5">
-
-<!-- Open Graph / Twitter (para que el enlace se vea bien al compartirlo) -->
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="IALIMP">
-<meta property="og:title" content="IALIMP · El sistema operativo de tu empresa de limpieza">
-<meta property="og:description" content="Programación automática, app para tu equipo, control de calidad, portal del propietario, informes y facturación. Menos caos, más control.">
-<meta property="og:url" content="https://ialimp.es/">
-<meta property="og:image" content="https://ialimp.es/og.png">
-<meta property="og:locale" content="es_ES">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="IALIMP · El sistema operativo de tu empresa de limpieza">
-<meta name="twitter:description" content="Software para empresas de limpieza: organiza, controla la calidad y factura sin esfuerzo.">
-<meta name="twitter:image" content="https://ialimp.es/og.png">
-
-<!-- Favicon (SVG inline: la "i" de ialimp) -->
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234f46e5'/%3E%3Ctext x='32' y='46' font-family='Arial,sans-serif' font-size='40' font-weight='900' fill='white' text-anchor='middle'%3Ei%3C/text%3E%3C/svg%3E">
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "IALIMP",
-  "applicationCategory": "BusinessApplication",
-  "operatingSystem": "Web",
-  "description": "Software de gestión para empresas de limpieza: programación, app para el equipo, control de calidad, portal del propietario, informes y facturación.",
-  "url": "https://ialimp.es",
-  "offers": { "@type": "Offer", "price": "49", "priceCurrency": "EUR" },
-  "provider": { "@type": "Organization", "name": "IALIMP", "email": "hola@ialimp.es", "address": "C/ San Juan de la Palma 28, 41003 Sevilla" }
-}
-</script>
+<meta name="color-scheme" content="light">
 <style>
   /* Fuente auto-alojada (Nunito). Sin Google Fonts: ningún dato del visitante
      sale a terceros. Los .woff2 se generan con fetch-fonts.sh antes de desplegar. */
@@ -49,56 +19,75 @@
 
   :root{
     --primary:#4f46e5;--brand:#6366f1;--soft:#eef2ff;--ink:#1e1b4b;
-    --bg:#f1f5f9;--white:#fff;--muted:#64748b;--line:#e2e8f0;--ok:#16a34a;--warn:#d97706;--wa:#25d366;
+    --bg:#f1f5f9;--white:#fff;--muted:#64748b;--line:#e2e8f0;--ok:#16a34a;--warn:#d97706;
     --shadow:0 24px 60px -24px rgba(30,27,75,.32);--shadow-sm:0 8px 22px -12px rgba(30,27,75,.22);--r:18px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
+  html{scroll-behavior:smooth;color-scheme:light}
   body{font-family:'Nunito',system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   a{color:inherit;text-decoration:none}
   .wrap{max-width:1160px;margin:0 auto;padding:0 24px}
   .logo{font-family:'Nunito',sans-serif;font-weight:800;font-size:24px;letter-spacing:-.03em;color:var(--ink)}
   .logo .ia{color:var(--primary)}.logo .l2{font-weight:400}
 
-  .btn{display:inline-flex;align-items:center;gap:9px;font-family:'Nunito';font-weight:600;font-size:15px;border:none;border-radius:13px;padding:13px 22px;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease;white-space:nowrap}
-  .btn svg{width:17px;height:17px}
+  /* Texto con degradado de marca (animado) */
+  .grad{background:linear-gradient(100deg,var(--primary),var(--brand) 45%,#8b89f2 70%,var(--primary));background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:grad 7s ease-in-out infinite}
+  @keyframes grad{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+  .btn{position:relative;display:inline-flex;align-items:center;gap:9px;font-family:'Nunito';font-weight:600;font-size:15px;border:none;border-radius:13px;padding:13px 22px;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease;white-space:nowrap}
+  .btn svg{width:17px;height:17px;transition:transform .2s ease}
+  .btn:hover svg{transform:translateX(3px)}
   .btn-primary{background:var(--primary);color:#fff;box-shadow:0 10px 26px -10px rgba(79,70,229,.55)}
-  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 38px -12px rgba(79,70,229,.6)}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 40px -12px rgba(79,70,229,.65)}
+  /* Brillo que cruza el botón primario */
+  .btn-primary::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-120%);transition:transform .6s ease}
+  .btn-primary:hover::after{transform:translateX(120%)}
   .btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:var(--shadow-sm)}
   .btn-ghost:hover{transform:translateY(-2px);border-color:var(--brand)}
-  .btn-wa{background:var(--wa);color:#fff;box-shadow:0 10px 26px -10px rgba(37,211,102,.5)}
-  .btn-wa:hover{transform:translateY(-2px)}
 
-  header{position:sticky;top:0;z-index:100;backdrop-filter:saturate(1.4) blur(12px);background:rgba(255,255,255,.78);border-bottom:1px solid rgba(226,232,240,.8)}
+  header{position:sticky;top:0;z-index:100;backdrop-filter:saturate(1.4) blur(12px);background:rgba(255,255,255,.78);border-bottom:1px solid rgba(226,232,240,.8);transition:box-shadow .25s ease}
+  header.scrolled{box-shadow:0 10px 30px -22px rgba(30,27,75,.4)}
   .nav{display:flex;align-items:center;justify-content:space-between;height:70px}
-  .nav .links{display:flex;gap:22px;align-items:center}
-  .nav .links a{font-weight:600;font-size:14px;color:var(--muted)}
-  .nav .links a:hover{color:var(--primary)}
-  @media(max-width:720px){.nav .links{display:none}}
+  .nav .right{display:flex;gap:12px;align-items:center}
 
   .hero{position:relative;padding:96px 0 72px;overflow:hidden}
-  .hero::before{content:"";position:absolute;inset:0;z-index:0;background:radial-gradient(680px 420px at 78% 8%,#dfe3ff 0,transparent 60%),radial-gradient(560px 380px at 8% 92%,#e9edff 0,transparent 55%)}
+  /* Aurora animada de fondo (degradados de marca en movimiento, tema claro) */
+  .aurora{position:absolute;inset:-20% -10% 0;z-index:0;pointer-events:none;filter:blur(8px)}
+  .aurora span{position:absolute;border-radius:50%;opacity:.55;mix-blend-mode:multiply;will-change:transform}
+  .aurora .a1{width:640px;height:520px;top:-120px;right:-60px;background:radial-gradient(circle at 30% 30%,#dfe3ff,transparent 62%);animation:float1 18s ease-in-out infinite}
+  .aurora .a2{width:560px;height:480px;bottom:-160px;left:-80px;background:radial-gradient(circle at 60% 40%,#e9edff,transparent 60%);animation:float2 22s ease-in-out infinite}
+  .aurora .a3{width:420px;height:420px;top:30%;left:40%;background:radial-gradient(circle at 50% 50%,#eef2ff,transparent 58%);animation:float3 26s ease-in-out infinite}
+  @keyframes float1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-40px,30px) scale(1.08)}}
+  @keyframes float2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(50px,-30px) scale(1.1)}}
+  @keyframes float3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-30px,-40px) scale(1.06)}}
+  /* Rejilla sutil sobre la aurora */
+  .hero::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(99,102,241,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,.05) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(80% 60% at 50% 30%,#000 30%,transparent 75%);mask-image:radial-gradient(80% 60% at 50% 30%,#000 30%,transparent 75%)}
   .hero .wrap{position:relative;z-index:1;display:grid;grid-template-columns:1.04fr .96fr;gap:54px;align-items:center}
   @media(max-width:940px){.hero .wrap{grid-template-columns:1fr;gap:46px}}
-  h1.hero-t{font-family:'Nunito';font-weight:700;font-size:clamp(40px,5.6vw,66px);line-height:1.0;letter-spacing:-.03em;margin-bottom:22px}
-  h1.hero-t em{font-style:normal;color:var(--primary)}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--primary);background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);padding:7px 14px;border-radius:999px;margin-bottom:22px}
+  .pill .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(22,163,74,.5);animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.5)}70%{box-shadow:0 0 0 9px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+  h1.hero-t{font-family:'Nunito';font-weight:800;font-size:clamp(40px,5.6vw,66px);line-height:1.0;letter-spacing:-.03em;margin-bottom:22px}
   .hero .tag{font-family:'Nunito';font-weight:600;font-size:clamp(18px,2.2vw,24px);color:var(--muted);margin-bottom:32px;letter-spacing:-.01em}
   .hero .ctas{display:flex;gap:14px;flex-wrap:wrap}
 
   .stagger>*{opacity:0;transform:translateY(16px);animation:rise .7s cubic-bezier(.2,.7,.2,1) forwards}
   .stagger>*:nth-child(1){animation-delay:.05s}.stagger>*:nth-child(2){animation-delay:.14s}
   .stagger>*:nth-child(3){animation-delay:.23s}.stagger>*:nth-child(4){animation-delay:.32s}
+  .stagger>*:nth-child(5){animation-delay:.41s}
   @keyframes rise{to{opacity:1;transform:none}}
 
-  .mock{position:relative;display:flex;justify-content:center;align-items:flex-end}
-  .dash{width:100%;max-width:430px;background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);overflow:hidden}
+  .mock{position:relative;display:flex;justify-content:center;align-items:flex-end;perspective:1200px}
+  .tilt{transform-style:preserve-3d;transition:transform .25s cubic-bezier(.2,.7,.2,1)}
+  .dash{width:100%;max-width:430px;background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);overflow:hidden;animation:bob 7s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
   .dash .bar{background:var(--primary);color:#fff;padding:16px 18px;display:flex;align-items:center;justify-content:space-between}
   .dash .bar .logo{font-size:18px;color:#fff}.dash .bar .logo .l2{color:#c7d2fe}
   .dash .bar .av{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.2);display:grid;place-items:center;font-size:12px;font-weight:700;font-family:'Nunito'}
   .dash .body{padding:18px}
   .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
   .kpi{background:var(--soft);border-radius:13px;padding:12px}
-  .kpi .n{font-family:'Nunito';font-weight:700;font-size:22px;color:var(--primary);line-height:1}
+  .kpi .n{font-family:'Nunito';font-weight:800;font-size:22px;color:var(--primary);line-height:1}
   .kpi .l{font-size:10.5px;color:var(--muted);margin-top:5px;font-weight:500}
   .lrow{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:9px}
   .lrow .ic{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;font-size:15px}
@@ -106,7 +95,8 @@
   .lrow .t1{font-weight:700;font-size:13.5px}.lrow .t2{font-size:11.5px;color:var(--muted)}
   .lrow .st{margin-left:auto;font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:999px}
   .st.p{background:#fff7ed;color:var(--warn)}.st.d{background:#f0fdf4;color:var(--ok)}
-  .phone-mini{position:absolute;right:-22px;bottom:-26px;width:158px;background:#0b1020;border-radius:26px;padding:7px;box-shadow:var(--shadow);transform:rotate(4deg)}
+  .phone-mini{position:absolute;right:-22px;bottom:-26px;width:158px;background:#0b1020;border-radius:26px;padding:7px;box-shadow:var(--shadow);transform:rotate(4deg);animation:bob2 7s ease-in-out infinite}
+  @keyframes bob2{0%,100%{transform:rotate(4deg) translateY(0)}50%{transform:rotate(4deg) translateY(-14px)}}
   .phone-mini .ps{background:#fff;border-radius:20px;overflow:hidden}
   .phone-mini .pt{background:var(--primary);color:#fff;padding:14px 12px 10px}
   .phone-mini .pt .logo{font-size:14px;color:#fff}.phone-mini .pt .logo .l2{color:#c7d2fe}
@@ -116,103 +106,88 @@
   .phone-mini .card .a{font-weight:700;font-size:11px}.phone-mini .card .h{font-size:9.5px;color:var(--muted);margin-top:3px}
   @media(max-width:520px){.phone-mini{display:none}}
 
+  /* Marquesina de capacidades */
+  .marquee{margin-top:8px;padding:18px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:rgba(255,255,255,.5);overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+  .marquee .track{display:flex;gap:40px;width:max-content;animation:scroll 28s linear infinite}
+  .marquee:hover .track{animation-play-state:paused}
+  .marquee .it{display:inline-flex;align-items:center;gap:9px;font-weight:700;font-size:15px;color:var(--ink);white-space:nowrap;opacity:.85}
+  .marquee .it b{color:var(--primary)}
+  @keyframes scroll{to{transform:translateX(-50%)}}
+
   section.block{padding:72px 0}
   .eyebrow{display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);margin-bottom:16px}
-  h2.sec{font-family:'Nunito';font-weight:700;font-size:clamp(30px,4vw,46px);line-height:1.04;letter-spacing:-.025em}
-  .sub{font-size:17px;color:var(--muted);margin-top:14px;max-width:60ch}
+  h2.sec{font-family:'Nunito';font-weight:800;font-size:clamp(30px,4vw,46px);line-height:1.04;letter-spacing:-.025em}
   .center{text-align:center}
-  .center .sub{margin-left:auto;margin-right:auto}
+  .lead{max-width:56ch;margin:14px auto 0;color:var(--muted);font-weight:500;font-size:clamp(15px,1.8vw,18px)}
   .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
   .reveal.in{opacity:1;transform:none}
 
-  .statement{background:var(--ink);color:#fff;border-radius:28px;padding:72px 48px;text-align:center}
-  .statement h2{font-family:'Nunito';font-weight:700;font-size:clamp(28px,4.2vw,48px);line-height:1.08;letter-spacing:-.025em;color:#fff;max-width:18ch;margin:0 auto}
+  .statement{position:relative;background:var(--ink);color:#fff;border-radius:28px;padding:72px 48px;text-align:center;overflow:hidden}
+  .statement::before{content:"";position:absolute;inset:0;background:radial-gradient(520px 280px at 18% 0%,rgba(99,102,241,.45),transparent 60%),radial-gradient(520px 280px at 90% 110%,rgba(79,70,229,.4),transparent 60%);animation:hue 12s ease-in-out infinite}
+  @keyframes hue{0%,100%{opacity:.8}50%{opacity:1}}
+  .statement h2{position:relative;font-family:'Nunito';font-weight:800;font-size:clamp(28px,4.2vw,48px);line-height:1.08;letter-spacing:-.025em;color:#fff;max-width:18ch;margin:0 auto}
   @media(max-width:640px){.statement{padding:52px 28px}}
 
   .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:14px}
   @media(max-width:900px){.feat-grid{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:560px){.feat-grid{grid-template-columns:1fr}}
-  .feat{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:26px 22px;box-shadow:var(--shadow-sm);transition:transform .18s ease,box-shadow .18s ease}
-  .feat:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
-  .feat .ic{width:48px;height:48px;border-radius:13px;background:var(--soft);color:var(--primary);display:grid;place-items:center;flex:none;margin-bottom:14px}
+  .feat{position:relative;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:28px 24px;box-shadow:var(--shadow-sm);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;display:flex;align-items:flex-start;gap:16px;overflow:hidden}
+  .feat::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(99,102,241,.06),transparent 55%);opacity:0;transition:opacity .25s ease}
+  .feat:hover{transform:translateY(-5px);box-shadow:var(--shadow);border-color:#c7d2fe}
+  .feat:hover::before{opacity:1}
+  .feat .ic{position:relative;width:48px;height:48px;border-radius:13px;background:var(--soft);color:var(--primary);display:grid;place-items:center;flex:none;transition:transform .25s ease}
+  .feat:hover .ic{transform:scale(1.08) rotate(-3deg)}
   .feat .ic svg{width:24px;height:24px}
-  .feat h3{font-family:'Nunito';font-weight:700;font-size:18px;letter-spacing:-.01em;margin-bottom:6px}
-  .feat p{font-size:14px;color:var(--muted);line-height:1.5}
+  .feat .tx{position:relative}
+  .feat h3{font-family:'Nunito';font-weight:800;font-size:18px;letter-spacing:-.01em;margin-bottom:4px}
+  .feat p{font-size:13.5px;color:var(--muted);font-weight:500;line-height:1.45}
 
-  /* Beneficios (cifras) */
-  .bene{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:14px}
-  @media(max-width:640px){.bene{grid-template-columns:1fr}}
-  .bene .b{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:28px;text-align:center;box-shadow:var(--shadow-sm)}
-  .bene .b .big{font-size:40px;font-weight:900;color:var(--primary);line-height:1}
-  .bene .b .t{font-weight:700;margin-top:8px}
-  .bene .b .d{font-size:13.5px;color:var(--muted);margin-top:6px}
-
-  /* Pasos */
-  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:14px}
-  @media(max-width:760px){.steps{grid-template-columns:1fr}}
-  .step{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:28px;box-shadow:var(--shadow-sm)}
-  .step .num{width:38px;height:38px;border-radius:11px;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:900;margin-bottom:14px}
-  .step h3{font-size:18px;font-weight:700;margin-bottom:6px}
-  .step p{font-size:14px;color:var(--muted)}
-
-  /* Precios */
-  .price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:14px;align-items:stretch}
-  @media(max-width:820px){.price-grid{grid-template-columns:1fr}}
-  .plan{background:#fff;border:1px solid var(--line);border-radius:20px;padding:30px 26px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column}
-  .plan.feat-plan{border:2px solid var(--primary);box-shadow:var(--shadow)}
-  .plan .name{font-weight:800;font-size:18px}
-  .plan .price{font-size:40px;font-weight:900;color:var(--primary);margin:10px 0 2px;line-height:1}
-  .plan .price small{font-size:15px;color:var(--muted);font-weight:600}
-  .plan ul{list-style:none;margin:18px 0;display:flex;flex-direction:column;gap:9px}
-  .plan li{font-size:14px;color:var(--ink);padding-left:24px;position:relative}
-  .plan li::before{content:"✓";position:absolute;left:0;color:var(--primary);font-weight:900}
-  .plan .tagp{font-size:13px;color:var(--muted);margin-top:auto}
-  .badge-pop{display:inline-block;background:var(--soft);color:var(--primary);font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em}
-
-  /* FAQ */
-  .faq{max-width:780px;margin:14px auto 0}
-  .faq details{background:#fff;border:1px solid var(--line);border-radius:14px;padding:0 22px;margin-bottom:12px;box-shadow:var(--shadow-sm)}
-  .faq summary{cursor:pointer;font-weight:700;font-size:16px;padding:18px 0;list-style:none;display:flex;justify-content:space-between;align-items:center}
-  .faq summary::-webkit-details-marker{display:none}
-  .faq summary::after{content:"+";color:var(--primary);font-weight:900;font-size:22px}
-  .faq details[open] summary::after{content:"–"}
-  .faq p{font-size:14.5px;color:var(--muted);padding:0 0 18px;line-height:1.6}
-
-  /* Testimonio */
-  .quote{background:var(--soft);border-radius:24px;padding:48px;text-align:center}
-  .quote p{font-size:clamp(20px,2.6vw,28px);font-weight:700;line-height:1.4;letter-spacing:-.01em;max-width:24ch;margin:0 auto 18px}
-  .quote .who{font-size:14px;color:var(--muted);font-weight:600}
-
-  /* Sección Sevilla (coherencia con el mailing) */
-  .sevilla{background:linear-gradient(135deg,#4f46e5 0,#6366f1 100%);border-radius:28px;padding:56px 48px;color:#fff;text-align:center}
-  .sevilla h2{color:#fff;margin-bottom:14px}
-  .sevilla p{color:#dfe1ff;max-width:52ch;margin:0 auto 26px;font-size:16px}
-  @media(max-width:640px){.sevilla{padding:40px 26px}}
-
-  /* Formulario */
-  .form-card{background:#fff;border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);overflow:hidden;display:grid;grid-template-columns:1fr 1fr}
-  @media(max-width:820px){.form-card{grid-template-columns:1fr}}
-  .form-card .info{background:var(--ink);color:#fff;padding:44px}
-  .form-card .info h2{color:#fff;font-size:30px;font-weight:800;letter-spacing:-.02em;margin-bottom:14px}
-  .form-card .info p{color:#c7cbe8;font-size:15px;line-height:1.6;margin-bottom:24px}
-  .form-card .info .wa{margin-top:8px}
-  .form-card form{padding:44px;display:flex;flex-direction:column;gap:14px}
-  .field label{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
-  .field input,.field textarea{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#f8fafc;font-family:'Nunito';font-size:15px;color:var(--ink)}
-  .field input:focus,.field textarea:focus{outline:none;border-color:var(--primary);background:#fff}
-  .consent{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--muted)}
-  .consent input{margin-top:3px;accent-color:var(--primary)}
-  .consent a{color:var(--primary);font-weight:600}
-  .form-msg{font-size:14px;font-weight:700;padding:10px 0}
-  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  /* Métricas con contador animado */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:8px}
+  @media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:26px 22px;text-align:center;box-shadow:var(--shadow-sm)}
+  .stat .n{font-family:'Nunito';font-weight:900;font-size:clamp(30px,4.4vw,44px);line-height:1;letter-spacing:-.02em}
+  .stat .n .grad{display:inline}
+  .stat .l{margin-top:8px;font-size:13.5px;color:var(--muted);font-weight:600}
 
   .ai{position:relative;border-radius:28px;overflow:hidden;padding:56px 48px;color:#fff;background:linear-gradient(135deg,#4f46e5 0,#6366f1 55%,#7c7af0 100%);text-align:center}
-  .ai::after{content:"";position:absolute;inset:0;background:radial-gradient(420px 240px at 88% 12%,rgba(255,255,255,.18),transparent 60%);pointer-events:none}
+  .ai::after{content:"";position:absolute;inset:0;background:radial-gradient(420px 240px at 88% 12%,rgba(255,255,255,.2),transparent 60%),radial-gradient(380px 220px at 10% 100%,rgba(255,255,255,.14),transparent 60%);pointer-events:none}
   .ai .inner{position:relative}
   .ai h2{color:#fff;margin-bottom:14px}
-  .ai .sub{color:#dfe1ff;margin-bottom:24px}
+  .ai .lead{color:rgba(255,255,255,.82);margin-bottom:30px}
   .ai .chips{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
-  .chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:12px 20px;font-family:'Nunito';font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:9px}
+  .chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:12px 20px;font-family:'Nunito';font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:9px;transition:transform .18s ease,background .18s ease}
+  .chip:hover{transform:translateY(-3px);background:rgba(255,255,255,.2)}
+
+  .cta-final{background:var(--ink);border-radius:28px;padding:64px 48px;text-align:center;color:#fff;position:relative;overflow:hidden}
+  .cta-final::before{content:"";position:absolute;inset:0;background:radial-gradient(520px 280px at 50% -10%,rgba(99,102,241,.5),transparent 60%)}
+  .cta-final .inner{position:relative}
+  .cta-final h2{color:#fff;margin-bottom:28px}
+  .cta-final .ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .cta-final .btn-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.3)}
+  .cta-final .btn-ghost:hover{border-color:#fff;background:rgba(255,255,255,.06)}
+  .cta-final .fine{margin-top:20px;font-size:13px;color:#9aa0c4}
+
+  .form-card{background:#fff;border:1px solid var(--line);border-radius:28px;padding:48px;box-shadow:var(--shadow);max-width:560px;margin:0 auto;text-align:left}
+  @media(max-width:560px){.form-card{padding:32px 22px}}
+  .form-card h2{margin-bottom:8px;text-align:center}
+  .form-card .lead{color:var(--muted);font-size:16px;text-align:center;margin-bottom:28px}
+  .field{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+  .field label{font-weight:700;font-size:14px}
+  .field input,.field textarea{width:100%;font-family:'Nunito',sans-serif;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:13px 15px;transition:border-color .16s ease,box-shadow .16s ease}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--soft)}
+  .field textarea{resize:vertical;min-height:96px}
+  .consent{display:flex;align-items:flex-start;gap:10px;margin:6px 0 20px}
+  .consent input{margin-top:3px;width:18px;height:18px;flex:none;accent-color:var(--primary)}
+  .consent label{font-size:13.5px;color:#475569;line-height:1.5}
+  .consent a{color:var(--primary);font-weight:600}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  .form-card .btn-primary{width:100%;justify-content:center;font-size:16px;padding:15px}
+  .form-card .btn-primary:disabled{opacity:.6;cursor:default;transform:none}
+  .form-note{text-align:center;font-size:13px;color:var(--muted);margin-top:16px}
+  .form-msg{margin-top:18px;padding:14px 16px;border-radius:13px;font-size:14px;font-weight:600;display:none}
+  .form-msg.ok{display:block;background:#f0fdf4;color:var(--ok);border:1px solid #bbf7d0}
+  .form-msg.err{display:block;background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
 
   footer{padding:44px 0 36px;border-top:1px solid var(--line);margin-top:36px}
   .foot{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
@@ -221,64 +196,88 @@
   .foot-legal a{font-size:13px;color:var(--muted);font-weight:600}
   .foot-legal a:hover{color:var(--primary)}
 
-  /* WhatsApp flotante */
-  .wa-float{position:fixed;right:20px;bottom:20px;z-index:200;background:var(--wa);color:#fff;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;box-shadow:0 12px 30px -8px rgba(37,211,102,.6);font-size:28px}
-  .wa-float:hover{transform:scale(1.06)}
+  /* Accesibilidad: si el usuario prefiere menos movimiento, lo apagamos todo. */
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+    .reveal,.stagger>*{opacity:1!important;transform:none!important}
+    html{scroll-behavior:auto}
+  }
 </style>
 </head>
 <body>
 
-<header>
+<header id="hdr">
   <div class="wrap nav">
     <div class="logo"><span class="ia">ia</span><span class="l2">limp</span></div>
-    <div class="links">
-      <a href="#funciones">Funciones</a>
-      <a href="#como">Cómo funciona</a>
-      <a href="#precios">Precios</a>
-      <a href="#faq">FAQ</a>
+    <div class="right">
+      <a class="btn btn-primary" href="#contacto">Solicitar demo</a>
     </div>
-    <a class="btn btn-primary" href="#contacto">Solicitar demo</a>
   </div>
 </header>
 
 <section class="hero">
+  <div class="aurora" aria-hidden="true"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
   <div class="wrap">
     <div class="stagger">
-      <h1 class="hero-t">El sistema operativo de tu <em>empresa de limpieza</em>.</h1>
+      <span class="pill"><span class="dot"></span> En vivo gestionando limpiezas reales</span>
+      <h1 class="hero-t">El sistema operativo de tu <span class="grad">empresa de limpieza</span>.</h1>
       <p class="tag">Menos caos. Más control.</p>
       <div class="ctas">
         <a class="btn btn-primary" href="#contacto">Solicitar demo
           <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
-        <a class="btn btn-ghost" href="https://app.ialimp.es" target="_blank" rel="noopener">Ver la app</a>
       </div>
     </div>
-    <div class="mock reveal">
-      <div class="dash">
-        <div class="bar"><div class="logo"><span style="color:#fff">ia</span><span class="l2">limp</span></div><div class="av">IA</div></div>
-        <div class="body">
-          <div class="kpis">
-            <div class="kpi"><div class="n">12</div><div class="l">Hoy</div></div>
-            <div class="kpi"><div class="n">8</div><div class="l">Hechas</div></div>
-            <div class="kpi"><div class="n">4</div><div class="l">Pendientes</div></div>
+    <div class="mock reveal" id="mock">
+      <div class="tilt" id="tilt">
+        <div class="dash">
+          <div class="bar"><div class="logo"><span style="color:#fff">ia</span><span class="l2">limp</span></div><div class="av">IA</div></div>
+          <div class="body">
+            <div class="kpis">
+              <div class="kpi"><div class="n" data-count="12">0</div><div class="l">Hoy</div></div>
+              <div class="kpi"><div class="n" data-count="8">0</div><div class="l">Hechas</div></div>
+              <div class="kpi"><div class="n" data-count="4">0</div><div class="l">Pendientes</div></div>
+            </div>
+            <div class="lrow"><div class="ic b">🧹</div><div><div class="t1">Apartamento Centro</div><div class="t2">11:00 · Asignada</div></div><span class="st p">Pendiente</span></div>
+            <div class="lrow"><div class="ic b">🧹</div><div><div class="t1">Ático Catedral</div><div class="t2">14:00 · Sin asignar</div></div><span class="st p">Pendiente</span></div>
+            <div class="lrow"><div class="ic g">✓</div><div><div class="t1">Dúplex Ribera</div><div class="t2">09:00 · 6 fotos</div></div><span class="st d">Hecha</span></div>
           </div>
-          <div class="lrow"><div class="ic b">🧹</div><div><div class="t1">Apartamento Centro</div><div class="t2">11:00 · Asignada</div></div><span class="st p">Pendiente</span></div>
-          <div class="lrow"><div class="ic b">🧹</div><div><div class="t1">Ático Catedral</div><div class="t2">14:00 · Sin asignar</div></div><span class="st p">Pendiente</span></div>
-          <div class="lrow"><div class="ic g">✓</div><div><div class="t1">Dúplex Ribera</div><div class="t2">09:00 · 6 fotos</div></div><span class="st d">Hecha</span></div>
         </div>
-      </div>
-      <div class="phone-mini">
-        <div class="ps">
-          <div class="pt"><div class="logo"><span style="color:#fff">ia</span><span class="l2">limp</span></div><div class="d">Hoy</div></div>
-          <div class="pb">
-            <div class="card"><div class="a">Apartamento Centro</div><div class="h">11:00 → 13:00 🚪🔑</div></div>
-            <div class="card"><div class="a">Ático Catedral</div><div class="h">14:00 → 16:00 🚪🔑</div></div>
+        <div class="phone-mini">
+          <div class="ps">
+            <div class="pt"><div class="logo"><span style="color:#fff">ia</span><span class="l2">limp</span></div><div class="d">Hoy</div></div>
+            <div class="pb">
+              <div class="card"><div class="a">Apartamento Centro</div><div class="h">11:00 → 13:00 🚪🔑</div></div>
+              <div class="card"><div class="a">Ático Catedral</div><div class="h">14:00 → 16:00 🚪🔑</div></div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 </section>
+
+<div class="marquee" aria-hidden="true">
+  <div class="track">
+    <span class="it"><b>🎯</b> Asignación automática</span>
+    <span class="it"><b>📱</b> App para tu equipo</span>
+    <span class="it"><b>📸</b> Control de calidad</span>
+    <span class="it"><b>🏠</b> Portal del propietario</span>
+    <span class="it"><b>📊</b> Informes al instante</span>
+    <span class="it"><b>🧾</b> Facturación lista</span>
+    <span class="it"><b>📅</b> Sincronización iCal</span>
+    <span class="it"><b>🤖</b> Agentes de IA</span>
+    <!-- duplicado para bucle continuo -->
+    <span class="it"><b>🎯</b> Asignación automática</span>
+    <span class="it"><b>📱</b> App para tu equipo</span>
+    <span class="it"><b>📸</b> Control de calidad</span>
+    <span class="it"><b>🏠</b> Portal del propietario</span>
+    <span class="it"><b>📊</b> Informes al instante</span>
+    <span class="it"><b>🧾</b> Facturación lista</span>
+    <span class="it"><b>📅</b> Sincronización iCal</span>
+    <span class="it"><b>🤖</b> Agentes de IA</span>
+  </div>
+</div>
 
 <section class="block">
   <div class="wrap">
@@ -288,73 +287,42 @@
   </div>
 </section>
 
-<!-- Beneficios -->
 <section class="block">
   <div class="wrap center">
-    <span class="eyebrow">Por qué IALIMP</span>
-    <h2 class="sec">Recupera tu tiempo.</h2>
-    <p class="sub">Deja de coordinar limpiezas por WhatsApp, Excel y llamadas. IALIMP lo ordena por ti.</p>
-  </div>
-  <div class="wrap">
-    <div class="bene">
-      <div class="b reveal"><div class="big">5h</div><div class="t">menos a la semana</div><div class="d">en organizar y repartir el trabajo de tu equipo.</div></div>
-      <div class="b reveal"><div class="big">0</div><div class="t">limpiezas olvidadas</div><div class="d">asignación automática según turnos y entradas de huéspedes.</div></div>
-      <div class="b reveal"><div class="big">100%</div><div class="t">trazabilidad</div><div class="d">fotos, checklist y partes de cada limpieza, listos para facturar.</div></div>
-    </div>
-  </div>
-</section>
-
-<!-- Funciones -->
-<section class="block" id="funciones">
-  <div class="wrap center">
     <span class="eyebrow">Todo en un sitio</span>
-    <h2 class="sec">Tu operación, ordenada.</h2>
+    <h2 class="sec">Tu operación, <span class="grad">ordenada</span>.</h2>
+    <p class="lead">Desde la salida del huésped hasta la factura al propietario, IALIMP conecta cada paso para que no se te escape ninguna limpieza.</p>
   </div>
   <div class="wrap">
     <div class="feat-grid">
-      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.2-8.5"/><path d="M21 4v5h-5"/></svg></div><h3>Programación automática</h3><p>Crea las limpiezas solas a partir de las salidas de tus huéspedes y las reparte a tu equipo.</p></div>
-      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></div><h3>App para tu equipo</h3><p>Cada limpiadora ve su agenda, su acceso al piso y completa el checklist con fotos desde el móvil.</p></div>
-      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div><h3>Control de calidad</h3><p>Fotos antes/después y revisión con IA para asegurar que cada piso queda perfecto.</p></div>
-      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div><h3>Portal del propietario</h3><p>Tus clientes ven sus limpiezas, fotos e informes en su propio portal. Menos llamadas para ti.</p></div>
-      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg></div><h3>Informes al instante</h3><p>Resumen mensual de servicios, incidencias y valoraciones, generado y enviado solo.</p></div>
-      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M9 13h6M9 17h6"/></svg></div><h3>Facturación lista</h3><p>De cada limpieza a la factura del propietario y a la nómina de tu equipo, sin recontar.</p></div>
+      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.2-8.5"/><path d="M21 4v5h-5"/></svg></div><div class="tx"><h3>Programación automática</h3><p>Las limpiezas se asignan solas a la persona idónea según turno y carga.</p></div></div>
+      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></div><div class="tx"><h3>App para tu equipo</h3><p>Cada limpiadora ve su día, hace el checklist y sube las fotos desde el móvil.</p></div></div>
+      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div><div class="tx"><h3>Control de calidad</h3><p>Fotos de cada limpieza y revisión asistida por IA para que nada se quede a medias.</p></div></div>
+      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></div><div class="tx"><h3>Portal del propietario</h3><p>Tu cliente entra a ver el estado de su piso, documentos y facturas. Con tu marca.</p></div></div>
+      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg></div><div class="tx"><h3>Informes al instante</h3><p>Resúmenes de actividad y rentabilidad listos en un clic, sin hojas de cálculo.</p></div></div>
+      <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M9 13h6M9 17h6"/></svg></div><div class="tx"><h3>Facturación lista</h3><p>Factura a propietarios y calcula nóminas de tu equipo de forma automática.</p></div></div>
     </div>
   </div>
 </section>
 
-<!-- Cómo funciona -->
-<section class="block" id="como">
-  <div class="wrap center">
-    <span class="eyebrow">Empezar es fácil</span>
-    <h2 class="sec">En marcha en 3 pasos.</h2>
-  </div>
-  <div class="wrap">
-    <div class="steps">
-      <div class="step reveal"><div class="num">1</div><h3>Conecta tus pisos</h3><p>Damos de alta tus propiedades y tu equipo. Si gestionas turísticos, conectamos los calendarios para crear las limpiezas solas.</p></div>
-      <div class="step reveal"><div class="num">2</div><h3>El equipo trabaja desde el móvil</h3><p>Cada limpiadora recibe su agenda, hace el checklist y sube las fotos. Tú lo ves todo en tiempo real.</p></div>
-      <div class="step reveal"><div class="num">3</div><h3>Factura e informa</h3><p>Al cerrar cada mes, los informes y las facturas salen solos. Tus clientes reciben su resumen sin que muevas un dedo.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- Testimonio -->
 <section class="block">
   <div class="wrap">
-    <div class="quote reveal">
-      <p>"Antes coordinaba todo por WhatsApp y Excel. Ahora abro IALIMP y sé qué pasa en cada piso."</p>
-      <div class="who">— Empresa de limpieza de pisos turísticos (Sevilla)</div>
+    <div class="stats">
+      <div class="stat reveal"><div class="n"><span class="grad" data-count="100" data-suffix="%">0</span></div><div class="l">de tu operación en un sitio</div></div>
+      <div class="stat reveal"><div class="n"><span class="grad" data-count="0" data-prefix="" data-suffix="" data-text="24/7">24/7</span></div><div class="l">tu equipo y tus clientes, conectados</div></div>
+      <div class="stat reveal"><div class="n"><span class="grad" data-count="8" data-suffix="+">0</span></div><div class="l">agentes de IA trabajando por ti</div></div>
+      <div class="stat reveal"><div class="n"><span class="grad" data-count="0" data-text="0">0</span></div><div class="l">hojas de cálculo que mantener</div></div>
     </div>
   </div>
 </section>
 
-<!-- IA -->
 <section class="block">
   <div class="wrap">
     <div class="ai reveal">
       <div class="inner">
         <span class="eyebrow" style="color:#dfe1ff">Inteligencia artificial</span>
         <h2 class="sec">Agentes que trabajan contigo.</h2>
-        <p class="sub">IALIMP incluye asistentes que asignan limpiezas, revisan la calidad de las fotos y redactan los informes por ti.</p>
+        <p class="lead">No es una promesa de marketing: ya asignan limpiezas, revisan fotos y redactan tus informes.</p>
         <div class="chips">
           <span class="chip">🎯 Asignación</span>
           <span class="chip">📸 Calidad de fotos</span>
@@ -366,94 +334,42 @@
   </div>
 </section>
 
-<!-- Precios -->
-<section class="block" id="precios">
-  <div class="wrap center">
-    <span class="eyebrow">Precios claros</span>
-    <h2 class="sec">Sin permanencia.</h2>
-    <p class="sub">Empiezas con lo que necesitas y creces cuando quieras. Te ayudamos a configurarlo gratis.</p>
-  </div>
-  <div class="wrap">
-    <div class="price-grid">
-      <div class="plan reveal">
-        <div class="name">Inicio</div>
-        <div class="price">49€<small>/mes</small></div>
-        <ul><li>Programación y agenda</li><li>App para tu equipo</li><li>Checklist con fotos</li><li>Hasta 3 limpiadoras</li></ul>
-        <div class="tagp">Para empezar a ordenar tu día a día.</div>
-      </div>
-      <div class="plan feat-plan reveal">
-        <span class="badge-pop">Más elegido</span>
-        <div class="name">Profesional</div>
-        <div class="price">49€<small> + 12€/limpiadora</small></div>
-        <ul><li>Todo lo de Inicio</li><li>Portal del propietario</li><li>Control de calidad con IA</li><li>Informes y facturación</li></ul>
-        <div class="tagp">Para empresas que quieren crecer con control total.</div>
-      </div>
-      <div class="plan reveal">
-        <div class="name">A medida</div>
-        <div class="price">Hablamos</div>
-        <ul><li>Varios equipos y zonas</li><li>Integraciones a medida</li><li>Soporte prioritario</li><li>Onboarding acompañado</li></ul>
-        <div class="tagp">Cuéntanos tu caso y lo ajustamos.</div>
-      </div>
-    </div>
-    <p class="center sub" style="margin-top:24px">¿No sabes qué plan te encaja? <a href="#contacto" style="color:var(--primary);font-weight:700">Pídenos una demo</a> y te asesoramos.</p>
-  </div>
-</section>
-
-<!-- FAQ -->
-<section class="block" id="faq">
-  <div class="wrap center">
-    <span class="eyebrow">Dudas frecuentes</span>
-    <h2 class="sec">Preguntas frecuentes.</h2>
-  </div>
-  <div class="wrap">
-    <div class="faq">
-      <details reveal><summary>¿Sirve si no gestiono pisos turísticos?</summary><p>Sí. IALIMP organiza limpiezas de cualquier tipo (turísticos, oficinas, comunidades, particulares). La conexión con calendarios de reservas es opcional.</p></details>
-      <details><summary>¿Mi equipo necesita instalar algo?</summary><p>No. Acceden desde el navegador del móvil con un enlace o un PIN. Sin instalar apps ni crear cuentas complicadas.</p></details>
-      <details><summary>¿Cuánto tardo en empezar?</summary><p>En el mismo día. Te ayudamos a dar de alta tus pisos y tu equipo en la demo.</p></details>
-      <details><summary>¿Hay permanencia?</summary><p>No. Pagas mes a mes y puedes cancelar cuando quieras.</p></details>
-      <details><summary>¿Mis datos están seguros?</summary><p>Sí. Cumplimos el RGPD, cada empresa ve solo sus datos y las fotos se guardan de forma privada.</p></details>
-    </div>
-  </div>
-</section>
-
-<!-- Sección Sevilla (coherencia con el mailing) -->
-<section class="block" id="sevilla">
-  <div class="wrap">
-    <div class="sevilla reveal">
-      <span class="eyebrow" style="color:#dfe1ff">Empresas de limpieza de Sevilla</span>
-      <h2 class="sec">Hecho para vosotras.</h2>
-      <p>Si tienes una empresa de limpieza en Sevilla y coordinar el equipo se te come el día, IALIMP es para ti. Te enseñamos cómo funciona en una demo de 15 minutos, sin compromiso.</p>
-      <a class="btn btn-ghost" href="#contacto" style="background:#fff;color:var(--ink)">Quiero la demo</a>
-    </div>
-  </div>
-</section>
-
-<!-- Contacto / Formulario -->
 <section class="block" id="contacto">
   <div class="wrap">
     <div class="form-card reveal">
-      <div class="info">
-        <h2>Solicita tu demo gratis</h2>
-        <p>Déjanos tus datos y te llamamos para enseñarte IALIMP adaptado a tu empresa. Sin compromiso.</p>
-        <p>¿Prefieres WhatsApp? Escríbenos directamente:</p>
-        <a class="btn btn-wa wa" href="https://wa.me/34637349990?text=Hola,%20quiero%20información%20de%20IALIMP" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.7.8-2.7-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.2-.4.2-.4.6-1.2.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.8.8-1 1.9-.6 3.1a10 10 0 0 0 4.6 4.6c1.9.8 2.7.7 3.6.6.5-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1z"/></svg>
-          WhatsApp
-        </a>
-      </div>
-      <form id="lead-form" novalidate>
-        <div class="field"><label for="empresa">Empresa *</label><input id="empresa" name="empresa" required placeholder="Nombre de tu empresa de limpieza"></div>
-        <div class="field"><label for="nombre">Tu nombre</label><input id="nombre" name="nombre" placeholder="Con quién hablamos"></div>
-        <div class="field"><label for="email">Email *</label><input id="email" name="email" type="email" required placeholder="tucorreo@empresa.com"></div>
-        <div class="field"><label for="telefono">Teléfono</label><input id="telefono" name="telefono" type="tel" placeholder="Para llamarte"></div>
-        <div class="field"><label for="pisos">Nº de pisos / personas en el equipo</label><input id="pisos" name="pisos" placeholder="Ej.: 20 pisos, 4 limpiadoras"></div>
-        <input class="hp" type="text" name="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-        <label class="consent"><input type="checkbox" id="consent" required>
-          He leído y acepto la <a href="/privacidad.html" target="_blank">política de privacidad</a> y que IALIMP me contacte sobre el servicio.</label>
-        <button class="btn btn-primary" type="submit" style="justify-content:center">Solicitar demo
+      <h2 class="sec">Empieza hoy.</h2>
+      <p class="lead">Cuéntanos un poco y te contactamos para enseñarte IALIMP.</p>
+      <form id="form-contacto" novalidate>
+        <div class="field">
+          <label for="nombre">Nombre *</label>
+          <input id="nombre" name="nombre" type="text" autocomplete="name" required>
+        </div>
+        <div class="field">
+          <label for="email">Email *</label>
+          <input id="email" name="email" type="email" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="telefono">Teléfono *</label>
+          <input id="telefono" name="telefono" type="tel" autocomplete="tel" required>
+        </div>
+        <div class="field">
+          <label for="mensaje">Mensaje</label>
+          <textarea id="mensaje" name="mensaje" placeholder="¿Qué necesitas? (opcional)"></textarea>
+        </div>
+        <!-- Honeypot anti-spam: oculto para personas, los bots lo rellenan. -->
+        <div class="hp" aria-hidden="true">
+          <label for="website">No rellenar</label>
+          <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="consent">
+          <input id="consentimiento" name="consentimiento" type="checkbox" required>
+          <label for="consentimiento">He leído y acepto la <a href="/privacidad.html" target="_blank" rel="noopener">Política de privacidad</a> y el tratamiento de mis datos para atender mi solicitud. *</label>
+        </div>
+        <button class="btn btn-primary" type="submit">Solicitar demo
           <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
-        <div class="form-msg" id="form-msg"></div>
+        <div id="form-msg" class="form-msg" role="status" aria-live="polite"></div>
+        <p class="form-note">O escríbenos a <a href="mailto:hola@ialimp.es" style="color:var(--primary);font-weight:600">hola@ialimp.es</a></p>
       </form>
     </div>
   </div>
@@ -474,35 +390,89 @@
   </div>
 </footer>
 
-<a class="wa-float" href="https://wa.me/34637349990?text=Hola,%20quiero%20información%20de%20IALIMP" target="_blank" rel="noopener" aria-label="WhatsApp">
-  <svg viewBox="0 0 24 24" width="28" height="28" fill="#fff"><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.7.8-2.7-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.2-.4.2-.4.6-1.2.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.8.8-1 1.9-.6 3.1a10 10 0 0 0 4.6 4.6c1.9.8 2.7.7 3.6.6.5-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1z"/></svg>
-</a>
-
 <script>
-  // Scroll reveal
-  const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:.14});
-  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+  (function(){
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Formulario de contacto → API de la app (otro dominio, con CORS).
-  const API='https://app.ialimp.es/api/lead-saas';
-  const form=document.getElementById('lead-form');
-  const out=document.getElementById('form-msg');
-  form.addEventListener('submit',async(e)=>{
-    e.preventDefault();
-    out.style.color='var(--muted)';out.textContent='Enviando…';
-    if(!document.getElementById('consent').checked){out.style.color='var(--warn)';out.textContent='Marca la casilla de privacidad para continuar.';return;}
-    const data={
-      empresa:form.empresa.value.trim(),nombre:form.nombre.value.trim(),
-      email:form.email.value.trim(),telefono:form.telefono.value.trim(),
-      pisos:form.pisos.value.trim(),hp:form.hp.value
-    };
-    if(!data.empresa||!data.email){out.style.color='var(--warn)';out.textContent='Indica al menos la empresa y un email.';return;}
-    try{
-      const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-      if(r.ok){out.style.color='var(--ok)';out.textContent='¡Gracias! Te contactamos muy pronto.';form.reset();}
-      else{const d=await r.json().catch(()=>({}));out.style.color='var(--warn)';out.textContent=d.error||'No se pudo enviar. Escríbenos a hola@ialimp.es';}
-    }catch(_){out.style.color='var(--warn)';out.textContent='No se pudo enviar. Escríbenos a hola@ialimp.es';}
-  });
+    // Reveal al hacer scroll
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {threshold:.14});
+    document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+
+    // Sombra en el header al hacer scroll
+    var hdr = document.getElementById('hdr');
+    var onScroll = function(){ if(hdr) hdr.classList.toggle('scrolled', window.scrollY > 8); };
+    window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+    // Contadores animados (cuando entran en pantalla)
+    function animateCount(el){
+      var target = parseFloat(el.getAttribute('data-count')) || 0;
+      var fixed = el.getAttribute('data-text');               // valor textual fijo (ej. 24/7, 0)
+      var suffix = el.getAttribute('data-suffix') || '';
+      var prefix = el.getAttribute('data-prefix') || '';
+      if(reduce || fixed){ el.textContent = fixed != null ? fixed : (prefix + target + suffix); return; }
+      var start = null, dur = 1100;
+      function step(ts){
+        if(!start) start = ts;
+        var p = Math.min((ts - start)/dur, 1);
+        var eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = prefix + Math.round(target * eased) + suffix;
+        if(p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    var cio = new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){ animateCount(e.target); cio.unobserve(e.target); }
+      });
+    }, {threshold:.6});
+    document.querySelectorAll('[data-count]').forEach(function(el){ cio.observe(el); });
+
+    // Parallax/tilt suave del mockup con el ratón (solo puntero fino, sin reduce-motion)
+    var tilt = document.getElementById('tilt');
+    var mock = document.getElementById('mock');
+    if(tilt && mock && !reduce && window.matchMedia('(pointer:fine)').matches){
+      mock.addEventListener('mousemove', function(ev){
+        var r = mock.getBoundingClientRect();
+        var x = (ev.clientX - r.left)/r.width - .5;
+        var y = (ev.clientY - r.top)/r.height - .5;
+        tilt.style.transform = 'rotateY(' + (x*7) + 'deg) rotateX(' + (-y*7) + 'deg)';
+      });
+      mock.addEventListener('mouseleave', function(){ tilt.style.transform = ''; });
+    }
+
+    // Formulario de contacto (lead capture → /api/contacto)
+    var form = document.getElementById('form-contacto');
+    var msg = document.getElementById('form-msg');
+    function show(type,text){ msg.className='form-msg '+type; msg.textContent=text; }
+    if(form){
+      form.addEventListener('submit', async function(e){
+        e.preventDefault();
+        var nombre=form.nombre.value.trim();
+        var email=form.email.value.trim();
+        var telefono=form.telefono.value.trim();
+        if(!nombre||!email||!telefono){ show('err','Completa nombre, email y teléfono.'); return; }
+        if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ show('err','Revisa el email.'); return; }
+        if(!form.consentimiento.checked){ show('err','Debes aceptar la política de privacidad.'); return; }
+        var btn=form.querySelector('button[type=submit]');
+        btn.disabled=true;
+        show('','');
+        try{
+          var r=await fetch('/api/contacto',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+            nombre:nombre,email:email,telefono:telefono,mensaje:form.mensaje.value.trim(),consentimiento:true,website:form.website.value
+          })});
+          var data=await r.json().catch(function(){return {};});
+          if(r.ok&&data.ok){ form.reset(); show('ok','¡Gracias! Hemos recibido tu solicitud y te contactamos pronto.'); }
+          else{ show('err','No se pudo enviar. Escríbenos a hola@ialimp.es y te respondemos enseguida.'); }
+        }catch(err){
+          show('err','No se pudo enviar. Escríbenos a hola@ialimp.es y te respondemos enseguida.');
+        }finally{ btn.disabled=false; }
+      });
+    }
+  })();
 </script>
 </body>
 </html>
