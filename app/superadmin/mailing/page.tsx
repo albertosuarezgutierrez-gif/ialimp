@@ -98,19 +98,23 @@ export default function MailingPage() {
   function flash(t: string) { setMsg(t); setTimeout(() => setMsg(''), 4000) }
 
   // ── Import CSV ──
-  async function importarCSV(file: File) {
+  const [pegado, setPegado] = useState('')
+  async function importarFilas(texto: string) {
     setBusy(true)
     try {
-      const filas = parseCSV(await file.text())
-      if (!filas.length) { flash('No se encontraron filas válidas (empresa + email).'); return }
+      const filas = parseCSV(texto)
+      if (!filas.length) { flash('No se encontraron filas válidas (empresa + email/teléfono/web).'); return }
       const r = await fetch('/api/superadmin/mailing/prospectos', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prospectos: filas }),
       })
       const d = await r.json()
-      if (r.ok) { flash(`Importados ${d.insertados} · ${d.duplicados} duplicados (de ${d.total}).`); cargarProspectos() }
+      if (r.ok) { flash(`Importados ${d.insertados} · ${d.duplicados} duplicados (de ${d.total}).`); setPegado(''); cargarProspectos() }
       else flash(d.error || 'Error al importar')
     } finally { setBusy(false) }
+  }
+  async function importarCSV(file: File) {
+    await importarFilas(await file.text())
   }
 
   // ── Buscar leads en Google ──
@@ -272,6 +276,18 @@ export default function MailingPage() {
               <button onClick={analizarWeb} disabled={busy} style={{ ...btn(true), background: busy ? '#c7d2fe' : C.accent }}>{busy ? 'Analizando…' : 'Analizar e importar'}</button>
               <button onClick={buscarEmails} disabled={busy} style={btn(false)} title="Rastrea la web de los prospectos sin email">🔍 Buscar emails que faltan</button>
               <span style={{ fontSize: 11, color: C.muted, width: '100%' }}>Gratis, sin tarjeta. La IA lee la página y saca empresas + contacto. Funciona con directorios HTML (no Google Maps).</span>
+            </div>
+
+            {/* Pegar CSV (sin guardar archivo) */}
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 16 }}>
+              <div style={{ fontWeight: 800, fontSize: 13, color: C.accent, marginBottom: 8 }}>📋 Pegar CSV (sin subir archivo)</div>
+              <textarea value={pegado} onChange={e => setPegado(e.target.value)} rows={4}
+                placeholder={'Pega aquí las filas con cabecera, p.ej.:\nempresa_nombre,email,telefono,web\nLimpiezas García,info@garcia.es,954000000,https://garcia.es'}
+                style={{ ...inp, fontFamily: 'monospace', fontSize: 12, resize: 'vertical', marginBottom: 8 }} />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <button onClick={() => importarFilas(pegado)} disabled={busy || !pegado.trim()} style={{ ...btn(true), background: (busy || !pegado.trim()) ? '#c7d2fe' : C.accent }}>{busy ? 'Importando…' : 'Importar pegado'}</button>
+                <span style={{ fontSize: 11, color: C.muted }}>La 1ª fila son las cabeceras. Acepta filas sin email (entran como "solo teléfono"). Descarta duplicados.</span>
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
