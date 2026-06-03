@@ -110,6 +110,11 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Excluye estáticos para que el middleware NO los toque. Importante: las
+    // FUENTES (woff2/woff/ttf/otf) deben quedar fuera — si no, en páginas SIN
+    // cookie `ialimp_session` (login, /superadmin pre-sesión) las peticiones a
+    // /fonts/*.woff2 se redirigían a /login y la app caía a la fuente del
+    // sistema (sin tipografía corporativa Nunito).
+    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf)$).*)',
   ],
 }
