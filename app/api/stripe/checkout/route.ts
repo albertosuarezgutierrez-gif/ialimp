@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server'
 import { requireEmpresaId } from '@/lib/tenant'
 
+// Price IDs reales de Stripe vía env (rellenar al activar el cobro; ver docs/STRIPE.md).
+// Mientras no estén puestos, quedan los placeholders (la ruta ya devuelve 503 si falta STRIPE_SECRET_KEY).
 const PRICES: Record<string, Record<string, string>> = {
-  pro:    { monthly: 'price_pro_monthly',    annual: 'price_pro_annual'    },
-  agency: { monthly: 'price_agency_monthly', annual: 'price_agency_annual' }
+  pro: {
+    monthly: process.env.STRIPE_PRICE_PRO_MONTHLY    || 'price_pro_monthly',
+    annual:  process.env.STRIPE_PRICE_PRO_ANNUAL     || 'price_pro_annual',
+  },
+  agency: {
+    monthly: process.env.STRIPE_PRICE_AGENCY_MONTHLY || 'price_agency_monthly',
+    annual:  process.env.STRIPE_PRICE_AGENCY_ANNUAL  || 'price_agency_annual',
+  },
 }
 
 export async function POST(req: Request) {
