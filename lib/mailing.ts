@@ -11,7 +11,20 @@ import { aiComplete } from '@/lib/ai-client'
 // Remitente del cold mailing. Separado del transaccional (hola@ialimp.es) para
 // NO quemar la reputación del dominio principal: usar MAILING_FROM si existe.
 export const MAILING_FROM = process.env.MAILING_FROM || MAIL_FROM
-export const MAILING_FROM_NAME = process.env.MAILING_FROM_NAME || 'IALIMP'
+// Para frío conviene un remitente con nombre de persona (no "IALIMP" a secas).
+export const MAILING_FROM_NAME = process.env.MAILING_FROM_NAME || 'Alberto de IALIMP'
+// Nombre que firma el correo (override con MAILING_FIRMA).
+export const FIRMA_NOMBRE = process.env.MAILING_FIRMA || 'Alberto Suárez'
+
+// Formatea un teléfono español "34637349990" → "+34 637 34 99 90".
+function telFmt(d: string): string {
+  const n = (d || '').replace(/\D/g, '')
+  if (n.length === 11 && n.startsWith('34')) {
+    const m = n.slice(2)
+    return `+34 ${m.slice(0, 3)} ${m.slice(3, 5)} ${m.slice(5, 7)} ${m.slice(7)}`
+  }
+  return '+' + n
+}
 
 // Número de WhatsApp de IALIMP para los CTAs wa.me (solo dígitos, con prefijo país).
 export const IALIMP_WHATSAPP = (process.env.IALIMP_WHATSAPP || '34637349990').replace(/\D/g, '')
@@ -116,43 +129,28 @@ export function construirEmail({ asunto, cuerpoHtml, prospecto, token, landingUr
   const urlPixel = `${base}/api/m/o/${token}`
 
   const r = RGPD_RESPONSABLE
+  // Diseño "personal y limpio": parece un email 1:1 (mejor entregabilidad y respuesta
+  // en frío). Sin banda de cabecera ni botones de newsletter; texto + un enlace + firma.
   const html = `<!DOCTYPE html>
-<html lang="es"><head><meta charset="utf-8">
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Arial,Helvetica,sans-serif;background:#f1f5f9;color:#1e1b4b;line-height:1.6}
-  .page{max-width:600px;margin:0 auto;background:#fff}
-  .header{background:#4f46e5;color:#fff;padding:28px 36px}
-  .header .logo{font-size:24px;font-weight:800;letter-spacing:-.03em}
-  .header .logo span{color:#c7d2fe;font-weight:400}
-  .content{padding:32px 36px;font-size:15px;color:#374151}
-  .content p{margin-bottom:14px}
-  .content ul{margin:0 0 16px 20px}.content li{margin-bottom:6px}
-  .ctas{padding:8px 36px 28px;text-align:center}
-  .btn{display:inline-block;text-decoration:none;font-weight:700;font-size:15px;border-radius:10px;padding:13px 26px;margin:6px}
-  .btn-primary{background:#4f46e5;color:#fff}
-  .btn-wa{background:#25d366;color:#fff}
-  .footer{background:#f8fafc;padding:20px 36px;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0}
-  .footer a{color:#94a3b8}
-</style></head>
-<body><div class="page">
-  <div class="header"><div class="logo">ia<span>limp</span></div></div>
-  <div class="content">${cuerpo}</div>
-  <div class="ctas">
-    <a class="btn btn-primary" href="${urlWeb}">Ver cómo funciona →</a>
-    <a class="btn btn-wa" href="${urlWa}">Escríbenos por WhatsApp</a>
-  </div>
-  <div class="footer">
-    Este correo lo envía <strong>${esc(r.marca)}</strong> — ${esc(r.nombre)}, NIF ${esc(r.nif)},
-    ${esc(r.direccion)}. Te escribimos porque creemos que IALIMP puede ayudar a tu empresa de limpieza.
-    Si no quieres recibir más correos, <a href="${urlBaja}">date de baja aquí</a>.
-  </div>
+<html lang="es"><head><meta charset="utf-8"></head>
+<body style="margin:0;background:#ffffff;">
+<div style="max-width:560px;margin:0 auto;padding:22px 20px;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:1.55;color:#1f2937;">
+  ${cuerpo}
+  <p style="margin:16px 0;">¿Te enseño en 2 minutos cómo? <a href="${urlWeb}" style="color:#4f46e5;">Aquí lo ves</a>, o responde a este correo y te llamo cuando te venga bien.</p>
+  <p style="margin:18px 0 2px;">Un saludo,</p>
+  <p style="margin:0;"><strong>${esc(FIRMA_NOMBRE)}</strong> — IALIMP</p>
+  <p style="margin:3px 0 0;color:#4b5563;font-size:14px;">📞 ${telFmt(IALIMP_WHATSAPP)} &nbsp;·&nbsp; <a href="${urlWa}" style="color:#16a34a;">WhatsApp</a> &nbsp;·&nbsp; ✉️ ${esc(MAILING_FROM)}</p>
+  <p style="margin:22px 0 0;font-size:11px;color:#9ca3af;line-height:1.5;">
+    ${esc(r.marca)} · ${esc(r.nombre)} · NIF ${esc(r.nif)} · ${esc(r.direccion)}.<br>
+    Si no quieres recibir más correos, <a href="${urlBaja}" style="color:#9ca3af;">date de baja aquí</a>.
+  </p>
   <img src="${urlPixel}" width="1" height="1" alt="" style="display:none">
 </div></body></html>`
 
   const text = `${cuerpo.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}\n\n` +
-    `Ver cómo funciona: ${landingUrl}\n` +
-    `Enviado por ${r.marca} (${r.nombre}). Baja: ${urlBaja}`
+    `¿Te enseño en 2 minutos cómo? ${landingUrl}\n\n` +
+    `Un saludo,\n${FIRMA_NOMBRE} — IALIMP\n${telFmt(IALIMP_WHATSAPP)} · ${MAILING_FROM}\n\n` +
+    `${r.marca} · ${r.nombre} · NIF ${r.nif} · ${r.direccion}. Baja: ${urlBaja}`
 
   return { subject, html, text, urlBaja }
 }

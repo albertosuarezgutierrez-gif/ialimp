@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       INSERT INTO mailing_pasos (campana_id, orden, dias_espera, asunto, cuerpo_html)
       VALUES (${id}::uuid, 1, 0,
         ${'Una idea para {{empresa}}'},
-        ${'<p>{{opener}}</p><p>En <strong>IALIMP</strong> ayudamos a empresas de limpieza como {{empresa}} a quitarse el caos de organizar el equipo, las fotos y la facturación — y <strong>nos adaptamos a vuestra forma de trabajar</strong>, no al revés.</p><p>¿Te enseño en 2 minutos cómo? Responde a este correo o pídeme info, sin compromiso.</p>'})
+        ${'<p>{{opener}}</p><p>En <strong>IALIMP</strong> ayudamos a empresas de limpieza como {{empresa}} a quitarse el caos de organizar el equipo, las fotos y la facturación — y <strong>nos adaptamos a vuestra forma de trabajar</strong>, no al revés.</p>'})
     `)
     return NextResponse.json({ ok: true, id })
   } catch (e: any) {
