@@ -116,6 +116,11 @@ export default function MailingPage() {
   async function importarCSV(file: File) {
     await importarFilas(await file.text())
   }
+  function descargarPlantilla() {
+    const csv = 'empresa_nombre,email,telefono,web,ciudad\nLimpiezas García,info@limpiezasgarcia.es,954000000,https://limpiezasgarcia.es,Sevilla\n'
+    const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }))
+    const a = document.createElement('a'); a.href = url; a.download = 'plantilla-prospectos.csv'; a.click(); URL.revokeObjectURL(url)
+  }
 
   // ── Buscar leads en Google ──
   const [gq, setGq] = useState('empresas de limpieza')
@@ -286,6 +291,7 @@ export default function MailingPage() {
                 style={{ ...inp, fontFamily: 'monospace', fontSize: 12, resize: 'vertical', marginBottom: 8 }} />
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 <button onClick={() => importarFilas(pegado)} disabled={busy || !pegado.trim()} style={{ ...btn(true), background: (busy || !pegado.trim()) ? '#c7d2fe' : C.accent }}>{busy ? 'Importando…' : 'Importar pegado'}</button>
+                <button onClick={descargarPlantilla} style={btn(false)}>⬇ Plantilla CSV</button>
                 <span style={{ fontSize: 11, color: C.muted }}>La 1ª fila son las cabeceras. Acepta filas sin email (entran como "solo teléfono"). Descarta duplicados.</span>
               </div>
             </div>
