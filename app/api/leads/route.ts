@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { rateLimitHit, clientIp } from '@/lib/rate-limit-db'
 
 const APP_URL = process.env.NEXTAUTH_URL || 'https://app.ialimp.es'
 
@@ -10,6 +11,12 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    // Ruta pública (exenta en middleware): rate-limit por IP contra spam de CRM.
+    const rl = await rateLimitHit('leads:' + clientIp(req), 10, 60)
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Demasiados envíos, inténtalo más tarde' }, { status: 429 })
+    }
+
     const body = await req.json()
     const { empresa_id, nombre, telefono, email, zona, tipo_servicio, m2, frecuencia, precio_estimado } = body
 

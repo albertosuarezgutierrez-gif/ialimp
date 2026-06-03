@@ -45,7 +45,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const result = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT * FROM sesiones_limpiadora WHERE id = ${id}::uuid
+      SELECT * FROM sesiones_limpiadora WHERE id = ${id}::uuid AND limpiadora_id = ${limpiadora_id}::uuid
     `)
     return NextResponse.json(serialize({ ok: true, sesion: result[0] }))
   } catch (e: any) {
