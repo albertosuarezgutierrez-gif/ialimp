@@ -22,6 +22,11 @@
   --indigo-d: #3730a3;
   --indigo-l: #eef2ff;
   --indigo-m: #818cf8;
+  /* Marca por empresa (white-label): por defecto = ialimp. Las sobreescribe
+     <BrandingStyle> según la empresa logueada (ver lib/branding.ts). */
+  --brand-primary:   #4f46e5;
+  --brand-secondary: #6366f1;
+  --brand-light:     #eef2ff;
   --slate:    #0f172a;
   --slate-m:  #334155;
   --slate-l:  #64748b;

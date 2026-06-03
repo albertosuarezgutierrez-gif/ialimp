@@ -165,9 +165,11 @@ export async function GET() {
 
   try {
     const rows = await prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT l.id, l.nombre, l.propiedades, l.color
+      SELECT l.id, l.nombre, l.propiedades, l.color,
+             e.marca_nombre, e.logo_url, e.color_primario, e.color_secundario, e.color_light
       FROM limpiadora_sessions s
       JOIN limpiadoras l ON l.id = s.limpiadora_id
+      LEFT JOIN empresas e ON e.id = l.empresa_id
       WHERE s.token = ${token} AND s.expires_at > now() AND l.activa = true
       LIMIT 1
     `)

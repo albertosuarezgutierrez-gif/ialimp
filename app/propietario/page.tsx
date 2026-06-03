@@ -6,6 +6,8 @@ import PropietarioLogin from './PropietarioLogin'
 import PropietarioLogoutButton from './PropietarioLogoutButton'
 import { getPropietarioSession } from '@/lib/propietario-auth'
 import { getClienteById, loadPortalData } from '@/lib/propietario-portal'
+import BrandingStyle from '@/components/BrandingStyle'
+import { brandingFrom } from '@/lib/branding'
 
 // URL fija del propietario: app.ialimp.es/propietario
 //  - sin sesión  → formulario de login (email+contraseña) / crear cuenta
@@ -42,13 +44,15 @@ export default async function PropietarioHome() {
   // El botón de cerrar sesión va DENTRO del menú hamburguesa del portal
   // (sesionPropia), no flotante: así no tapa los controles de la cabecera.
   return (
-    <PropietarioClient
-      cliente={serialize(cliente)}
-      propiedades={serialize(propiedades)}
-      historial={serialize(historial)}
-      token={cliente.access_token}
-      permisos={permisos}
-      sesionPropia
-    />
+    <BrandingStyle branding={brandingFrom(cliente)}>
+      <PropietarioClient
+        cliente={serialize(cliente)}
+        propiedades={serialize(propiedades)}
+        historial={serialize(historial)}
+        token={cliente.access_token}
+        permisos={permisos}
+        sesionPropia
+      />
+    </BrandingStyle>
   )
 }

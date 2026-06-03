@@ -9,7 +9,7 @@ import { photoSrc } from '@/lib/photo'
 
 // ── Colores corporativos ialimp ─────────────────────────────────────────
 const C = {
-  primary: '#4f46e5', brand: '#6366f1', light: '#eef2ff',
+  primary: 'var(--brand-primary)', brand: 'var(--brand-secondary)', light: 'var(--brand-light)',
   bg: '#f1f5f9', text: '#1e293b', muted: '#64748b', border: '#e2e8f0',
   ok: '#16a34a', okBg: '#f0fdf4', warn: '#d97706', warnBg: '#fffbeb',
   red: '#dc2626', redBg: '#fef2f2',
@@ -42,7 +42,7 @@ const APP_CSS = `
 
 /* ── Header ── */
 .l-header {
-  background: linear-gradient(160deg, #4f46e5 0%, #6366f1 100%);
+  background: linear-gradient(160deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
   padding: 0;
   position: relative; overflow: hidden;
 }
@@ -93,7 +93,7 @@ const APP_CSS = `
   transition: all .18s;
 }
 .l-date.sel {
-  background: #4f46e5; color: white;
+  background: var(--brand-primary); color: white;
   box-shadow: 0 3px 10px rgba(79,70,229,.35);
 }
 .l-date:not(.sel) {
@@ -108,14 +108,14 @@ const APP_CSS = `
 }
 .l-manual-btn {
   display: inline-flex; align-items: center; gap: 5px;
-  background: white; color: #4f46e5;
+  background: white; color: var(--brand-primary);
   border: 1px solid #c7d2fe; border-radius: 20px;
   padding: 6px 14px; font-size: 11px; font-weight: 700;
   text-decoration: none; font-family: inherit;
   box-shadow: 0 1px 4px rgba(79,70,229,.1);
   transition: all .15s;
 }
-.l-manual-btn:hover { background: #eef2ff; }
+.l-manual-btn:hover { background: var(--brand-light); }
 
 /* ── Lista sesiones ── */
 .l-list { padding: clamp(10px, 3vw, 14px) clamp(14px, 4vw, 18px) 32px; display: flex; flex-direction: column; gap: 10px; }
@@ -133,7 +133,7 @@ const APP_CSS = `
 }
 .l-card:hover { box-shadow: 0 4px 16px rgba(15,23,42,.1); transform: translateY(-1px); }
 .l-card.ok   { border-left-color: #10b981; }
-.l-card.go   { border-left-color: #4f46e5; }
+.l-card.go   { border-left-color: var(--brand-primary); }
 .l-card.pend { border-left-color: #e2e8f0; }
 .l-card.prio { border-left-color: #dc2626; border-left-width: 5px; }
 
@@ -144,7 +144,7 @@ const APP_CSS = `
   font-size: clamp(18px, 4.5vw, 22px);
 }
 .l-card.ok   .l-card-icon { background: #d1fae5; }
-.l-card.go   .l-card-icon { background: #eef2ff; }
+.l-card.go   .l-card-icon { background: var(--brand-light); }
 .l-card.pend .l-card-icon { background: #f1f5f9; }
 
 .l-card-title { font-size: clamp(13px, 3.5vw, 15px); font-weight: 700; color: #1e293b; margin-bottom: 2px; }
@@ -155,7 +155,7 @@ const APP_CSS = `
   padding: 3px 8px; border-radius: 20px;
   font-size: 11px; font-weight: 700;
 }
-.l-chip.time  { background: #eef2ff; color: #4f46e5; }
+.l-chip.time  { background: var(--brand-light); color: var(--brand-primary); }
 .l-chip.warn  { background: #fffbeb; color: #b45309; }
 .l-chip.pax   { background: #f1f5f9; color: #64748b; }
 .l-chip.entra { background: #fee2e2; color: #dc2626; }
@@ -163,14 +163,14 @@ const APP_CSS = `
 /* progreso inline */
 .l-prog { margin-top: 9px; }
 .l-prog-row { display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 4px; }
-.l-prog-row span:last-child { font-weight: 800; color: #4f46e5; }
+.l-prog-row span:last-child { font-weight: 800; color: var(--brand-primary); }
 .l-prog-bar { height: 5px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
-.l-prog-fill { height: 100%; background: #4f46e5; border-radius: 3px; transition: width .3s; }
+.l-prog-fill { height: 100%; background: var(--brand-primary); border-radius: 3px; transition: width .3s; }
 
 .l-card-right { flex-shrink: 0; text-align: right; }
 .l-status-done { font-size: clamp(22px, 6vw, 28px); }
 .l-status-go {
-  background: #eef2ff; color: #4f46e5;
+  background: var(--brand-light); color: var(--brand-primary);
   font-size: 10px; font-weight: 800;
   padding: 5px 10px; border-radius: 8px;
   white-space: nowrap; letter-spacing: .03em;
@@ -562,7 +562,7 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
 
       {showChatGlobal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', flexDirection: 'column', fontFamily: "'Nunito',sans-serif" }}>
-          <div style={{ background: '#4f46e5', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ background: 'var(--brand-primary)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <button onClick={() => setShowChatGlobal(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', width: 34, height: 34, borderRadius: 9, fontSize: 16, cursor: 'pointer' }}>←</button>
             <div style={{ color: 'white', fontWeight: 800, fontSize: 16 }}>💬 Chat del equipo</div>
           </div>
@@ -582,7 +582,7 @@ function SesionDetalle({ s, onBack, onUpdate, limpiadora }: { s: any; onBack: ()
       {showConsumo && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', fontFamily: "'Nunito',sans-serif" }}>
           <div style={{ background: 'white', borderRadius: '20px 20px 0 0', maxHeight: '85vh', overflow: 'auto' }}>
-            <div style={{ background: '#4f46e5', borderRadius: '20px 20px 0 0', padding: '16px 16px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ background: 'var(--brand-primary)', borderRadius: '20px 20px 0 0', padding: '16px 16px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ color: 'white', fontWeight: 800, fontSize: 16 }}>Productos usados</div>
                 <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12 }}>Anota lo que has utilizado</div>
@@ -612,6 +612,10 @@ function LimpiadoarasApp() {
   const [limpiadora, setLimpiadora] = useState<any>(null)
 
   useEffect(() => { cargarDia(fecha) }, [fecha])
+  // Carga la limpiadora (avatar) y la marca de su empresa (white-label).
+  useEffect(() => {
+    fetch('/api/l/auth').then(r => r.json()).then(d => { if (d?.limpiadora) setLimpiadora(d.limpiadora) }).catch(() => {})
+  }, [])
 
   // Sync back button: when sesionId disappears from URL, clear active detail
   const sesionActiva = sesionId ? sesionMap[sesionId] ?? null : null
@@ -644,7 +648,11 @@ function LimpiadoarasApp() {
   }
 
   if (sesionActiva) {
-    return <SesionDetalle s={sesionActiva} onBack={() => router.push('/l')} onUpdate={onUpdate} limpiadora={limpiadora} />
+    return (
+      <div style={limpiadora ? ({ display:'contents', ['--brand-primary' as any]: limpiadora.color_primario, ['--brand-secondary' as any]: limpiadora.color_secundario, ['--brand-light' as any]: limpiadora.color_light }) : { display:'contents' }}>
+        <SesionDetalle s={sesionActiva} onBack={() => router.push('/l')} onUpdate={onUpdate} limpiadora={limpiadora} />
+      </div>
+    )
   }
 
   const completadas = sesiones.filter(s => !!s.completed_at).length
@@ -664,13 +672,13 @@ function LimpiadoarasApp() {
   return (
     <>
       <style>{APP_CSS}</style>
-      <div className="l-app">
+      <div className="l-app" style={limpiadora ? ({ ['--brand-primary' as any]: limpiadora.color_primario, ['--brand-secondary' as any]: limpiadora.color_secundario, ['--brand-light' as any]: limpiadora.color_light }) : undefined}>
 
         {/* Header */}
         <div className="l-header">
           <div className="l-header-top">
             <div>
-              <LogoIalimp size={17} style={{ marginBottom:2, display:'inline-block' }} />
+              <LogoIalimp size={17} style={{ marginBottom:2, display:'inline-block' }} nombre={limpiadora?.marca_nombre} logoUrl={limpiadora?.logo_url} />
               <div className="l-header-title">Mis limpiezas</div>
               <div className="l-header-sub">{hoyLabel}</div>
             </div>
@@ -738,7 +746,7 @@ function LimpiadoarasApp() {
 
 export default function LimpiadoarasAppWrapper() {
   return (
-    <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',background:'#f1f5f9',color:'#4f46e5',fontSize:32}}>⏳</div>}>
+    <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',background:'#f1f5f9',color:'var(--brand-primary)',fontSize:32}}>⏳</div>}>
       <LimpiadoarasApp />
     </Suspense>
   )

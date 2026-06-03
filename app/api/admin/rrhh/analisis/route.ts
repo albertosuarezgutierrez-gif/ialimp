@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       ? expedientes.map((e: any) => '- [' + e.tipo + '] ' + e.titulo).join('\n')
       : 'Sin expediente previo'
 
-    const prompt = 'Eres el sistema de RRHH de una empresa de limpieza profesional española llamada Sique Brilla. ' +
+    const prompt = 'Eres el sistema de RRHH de una empresa de limpieza profesional española. ' +
       'Analiza el rendimiento de esta limpiadora y proporciona un informe profesional en español.\n\n' +
       'DATOS:\n' +
       '- Nombre: ' + r.limpiadora_nombre + '\n' +
