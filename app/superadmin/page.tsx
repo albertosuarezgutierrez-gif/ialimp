@@ -1,12 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-
-const C = {
-  primary: '#1e1b4b', accent: '#4f46e5', light: '#eef2ff',
-  bg: '#f1f5f9', card: '#ffffff', border: '#e2e8f0',
-  text: '#1e1b4b', muted: '#64748b',
-  ok: '#16a34a', okBg: '#f0fdf4', warn: '#d97706', red: '#dc2626',
-}
+import SuperHeader, { BrandMark } from '@/components/SuperHeader'
+import { C } from './_ui'
 
 function StatCard({ label, value, sub, color }: any) {
   return (
@@ -22,6 +17,8 @@ export default function SuperadminPage() {
   const [empresas, setEmpresas] = useState<any[]>([])
   const [consent, setConsent]   = useState<any[]>([])
   const [soloMkt, setSoloMkt]   = useState(false)
+  const [qEmpresas, setQEmpresas] = useState('')
+  const [qConsent, setQConsent]   = useState('')
   const [loading, setLoading]   = useState(true)
   const [loggedIn, setLoggedIn] = useState(false)
   const [loginForm, setLoginForm] = useState({ email: 'alberto.suarez.gutierrez@gmail.com', password: '' })
@@ -64,9 +61,9 @@ export default function SuperadminPage() {
   if (!loggedIn) return (
     <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Nunito', sans-serif" }}>
       <div style={{ background: C.card, borderRadius: 20, padding: '40px 36px', width: '100%', maxWidth: 380, border: `1px solid ${C.border}` }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 32, fontWeight: 900, color: C.accent, letterSpacing: '-0.03em' }}>IALIMP</div>
-          <div style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>Panel superadmin</div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginBottom: 32 }}>
+          <BrandMark size={30} />
+          <div style={{ fontSize: 13, color: C.muted }}>Panel superadmin</div>
         </div>
         <form onSubmit={doLogin}>
           {loginErr && (
@@ -105,8 +102,13 @@ export default function SuperadminPage() {
 
   // ── Consentimientos ─────────────────────────────────────────────
   const fmtFecha = (v: any) => v ? new Date(v).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
-  const consentView = soloMkt ? consent.filter(c => c.marketing_aceptado) : consent
+  const matchQ = (q: string, ...vals: any[]) => { const s = q.trim().toLowerCase(); return !s || vals.some(v => String(v ?? '').toLowerCase().includes(s)) }
+  const empresasView = empresas.filter(e => matchQ(qEmpresas, e.nombre, e.email))
+  const consentView  = consent
+    .filter(c => !soloMkt || c.marketing_aceptado)
+    .filter(c => matchQ(qConsent, c.nombre, c.empresa_nombre, c.email))
   const totalMkt    = consent.filter(c => c.marketing_aceptado).length
+  const inpSearch: React.CSSProperties = { padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#f8fafc', color: C.text, fontSize: 13, fontFamily: 'inherit', minWidth: 180, maxWidth: 260, flex: 1 }
 
   function exportarCSV() {
     const filas = consent.filter(c => c.marketing_aceptado)
@@ -126,17 +128,11 @@ export default function SuperadminPage() {
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Nunito', sans-serif", color: C.text }}>
 
       {/* Header */}
-      <header style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: '16px 28px', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 20, fontWeight: 900, color: C.accent, letterSpacing: '-0.02em' }}>IALIMP <span style={{ color: C.muted, fontWeight: 400, fontSize: 14 }}>/ Superadmin</span></div>
-        </div>
-        <a href="/superadmin/mailing" style={{ background: C.accent, color: '#fff', padding: '8px 16px', borderRadius: 8, fontWeight: 800, fontSize: 13, textDecoration: 'none' }}>📣 Captación / Mailing</a>
-        <div style={{ fontSize: 12, color: C.muted }}>Alberto Suarez · {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-      </header>
+      <SuperHeader activo="inicio" />
 
       <div style={{ padding: '28px', maxWidth: 1000, margin: '0 auto' }}>
         {/* KPIs */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 28 }}>
           <StatCard label="Empresas" value={totalActivas} sub={`${totalEmpresas} total`} />
           <StatCard label="Limpiadoras activas" value={totalLimpiadoras} color={C.ok} />
           <StatCard label="Sesiones este mes" value={totalSesiones} />
@@ -146,16 +142,19 @@ export default function SuperadminPage() {
 
         {/* Tabla empresas */}
         <div style={{ background: C.card, borderRadius: 16, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ fontWeight: 800, fontSize: 15 }}>Empresas registradas</div>
-            <div style={{ fontSize: 12, color: C.muted }}>{loading ? 'Cargando...' : `${totalEmpresas} empresa${totalEmpresas !== 1 ? 's' : ''}`}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
+              <input value={qEmpresas} onChange={e => setQEmpresas(e.target.value)} placeholder="🔎 Buscar empresa o email…" style={inpSearch} />
+              <div style={{ fontSize: 12, color: C.muted, whiteSpace: 'nowrap' }}>{loading ? 'Cargando...' : `${empresasView.length}${qEmpresas ? ' de ' + totalEmpresas : ''} empresa${(qEmpresas ? empresasView.length : totalEmpresas) !== 1 ? 's' : ''}`}</div>
+            </div>
           </div>
 
           {loading
             ? <div style={{ padding: 40, textAlign: 'center', color: C.muted }}>Cargando...</div>
             : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${C.border}` }}>
                     {['Empresa', 'Email', 'Limpiadoras', 'Clientes', 'Propiedades', 'Sesiones/mes', 'Cuota est.', 'Estado'].map(h => (
@@ -164,7 +163,7 @@ export default function SuperadminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {empresas.map((e: any) => {
+                  {empresasView.map((e: any) => {
                     const cuota = 49 + Number(e.limpiadoras_activas || 0) * 12
                     return (
                       <tr key={e.id} style={{ borderBottom: `1px solid ${C.border}20` }}>
@@ -216,6 +215,7 @@ export default function SuperadminPage() {
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <input value={qConsent} onChange={e => setQConsent(e.target.value)} placeholder="🔎 Buscar cliente, empresa o email…" style={inpSearch} />
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.muted, cursor: 'pointer' }}>
                 <input type="checkbox" checked={soloMkt} onChange={e => setSoloMkt(e.target.checked)} style={{ accentColor: C.accent }} />
                 Solo los que aceptan ofertas
@@ -229,10 +229,10 @@ export default function SuperadminPage() {
           </div>
 
           {consentView.length === 0
-            ? <div style={{ padding: 40, textAlign: 'center', color: C.muted, fontSize: 13 }}>Sin consentimientos todavía.</div>
+            ? <div style={{ padding: 40, textAlign: 'center', color: C.muted, fontSize: 13 }}>{(qConsent || soloMkt) && consent.length > 0 ? 'Sin resultados para el filtro.' : 'Sin consentimientos todavía.'}</div>
             : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <table style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${C.border}` }}>
                     {['Cliente', 'Empresa', 'Email', 'Teléfono', 'Servicio', 'Ofertas', 'Desde'].map(h => (
