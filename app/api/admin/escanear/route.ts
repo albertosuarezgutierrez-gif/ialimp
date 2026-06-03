@@ -33,10 +33,14 @@ export async function POST(req: NextRequest) {
     `)
     const doc_id = docRows[0]?.id
 
-    // Fire-and-forget background analysis (same pattern as analizar-foto)
+    // Fire-and-forget background analysis (same pattern as analizar-foto).
+    // Auth interna: el middleware y el handler exigen Bearer CRON_SECRET.
     fetch(APP_URL + '/api/admin/escanear/process', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (process.env.CRON_SECRET || ''),
+      },
       body: JSON.stringify({ doc_id, empresa_id, imagen_base64, media_type: media_type || 'image/jpeg' })
     }).catch(() => {})
 

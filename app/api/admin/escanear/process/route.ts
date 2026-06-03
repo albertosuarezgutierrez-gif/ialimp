@@ -103,6 +103,13 @@ function generarApunte(ext: any) {
 // Called internally (fire-and-forget) — processes the image and updates the doc
 export async function POST(req: NextRequest) {
   try {
+    // Ruta INTERNA (la llama /api/admin/escanear server-to-server). Exigir
+    // CRON_SECRET evita que un admin actualice un doc de otra empresa (IDOR).
+    const secret = process.env.CRON_SECRET
+    if (!secret || req.headers.get('authorization') !== 'Bearer ' + secret) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
     const { doc_id, empresa_id, imagen_base64, media_type } = await req.json()
     if (!doc_id || !empresa_id || !imagen_base64) return NextResponse.json({ error: 'params missing' }, { status: 400 })
 
