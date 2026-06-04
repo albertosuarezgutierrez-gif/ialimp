@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     // Aviso a Alberto (no crítico).
     try {
       const t = getTransporter()
-      const to = process.env.MAILING_AVISO_TO || MAIL_FROM
+      const to = process.env.MAILING_AVISO_TO || 'alberto.suarez.gutierrez@gmail.com'
       if (t) {
         await t.sendMail({
           from: `"IALIMP Web" <${MAIL_FROM}>`,
