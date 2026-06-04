@@ -77,6 +77,22 @@ export async function buscarEmpresasGoogle(opts: {
 const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g
 const EMAIL_BASURA = /\.(png|jpg|jpeg|gif|webp|svg)$/i
 
+// Rechaza emails que NO son de contacto de la empresa: imágenes, dominios de
+// terceros (Google, CDNs, plantillas) y local-parts de relleno ("email@ejemplo").
+export function esEmailContacto(e: string): boolean {
+  const email = (e || '').toLowerCase().trim()
+  if (!email || EMAIL_BASURA.test(email)) return false
+  const at = email.indexOf('@')
+  if (at < 1) return false
+  const local = email.slice(0, at), dom = email.slice(at + 1)
+  // Dominios que no son de la empresa (Google, CDNs, ejemplos, sentry…).
+  if (/(^|\.)(google\.com|gstatic\.com|googleapis\.com|youtube\.com|schema\.org|w3\.org|wixpress\.com|wix\.com|sentry\.io|godaddy\.com|cloudflare\.com|gravatar\.com|jquery\.com|domain\.com|email\.com|tu-?dominio\.com)$/i.test(dom)) return false
+  if (/sentry|example\.|ejemplo\./i.test(dom)) return false
+  // Local-parts de relleno / buzones que no se contactan en frío.
+  if (/^(email|ejemplo|example|tu|tucorreo|tuemail|your|youremail|nombre|name|usuario|user|test|noreply|no-reply|donotreply|mailer-daemon|postmaster|abuse)$/i.test(local)) return false
+  return true
+}
+
 // Intenta extraer un email de contacto de la web (home + /contacto). Best-effort.
 export async function extraerEmailDeWeb(web: string): Promise<string | null> {
   const candidatas: string[] = []
@@ -96,7 +112,7 @@ export async function extraerEmailDeWeb(web: string): Promise<string | null> {
       const html = (await res.text()).slice(0, 500_000)
       const found = (html.match(EMAIL_RE) || [])
         .map(e => e.toLowerCase())
-        .filter(e => !EMAIL_BASURA.test(e) && !e.includes('@sentry') && !e.includes('example.'))
+        .filter(esEmailContacto)
       if (found.length) {
         // Preferir un email del mismo dominio que la web.
         const dom = new URL(web).hostname.replace(/^www\./, '')
@@ -153,7 +169,7 @@ export async function analizarListadoWeb(url: string): Promise<{ leads: LeadWeb[
   const leads: LeadWeb[] = (Array.isArray(arr) ? arr : [])
     .map(o => ({
       empresa: String(o?.empresa || o?.nombre || '').trim(),
-      email: o?.email ? String(o.email).trim().toLowerCase() : null,
+      email: o?.email && esEmailContacto(String(o.email)) ? String(o.email).trim().toLowerCase() : null,
       telefono: o?.telefono ? String(o.telefono).trim() : null,
       web: o?.web ? String(o.web).trim() : null,
     }))
@@ -200,7 +216,7 @@ export async function apifyResults(runId: string): Promise<{ status: string; lea
     const items: any[] = await ir.json().catch(() => [])
     const leads: LeadWeb[] = (Array.isArray(items) ? items : []).map(it => ({
       empresa: String(it?.title || it?.name || '').trim(),
-      email: Array.isArray(it?.emails) && it.emails[0] ? String(it.emails[0]).trim().toLowerCase() : null,
+      email: Array.isArray(it?.emails) && it.emails[0] && esEmailContacto(String(it.emails[0])) ? String(it.emails[0]).trim().toLowerCase() : null,
       telefono: it?.phoneUnformatted || it?.phone || null,
       web: it?.website || it?.url || null,
     })).filter(l => l.empresa)
