@@ -17,6 +17,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       await prisma.$executeRaw(Prisma.sql`UPDATE mailing_prospectos SET notas = ${b.notas} WHERE id = ${id}::uuid`)
     if (typeof b.telefono === 'string')
       await prisma.$executeRaw(Prisma.sql`UPDATE mailing_prospectos SET telefono = ${b.telefono} WHERE id = ${id}::uuid`)
+    if (typeof b.email === 'string') {
+      const email = b.email.trim().toLowerCase()
+      if (email)
+        // Solo si ese email no lo tiene ya otro prospecto (índice único lower(email)).
+        await prisma.$executeRaw(Prisma.sql`UPDATE mailing_prospectos SET email = ${email}, email_buscado_at = now() WHERE id = ${id}::uuid AND NOT EXISTS (SELECT 1 FROM mailing_prospectos WHERE lower(email) = ${email} AND id <> ${id}::uuid)`)
+      else
+        await prisma.$executeRaw(Prisma.sql`UPDATE mailing_prospectos SET email = NULL WHERE id = ${id}::uuid`)
+    }
+    if (typeof b.web === 'string')
+      await prisma.$executeRaw(Prisma.sql`UPDATE mailing_prospectos SET web = ${b.web.trim() || null} WHERE id = ${id}::uuid`)
     if ('seguimiento_proximo_at' in b)
       await prisma.$executeRaw(Prisma.sql`UPDATE mailing_prospectos SET seguimiento_proximo_at = ${b.seguimiento_proximo_at ? new Date(b.seguimiento_proximo_at) : null} WHERE id = ${id}::uuid`)
     if (b.baja === true)

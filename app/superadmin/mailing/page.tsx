@@ -159,7 +159,7 @@ export default function MailingPage() {
         await new Promise(res => setTimeout(res, 5000))
         const sr = await fetch(`/api/superadmin/mailing/apify?runId=${runId}&ciudad=${encodeURIComponent(ciudad)}`)
         const sd = await sr.json().catch(() => ({}))
-        if (sd.status === 'SUCCEEDED') { flash(`Apify: ${sd.encontrados} encontrados · ${sd.insertados} nuevos · ${sd.con_email} con email.`); cargarProspectos(); return }
+        if (sd.status === 'SUCCEEDED') { flash(`Apify: ${sd.insertados} nuevos. Rastreando emails de sus webs…`); await rellenarEmails(); return }
         if (['ERROR', 'FAILED', 'ABORTED', 'TIMED-OUT'].includes(sd.status)) { flash('Apify: ' + (sd.error || sd.status)); return }
       }
       flash('Apify sigue trabajando; en un par de minutos vuelve a darle a Buscar para importar el resultado.')
@@ -181,14 +181,24 @@ export default function MailingPage() {
       else flash(d.error || 'No se pudo analizar la web')
     } finally { setBusy(false) }
   }
+  // Rastrea en bucle TODAS las webs sin email (lotes de 15) hasta agotarlas.
+  // Lo usa el botón manual y, automáticamente, el final de una búsqueda de Apify.
+  async function rellenarEmails() {
+    let totalEnc = 0, totalRev = 0
+    for (let i = 0; i < 40; i++) {
+      const r = await fetch('/api/superadmin/mailing/buscar-emails', { method: 'POST' })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { flash(d.error || 'Error buscando emails'); break }
+      totalEnc += d.encontrados || 0; totalRev += d.revisados || 0
+      flash(`🔍 Rastreando webs… ${totalEnc} emails encontrados (${d.pendientes ?? 0} por revisar)`)
+      if (!d.revisados || !d.pendientes) break
+    }
+    flash(`✅ Rastreo terminado: ${totalEnc} emails nuevos de ${totalRev} webs revisadas.`)
+    cargarProspectos()
+  }
   async function buscarEmails() {
     setBusy(true)
-    try {
-      const r = await fetch('/api/superadmin/mailing/buscar-emails', { method: 'POST' })
-      const d = await r.json()
-      if (r.ok) { flash(`Emails: ${d.encontrados} encontrados de ${d.revisados} revisados.`); cargarProspectos() }
-      else flash(d.error || 'Error')
-    } finally { setBusy(false) }
+    try { await rellenarEmails() } finally { setBusy(false) }
   }
 
   async function patchProspecto(id: string, body: any) {
@@ -347,7 +357,7 @@ export default function MailingPage() {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                    {['Empresa', 'Teléfono', 'Estado', '👁', '🖱', 'Notas', 'Seguim.', ''].map(h => (
+                    {['Empresa', 'Email', 'Web', 'Teléfono', 'Estado', '👁', '🖱', 'Notas', 'Seguim.', ''].map(h => (
                       <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: C.muted, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr></thead>
@@ -358,7 +368,17 @@ export default function MailingPage() {
                         <tr key={p.id} style={{ borderBottom: `1px solid ${C.border}30`, background: caliente ? '#fff1f2' : undefined }}>
                           <td style={{ padding: '10px 14px', fontWeight: 700, whiteSpace: 'nowrap' }}>
                             {caliente && '🔥 '}{p.empresa_nombre}
-                            <div style={{ fontSize: 11, color: C.muted, fontWeight: 400 }}>{p.email}</div>
+                          </td>
+                          <td style={{ padding: '10px 14px', minWidth: 190 }}>
+                            <input defaultValue={p.email || ''} placeholder="añadir email…" type="email"
+                              onBlur={e => e.target.value.trim().toLowerCase() !== (p.email || '') && patchProspecto(p.id, { email: e.target.value })}
+                              style={{ ...inp, padding: '6px 8px', fontSize: 12, background: p.email ? '#f0fdf4' : '#fff' }} />
+                          </td>
+                          <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                            {p.web
+                              ? <a href={/^https?:\/\//i.test(p.web) ? p.web : `https://${p.web}`} target="_blank" rel="noreferrer"
+                                  style={{ color: C.accent, fontWeight: 700 }} title={p.web}>🔗 {String(p.web).replace(/^https?:\/\/(www\.)?/i, '').replace(/\/.*$/, '').slice(0, 24)}</a>
+                              : <span style={{ color: C.muted }}>—</span>}
                           </td>
                           <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
                             {p.telefono ? <a href={`tel:${p.telefono}`} style={{ color: C.accent, fontWeight: 700 }}>{p.telefono}</a> : <span style={{ color: C.muted }}>—</span>}
@@ -387,7 +407,7 @@ export default function MailingPage() {
                         </tr>
                       )
                     })}
-                    {!prospectos.length && <tr><td colSpan={8} style={{ padding: 40, textAlign: 'center', color: C.muted }}>Sin prospectos. Importa un CSV para empezar.</td></tr>}
+                    {!prospectos.length && <tr><td colSpan={10} style={{ padding: 40, textAlign: 'center', color: C.muted }}>Sin prospectos. Importa un CSV para empezar.</td></tr>}
                   </tbody>
                 </table>
               </div>
