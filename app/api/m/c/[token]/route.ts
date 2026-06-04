@@ -36,7 +36,7 @@ async function avisarClick(envioId: string, esWhatsapp: boolean) {
     `)
     const t = getTransporter()
     if (!t) return
-    const aviso = process.env.MAILING_AVISO_TO || MAIL_FROM
+    const aviso = process.env.MAILING_AVISO_TO || 'alberto.suarez.gutierrez@gmail.com'
     const tel = r.telefono || '—'
     await t.sendMail({
       from: `"IALIMP Mailing" <${MAIL_FROM}>`,
