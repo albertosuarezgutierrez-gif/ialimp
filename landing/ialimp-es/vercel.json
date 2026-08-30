@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/limpieza",
+      "destination": "https://plataforma-ten-flame.vercel.app/invitado/limpieza",
+      "permanent": false
+    }
+  ]
+}
