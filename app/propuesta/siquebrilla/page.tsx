@@ -524,12 +524,7 @@ export default function PropuestaSiqueBrilla() {
           <strong>Acceso ya activo — prueba desde hoy</strong>
           <p>Tu cuenta y la de Vanessa están creadas y funcionando con datos reales.</p>
           <div class="access-box">
-            <strong>Admin:</strong><br>
-            <code>ialimp.vercel.app/login</code><br>
-            <code>limpiezascruzz@gmail.com</code><br>
-            <code>SiqueBrilla2026</code><br><br>
-            <strong>Vanessa (móvil):</strong><br>
-            <code>ialimp.vercel.app/l/login</code> · PIN <code>5678</code>
+            Credenciales entregadas por canal seguro.
           </div>
         </div>
       </div>
